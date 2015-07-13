@@ -40,7 +40,7 @@ except Exception as e:
 if __name__ == '__main__':
     setup(
         name='varlens',
-        packages=find_packages(),
+        packages=["varlens", "varlens.commands", "varlens.plots"],
         version="0.0.1",
         description=
             "tools for looking at somatic variation across multiple samples",
@@ -50,8 +50,9 @@ if __name__ == '__main__':
         license="http://www.apache.org/licenses/LICENSE-2.0.html",
         entry_points={
             'console_scripts': [
-                'varlens-variant-support = varlens.variant_support:run',
-            ]
+                'varlens-support = '
+                    'varlens.commands.variant_support:run',
+            ],
         },
         classifiers=[
             'Development Status :: 3 - Alpha',

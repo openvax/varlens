@@ -40,9 +40,13 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
 
     filters = []
     params = {}
+    collection_metadata = {}
     for (key, value) in fragment:
         if key == 'filter':
             filters.append(value)
+        elif key.startswith('metadata.'):
+            metadata_key = key[len("metadata."):]
+            collection_metadata[metadata_key] = value
         elif key in ("only_passing", "allow_extended_nucleotides"):
             params[key] = string_to_boolean(value)
         elif key in ("ensembl_version", "reference_name", "reference_vcf_key"):
@@ -53,7 +57,9 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
             raise ValueError("Unsupported operation: %s" % key)
     
     # kwargs override URL.
-    params.update(kwargs)
+    for (key, value) in kwargs.items():
+        if value is not None:
+            params[key] = value
 
     # passed in filter is run after filters specified in the URL.
     if filter:
@@ -61,6 +67,7 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
 
     url_without_fragment = parsed._replace(fragment='').geturl()
     result = loader(url_without_fragment, **params)
+    result.collection_metadata.update(collection_metadata)
     for f in filters:
         result = filter_variants(result, f)
     return result
