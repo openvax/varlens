@@ -211,23 +211,7 @@ def variant_label(num, variant):
         effect=effects.top_priority_effect().short_description)
 
 
-def load_variants_dict(variant_inputs, filter=None, ensembl_version=None):
-    '''
 
-    Returns
-    --------
-    dict : Variant -> set(VariantInput) giving the inputs that have the variant
-    '''
-    result = collections.defaultdict(set)
-    for (i, variant_input) in enumerate(variant_inputs):
-        logging.info("Loading vcf %d / %d" % ((i + 1), len(variant_inputs)))
-        vc = load_variants.load_vcf(
-            variant_input.path,
-            filter=filter,
-            ensembl_version=ensembl_version)
-        for variant in vc:
-            result[variant].add(variant_input.name)
-    return result
 
 def collect_evidence(loci, read_inputs):
     '''
@@ -398,3 +382,21 @@ def draw_plot(
 
         pyplot.subplots_adjust(**subplots_adjust_properties)
         yield figure
+
+def load_variants_dict(variant_inputs, filter=None, ensembl_version=None):
+    '''
+
+    Returns
+    --------
+    dict : Variant -> set(VariantInput) giving the inputs that have the variant
+    '''
+    result = collections.defaultdict(set)
+    for (i, variant_input) in enumerate(variant_inputs):
+        logging.info("Loading vcf %d / %d" % ((i + 1), len(variant_inputs)))
+        vc = load_variants.load_vcf(
+            variant_input.path,
+            filter=filter,
+            ensembl_version=ensembl_version)
+        for variant in vc:
+            result[variant].add(variant_input.name)
+    return result

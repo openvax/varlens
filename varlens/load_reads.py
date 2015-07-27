@@ -1,10 +1,7 @@
 
 # incomplete
 
-import pysam
-
-def load_bam(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
-    
+import pysam    
 
 class ReadCollection(object):
     def __init__(self, url, filter=None):
@@ -12,5 +9,6 @@ class ReadCollection(object):
         self.filter = filter
 
     def pileup(self, locus, filter=None):
+        
 
 

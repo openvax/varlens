@@ -11,33 +11,8 @@ import varcode
 
 from . import util
 
-def string_to_boolean(s):
-    value = str(s).lower()
-    if value in ("true", "1"):
-        return True
-    elif value in ("false", 0):
-        return False
-    raise ValueError("Not a boolean string: %s" % s)
-
 def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
-    parsed = util.urlparse(url)
-
-    # Parse operations (filters and transforms) from the URL fragment
-    # (everything after the '#')
-    # Operations is a list of (op [either 'filter' or 'transform'], value))
-    try:
-        if parsed.fragment:
-            # If our fragment begins with an '&' symbol, we ignore it. 
-            unparsed_fragment = parsed.fragment
-            if unparsed_fragment.startswith("&"):
-                unparsed_fragment = unparsed_fragment[1:]
-            fragment = util.parse_qsl(unparsed_fragment, strict_parsing=True)
-        else:
-            fragment = []
-    except ValueError as e:
-        raise ValueError("Couldn't parse fragment '%s': %s" % (
-            parsed.fragment, e))
-
+    (url_without_fragment, fragment) = util.parse_url_fragment(url)
     filters = []
     params = {}
     collection_metadata = {}
@@ -48,7 +23,7 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
             metadata_key = key[len("metadata."):]
             collection_metadata[metadata_key] = value
         elif key in ("only_passing", "allow_extended_nucleotides"):
-            params[key] = string_to_boolean(value)
+            params[key] = util.string_to_boolean(value)
         elif key in ("ensembl_version", "reference_name", "reference_vcf_key"):
             params[key] = value
         elif key == "max_variants":
@@ -65,7 +40,6 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
     if filter:
         filters.append(filter)
 
-    url_without_fragment = parsed._replace(fragment='').geturl()
     result = loader(url_without_fragment, **params)
     result.collection_metadata.update(collection_metadata)
     for f in filters:

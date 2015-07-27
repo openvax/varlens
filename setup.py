@@ -15,7 +15,7 @@
 from __future__ import print_function
 import os
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 readme_filename = "README.md"
 current_directory = os.path.dirname(__file__)
@@ -42,16 +42,16 @@ if __name__ == '__main__':
         name='varlens',
         packages=["varlens", "varlens.commands", "varlens.plots"],
         version="0.0.1",
-        description=
-            "tools for looking at somatic variation across multiple samples",
+        description=(
+            "tools for looking at somatic variation across multiple samples"),
         long_description=readme,
         url="https://github.com/timodonnell/varlens",
         author="Tim O'Donnell",
         license="http://www.apache.org/licenses/LICENSE-2.0.html",
         entry_points={
             'console_scripts': [
-                'varlens-support = '
-                    'varlens.commands.variant_support:run',
+                'varlens-support = varlens.commands.variant_support:run',
+                'varlens-fpkm2gsea = varlens.commands.fpkm2gsea:run',
             ],
         },
         classifiers=[

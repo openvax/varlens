@@ -8,7 +8,7 @@ Generate a read evidence pie chart plot.
     --input-variants /path/to/vcf2 "my vcf2"
 
 '''
-
+from __future__ import absolute_import
 
 import argparse
 import collections
@@ -21,28 +21,19 @@ except ImportError:
     import pickle
 
 import varcode
-from varcode import read_evidence
 
-from . import plot_util, load_variants_dict
+from .. import plot_util, load_variants
+from .. import plots
 
 parser = argparse.ArgumentParser(usage=__doc__)
-parser.add_argument("--variant-sets", nargs="+", required=True)
-parser.add_argument("--read-sets", nargs="+", default=[])
 parser.add_argument("--evidence")
-
-parser.add_argument("--variant-set-labels", nargs="+")
-parser.add_argument("--read-set-labels", nargs="+")
-parser.add_argument("--associate", nargs=2, action="append", default=[])
 
 parser.add_argument("--neighboring-loci-offsets",
     nargs="+", type=int, default=[])
 parser.add_argument("--extra-info-below-each-pie", nargs="+")
 parser.add_argument("--sort-order",
     choices=("priority", "genomic"), default="priority")
-
-parser.add_argument("--ensembl-version")
-parser.add_argument("--variant-filter")
-
+    
 parser.add_argument("--out-plot")
 parser.add_argument("--out-evidence")
 
@@ -153,3 +144,21 @@ def write_evidence(filename, evidence):
     else:
         raise ValueError("Unsupported format: %s" % filename)
     print("Wrote: %s" % filename)
+
+def load_variants_dict(variant_inputs, filter=None, ensembl_version=None):
+    '''
+
+    Returns
+    --------
+    dict : Variant -> set(VariantInput) giving the inputs that have the variant
+    '''
+    result = collections.defaultdict(set)
+    for (i, variant_input) in enumerate(variant_inputs):
+        logging.info("Loading vcf %d / %d" % ((i + 1), len(variant_inputs)))
+        vc = load_variants.load_vcf(
+            variant_input.path,
+            filter=filter,
+            ensembl_version=ensembl_version)
+        for variant in vc:
+            result[variant].add(variant_input.name)
+    return result
