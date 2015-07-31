@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import logging
 import numpy
 import collections
@@ -12,7 +14,7 @@ from matplotlib import pyplot
 import varcode
 from varcode import read_evidence
 
-from . import load_variants
+from .. import load_variants
 
 PIE_CHART_COLORS = [
     "#37AE37",

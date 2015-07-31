@@ -15,17 +15,36 @@ import collections
 import os
 import logging
 import csv
+import sys
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
 import varcode
+import varcode.read_evidence
 
 from .. import plot_util, load_variants
 from .. import plots
 
+print(sys.path)
+from ..plots import variant_support_pie_charts
+
 parser = argparse.ArgumentParser(usage=__doc__)
+parser.add_argument("--variant-sets", nargs="+", default=[])
+parser.add_argument("--read-sets", nargs="+", default=[])
+parser.add_argument("--variant-set-labels", nargs="+")
+parser.add_argument("--read-set-labels", nargs="+")
+parser.add_argument("--associate",
+    metavar=("VARIANT_SET", "READ_SET"),
+    nargs=2,
+    action="append",
+    default=[])
+
+parser.add_argument("--variant-filter")
+parser.add_argument("--ensembl-version")
+
 parser.add_argument("--evidence")
 
 parser.add_argument("--neighboring-loci-offsets",
@@ -43,6 +62,8 @@ ReadInput = collections.namedtuple("ReadInput", "name path")
 VariantInput = collections.namedtuple("VariantInput", "name path reads")
 
 def drop_prefix(strings):
+    if len(strings) == 1:
+        return strings
     prefix_len = len(os.path.commonprefix(strings))
     return [string[prefix_len:] for string in strings]
 
@@ -97,14 +118,23 @@ def run():
     evidence = None
     if args.evidence:
         evidence = load_evidence(args.evidence)
-    
-    evidence_out = {}
-    plot_generator = plot(
-        variants=variant_to_inputs,
-        read_inputs=read_inputs,
-        evidence=evidence,
-        evidence_out=evidence_out,
-        neighboring_loci_offsets=args.neighboring_loci_offsets)
+
+    if args.out_plot:
+        evidence_out = {}
+        plot_generator = plots.variant_support_pie_charts.plot(
+            variants=variant_to_inputs,
+            read_inputs=read_inputs,
+            evidence=evidence,
+            evidence_out=evidence_out,
+            neighboring_loci_offsets=args.neighboring_loci_offsets)
+    else:
+        loci = [
+            varcode.read_evidence.pileup_collection.to_locus(variant)
+            for variant in variant_to_inputs
+        ]
+        print("Collecting evidence.")
+        evidence_out = plots.variant_support_pie_charts.collect_evidence(
+            loci, read_inputs)
 
     assert evidence_out
     if args.out_evidence:

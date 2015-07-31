@@ -41,7 +41,7 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
         filters.append(filter)
 
     result = loader(url_without_fragment, **params)
-    result.collection_metadata.update(collection_metadata)
+    #result.collection_metadata.update(collection_metadata)
     for f in filters:
         result = filter_variants(result, f)
     return result
