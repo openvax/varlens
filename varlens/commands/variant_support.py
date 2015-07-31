@@ -102,17 +102,6 @@ def run():
         filter=args.variant_filter,
         ensembl_version=args.ensembl_version)
 
-    # Sort variant_to_inputs.
-    if args.sort_order == "priority":
-        def sort_key(variant):
-            return -1 * varcode.effect_ordering.effect_priority(
-                variant.effects().top_priority_effect())
-    elif args.sort_order == "genomic":
-        sort_key = None
-    variant_to_inputs = collections.OrderedDict(
-        (variant, variant_to_inputs[variant])
-        for variant in sorted(variant_to_inputs, key=sort_key))
-
     print("Loaded %d variants." % len(variant_to_inputs))
 
     evidence = None
@@ -120,6 +109,17 @@ def run():
         evidence = load_evidence(args.evidence)
 
     if args.out_plot:
+        # Sort variant_to_inputs.
+        if args.sort_order == "priority":
+            def sort_key(variant):
+                return -1 * varcode.effect_ordering.effect_priority(
+                    variant.effects().top_priority_effect())
+        elif args.sort_order == "genomic":
+            sort_key = None
+        variant_to_inputs = collections.OrderedDict(
+            (variant, variant_to_inputs[variant])
+            for variant in sorted(variant_to_inputs, key=sort_key))
+
         evidence_out = {}
         plot_generator = plots.variant_support_pie_charts.plot(
             variants=variant_to_inputs,
