@@ -189,6 +189,8 @@ def load_variants_dict(variant_inputs, filter=None, ensembl_version=None):
             variant_input.path,
             filter=filter,
             ensembl_version=ensembl_version)
+        logging.info("Loaded %d variants from %s." %
+            (len(vc), variant_input.path))
         for variant in vc:
             result[variant].add(variant_input.name)
     return result
