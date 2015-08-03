@@ -22,6 +22,8 @@ try:
 except ImportError:
     import pickle
 
+import numpy
+
 import varcode
 import varcode.read_evidence
 
@@ -36,6 +38,7 @@ parser.add_argument("--variant-sets", nargs="+", default=[])
 parser.add_argument("--read-sets", nargs="+", default=[])
 parser.add_argument("--variant-set-labels", nargs="+")
 parser.add_argument("--read-set-labels", nargs="+")
+parser.add_argument("--max-variants", type=int)
 parser.add_argument("--associate",
     metavar=("VARIANT_SET", "READ_SET"),
     nargs=2,
@@ -55,6 +58,7 @@ parser.add_argument("--sort-order",
     
 parser.add_argument("--out-plot")
 parser.add_argument("--out-evidence")
+
 
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
@@ -103,6 +107,15 @@ def run():
         ensembl_version=args.ensembl_version)
 
     print("Loaded %d variants." % len(variant_to_inputs))
+
+    if args.max_variants and len(variant_to_inputs) > args.max_variants:
+        subselected = numpy.random.choice(
+            list(variant_to_inputs),
+            args.max_variants,
+            replace=False)
+        variant_to_inputs = dict(
+            (v, variant_to_inputs[v]) for v in subselected)
+        print("Subselected to %d variants." % len(variant_to_inputs))
 
     evidence = None
     if args.evidence:
