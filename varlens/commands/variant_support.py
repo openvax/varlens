@@ -27,11 +27,7 @@ import numpy
 import varcode
 import varcode.read_evidence
 
-from .. import plot_util, load_variants
-from .. import plots
-
-print(sys.path)
-from ..plots import variant_support_pie_charts
+from .. import load_variants
 
 parser = argparse.ArgumentParser(usage=__doc__)
 parser.add_argument("--variant-sets", nargs="+", default=[])
@@ -48,8 +44,6 @@ parser.add_argument("--associate",
 parser.add_argument("--variant-filter")
 parser.add_argument("--ensembl-version")
 
-parser.add_argument("--evidence")
-
 parser.add_argument("--neighboring-loci-offsets",
     nargs="+", type=int, default=[])
 parser.add_argument("--extra-info-below-each-pie", nargs="+")
@@ -58,7 +52,6 @@ parser.add_argument("--sort-order",
     
 parser.add_argument("--out-plot")
 parser.add_argument("--out-evidence")
-
 
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
@@ -71,13 +64,12 @@ def drop_prefix(strings):
     prefix_len = len(os.path.commonprefix(strings))
     return [string[prefix_len:] for string in strings]
 
-def run():
-    plot_util.configure_matplotlib()
-
-    args = parser.parse_args()
+def run(raw_args=sys.argv[1:]):
+    args = parser.parse_args(raw_args)
 
     if not args.variant_set_labels:
         args.variant_set_labels = drop_prefix(args.variant_sets)
+
     if not args.read_set_labels:
         args.read_set_labels = drop_prefix(args.read_sets)
 
@@ -117,48 +109,16 @@ def run():
             (v, variant_to_inputs[v]) for v in subselected)
         print("Subselected to %d variants." % len(variant_to_inputs))
 
-    evidence = None
-    if args.evidence:
-        evidence = load_evidence(args.evidence)
-
-    if args.out_plot:
-        # Sort variant_to_inputs.
-        if args.sort_order == "priority":
-            def sort_key(variant):
-                return -1 * varcode.effect_ordering.effect_priority(
-                    variant.effects().top_priority_effect())
-        elif args.sort_order == "genomic":
-            sort_key = None
-        variant_to_inputs = collections.OrderedDict(
-            (variant, variant_to_inputs[variant])
-            for variant in sorted(variant_to_inputs, key=sort_key))
-
-        evidence_out = {}
-        plot_generator = plots.variant_support_pie_charts.plot(
-            variants=variant_to_inputs,
-            read_inputs=read_inputs,
-            evidence=evidence,
-            evidence_out=evidence_out,
-            neighboring_loci_offsets=args.neighboring_loci_offsets)
-    else:
-        loci = [
-            varcode.read_evidence.pileup_collection.to_locus(variant)
-            for variant in variant_to_inputs
-        ]
-        print("Collecting evidence.")
-        evidence_out = plots.variant_support_pie_charts.collect_evidence(
-            loci, read_inputs)
+    loci = [
+        varcode.read_evidence.pileup_collection.to_locus(variant)
+        for variant in variant_to_inputs
+    ]
+    print("Collecting evidence.")
+    evidence_out = collect_evidence(loci, read_inputs)
 
     assert evidence_out
     if args.out_evidence:
         write_evidence(args.out_evidence, evidence_out)
-
-    if args.out_plot:
-        plot_util.write_figures(args.out_plot, plot_generator)
-
-
-def load_evidence(filename):
-    raise NotImplementedError
 
 def write_evidence(filename, evidence):
     if filename.endswith(".pickle"):
@@ -187,6 +147,32 @@ def write_evidence(filename, evidence):
     else:
         raise ValueError("Unsupported format: %s" % filename)
     print("Wrote: %s" % filename)
+
+def collect_evidence(loci, read_inputs):
+    '''
+    Parameters
+    ----------
+    loci : list of varcode.Locus or varcode.Variant instances
+    read_inputs : list of ReadInput
+    Returns
+    ----------
+    dict : read label -> locus -> allele -> count
+    '''
+    print("Loci", loci)
+    result = collections.OrderedDict()
+    for (i, read_input) in enumerate(read_inputs):
+        logging.info("Reading pileups for %d / %d: %s" % (
+            (i + 1), len(read_inputs), read_input.path))
+        evidence = read_evidence.PileupCollection.from_bam(
+            read_input.path, loci)
+        logging.info("Done loading evidence")
+        result[read_input.name] = collections.OrderedDict()
+        for (j, locus) in enumerate(loci):
+            if j % 100 == 0:
+                logging.info("Locus %d / %d" % ((j + 1), len(loci)))
+            result[read_input.name][locus] = dict(
+                evidence.allele_summary(locus))
+    return result
 
 def load_variants_dict(variant_inputs, filter=None, ensembl_version=None):
     '''
