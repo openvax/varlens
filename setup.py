@@ -51,6 +51,7 @@ if __name__ == '__main__':
         entry_points={
             'console_scripts': [
                 'varlens-support = varlens.commands.variant_support:run',
+                'varlens-extract-reads = varlens.commands.extract_reads:run',
                 'varlens-fpkm2gsea = varlens.commands.fpkm2gsea:run',
             ],
         },

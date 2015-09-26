@@ -11,20 +11,8 @@ Generate a read evidence pie chart plot.
 from __future__ import absolute_import
 
 import argparse
-import collections
-import os
-import logging
 import csv
 import sys
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-import varcode
-import varcode.read_evidence
-from varcode import Locus
 
 from .. import load_loci
 from .. import load_reads
@@ -64,6 +52,6 @@ def run(raw_args=sys.argv[1:]):
                         allele,
                         str(count),
                     ])
-                    
+
     print("Wrote: %s" % args.out)
 
