@@ -1,15 +1,38 @@
-import os
-import sys
-import re
-import json
-import collections
 import typechecks
-
-from future.utils import raise_
 
 import varcode
 
 from . import util
+from . import evaluation
+
+def add_args(parser):
+    parser.add_argument("--variants", action="append", default=[],
+        help="Path to VCF file. Can be specified multiple times.")
+    parser.add_argument("--variant-filter")
+    parser.add_argument("--variant-genome")
+
+def load(args):
+    '''
+    Given parsed variant-loading arguments, return a varcode.VariantCollection.
+    '''
+    variant_collections = [
+        load_vcf(
+            filename, filter=args.variant_filter, genome=args.variant_genome)
+        for filename in args.variants
+    ]
+    if not variant_collections:
+        return varcode.VariantCollection([])
+    
+    if len(variant_collections) == 1:
+        return variant_collections[0]
+
+    variants = set()
+    metadata = {}
+    for collection in variant_collections:
+        variants.update(collection)
+        metadata.update(collection.metadata)
+
+    return varcode.VariantCollection(variants, metadata=metadata)
 
 def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
     (url_without_fragment, fragment) = util.parse_url_fragment(url)
@@ -24,7 +47,7 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
             collection_metadata[metadata_key] = value
         elif key in ("only_passing", "allow_extended_nucleotides"):
             params[key] = util.string_to_boolean(value)
-        elif key in ("ensembl_version", "reference_name", "reference_vcf_key"):
+        elif key in ("genome", "reference_name", "reference_vcf_key"):
             params[key] = value
         elif key == "max_variants":
             params[key] = int(value)
@@ -41,77 +64,32 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
         filters.append(filter)
 
     result = loader(url_without_fragment, **params)
-    #result.collection_metadata.update(collection_metadata)
-    for f in filters:
-        result = filter_variants(result, f)
+    if collection_metadata:
+        for variant in result:
+            result.metadata[variant].update(collection_metadata)
+    for expression in filters:
+        result = result.filter(
+            lambda variant:
+                evaluate_variant_expression(expression, result, variant))
     return result
 
-RAISE = object()
-def filter_variants(
-        collection,
-        expression,
-        error_value=RAISE,
-        extra_bindings={}):
-
-    return collection.filter(
-        lambda variant: evaluate_expression(
-            expression,
-            collection,
-            variant,
-            error_value=error_value,
-            extra_bindings=extra_bindings))
-
-
-STANDARD_EVALUATION_ENVIRONMENT = {
-    "os": os,
-    "sys": sys,
-    "collections": collections,
-    "re": re,
-    "json": json,
-}
-
-class VariantWrapper(object):
-    def __init__(self, variant):
-        self.variant = variant
-
-    def __getitem__(self, key):
-        if hasattr(self.variant, key):
-            return getattr(self.variant, key)
-        raise KeyError("No key: %s" % key)
-
-def evaluate_expression(
+def evaluate_variant_expression(
         expression,
         collection,
         variant,
-        error_value=RAISE,
+        error_value=evaluation.RAISE,
         extra_bindings={}):
 
-    # Since Python 2 doesn't have a nonlocal keyword, we have to box up the
-    # error_value, so we can reassign to it in the ``on_error`` function
-    # below.
-    error_box = [error_value] 
-    try:
-        if typechecks.is_string(expression):
-            # Give some basic modules.
-            environment = dict(STANDARD_EVALUATION_ENVIRONMENT)
-            environment["variant"] = variant
-            environment["collection"] = collection
-            environment["metadata"] = collection.metadata.get(variant)
+    if typechecks.is_string(expression):
+        bindings = eval.AttributeToKeyWrapper(variant, extra={
+            'variant': variant,
+            'collection': collection,
+            'metadata': collection.metadata.get(variant),
+        })
+        return evaluation.evaluate_expression(
+            expression,
+            bindings,
+            error_value=error_value)
+    else:
+        return expression(variant)  
 
-            # We also add our "on_error" hack.
-            def on_error(value):
-                error_box[0] = value
-            environment["on_error"] = on_error
-            environment.update(extra_bindings)
-
-            variant_wrapper = VariantWrapper(variant)
-            return eval(expression, environment, variant_wrapper)
-        else:
-            return expression(variant)                
-    except Exception as e:
-        if error_box[0] is not RAISE:
-            return error_box[0]
-        extra = "Error while evaluating: \n\t%s\non variant:\n%s" % (
-            expression, variant)
-        traceback = sys.exc_info()[2]
-        raise_(ValueError, str(e) + "\n" + extra, traceback)
