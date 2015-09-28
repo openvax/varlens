@@ -1,5 +1,7 @@
-import typechecks
+import collections
 
+import typechecks
+import pandas
 import varcode
 
 from . import util
@@ -81,7 +83,11 @@ def evaluate_variant_expression(
         extra_bindings={}):
 
     if typechecks.is_string(expression):
-        bindings = eval.AttributeToKeyWrapper(variant, extra={
+        bindings = evaluation.AttributeToKeyWrapper([variant], extra={
+            'inclusive_start': variant.start,
+            'inclusive_end': variant.end,
+            'interbase_start': variant.start - 1,
+            'interbase_end': variant.end,
             'variant': variant,
             'collection': collection,
             'metadata': collection.metadata.get(variant),
@@ -92,4 +98,30 @@ def evaluate_variant_expression(
             error_value=error_value)
     else:
         return expression(variant)  
+
+STANDARD_DATAFRAME_COLUMNS = [
+    "genome",
+    "contig",
+    "interbase_start",
+    "interbase_end",
+    "ref",
+    "alt",
+]
+
+def variants_to_dataframe(variant_collection, extra_columns={}):
+    columns = collections.OrderedDict(
+        (name, []) for name in STANDARD_DATAFRAME_COLUMNS)
+    columns.extend(extra_columns.keys())
+    for variant in variant_collection:
+        columns["genome"].append(str(variant.genome))
+        columns["contig"].append(variant.contig)
+        columns["interbase_start"].append(variant.start - 1)
+        columns["interbase_end"].append(variant.end)
+        columns["ref"].append(variant.ref)
+        columns["alt"].append(variant.alt)
+        for (column, callable_or_expression) in extra_columns.items():
+            columns[column].append(evaluate_variant_expression(
+                callable_or_expression, variant_collection, variant))
+
+    return pandas.DataFrame(columns, index=list(variant_collection))
 

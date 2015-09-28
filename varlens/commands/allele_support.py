@@ -1,5 +1,9 @@
 '''
-Generate a read evidence pie chart plot.
+Given genomic loci (e.g. from a VCF file) and one or more BAM files, write a
+csv file giving read counts for each allele at each locus.
+
+Note that the output of this command is given in *interbase coordinates*, i.e.
+starting at 0, inclusive on first index, exclusive on second.
 
 %(prog)s \
     --reads /path/to/bam1
@@ -13,6 +17,7 @@ from __future__ import absolute_import
 import argparse
 import csv
 import sys
+import logging
 
 from .. import load_loci
 from .. import load_reads
@@ -31,16 +36,22 @@ def run(raw_args=sys.argv[1:]):
     if not loci:
         parser.error("No genomic loci (e.g. VCF files) specified.")
 
-    print("Loaded %d genomic loci." % len(loci))
+    logging.info("Loaded %d genomic loci." % len(loci))
 
     read_sources = load_reads.load(args)
 
     with open(args.out, "w") as fd:
         writer = csv.writer(fd)
-        writer.writerow(
-            ["source", "contig", "start", "end", "allele", "count"])
+        writer.writerow([
+            "source",
+            "contig",
+            "interbase_start",
+            "interbase_end",
+            "allele",
+            "count",
+        ])
         for source in read_sources:
-            print("Reading from: %s" % source.name)
+            logging.info("Reading from: %s" % source.name)
             for locus in loci:
                 summary = dict(source.pileups([locus]).allele_summary(locus))
                 for (allele, count) in summary.items():
@@ -53,5 +64,5 @@ def run(raw_args=sys.argv[1:]):
                         str(count),
                     ])
 
-    print("Wrote: %s" % args.out)
+    logging.info("Wrote: %s" % args.out)
 

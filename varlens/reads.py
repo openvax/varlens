@@ -22,7 +22,7 @@ def load(args):
 
 def drop_prefix(strings):
     if len(strings) == 1:
-        return strings
+        return [os.path.basename(strings[0])]
     prefix_len = len(os.path.commonprefix(strings))
     return [string[prefix_len:] for string in strings]
 

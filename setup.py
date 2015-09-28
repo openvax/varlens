@@ -50,7 +50,8 @@ if __name__ == '__main__':
         license="http://www.apache.org/licenses/LICENSE-2.0.html",
         entry_points={
             'console_scripts': [
-                'varlens-support = varlens.commands.variant_support:run',
+                'varlens-allele-support = varlens.commands.allele_support:run',
+                'varlens-variants = varlens.commands.variants:run',
                 'varlens-extract-reads = varlens.commands.extract_reads:run',
                 'varlens-fpkm2gsea = varlens.commands.fpkm2gsea:run',
             ],
