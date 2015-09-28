@@ -44,7 +44,17 @@ def load(args):
 
     variants = set()
     metadata = {}
+    reference_name = None
     for collection in variant_collections:
+        if not collection:
+            continue
+        if reference_name is None:
+            reference_name = collection[0].reference_name
+        if collection[0].reference_name != reference_name:
+            raise ValueError(
+                "Mixing references is not supported. "
+                "Reference %s != %s" % (
+                    reference_name, collection[0].reference_name))
         variants.update(collection)
         metadata.update(collection.metadata)
 
@@ -125,9 +135,10 @@ STANDARD_DATAFRAME_COLUMNS = [
 def variants_to_dataframe(variant_collection, extra_columns={}):
     columns = collections.OrderedDict(
         (name, []) for name in STANDARD_DATAFRAME_COLUMNS)
-    columns.extend(extra_columns.keys())
+    for name in extra_columns:
+        columns[name] = []
     for variant in variant_collection:
-        columns["genome"].append(str(variant.genome))
+        columns["genome"].append(str(variant.reference_name))
         columns["contig"].append(variant.contig)
         columns["interbase_start"].append(variant.start - 1)
         columns["interbase_end"].append(variant.end)

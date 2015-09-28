@@ -21,17 +21,19 @@ import logging
 
 from .. import loci
 from .. import reads
+from . import configure_logging
 
 parser = argparse.ArgumentParser(usage=__doc__)
 loci.add_args(parser)
 reads.add_args(parser)
 
-parser.add_argument("--out", required=True)
+parser.add_argument("--out")
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
-
+    configure_logging(args)
+    
     sites = loci.load(args)
     if not sites:
         parser.error("No genomic loci (e.g. VCF files) specified.")
@@ -40,8 +42,10 @@ def run(raw_args=sys.argv[1:]):
 
     read_sources = reads.load(args)
 
-    with open(args.out, "w") as fd:
-        writer = csv.writer(fd)
+    out_fd = open(args.out, "w") if args.out else sys.stdout
+
+    try:
+        writer = csv.writer(out_fd)
         writer.writerow([
             "source",
             "contig",
@@ -63,6 +67,10 @@ def run(raw_args=sys.argv[1:]):
                         allele,
                         str(count),
                     ])
+    finally:
+        if out_fd is not sys.stdout:
+            out_fd.close()
+            logging.info("Wrote: %s" % args.out)
 
-    logging.info("Wrote: %s" % args.out)
+
 

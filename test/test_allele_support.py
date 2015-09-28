@@ -11,39 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from __future__ import absolute_import
 
-import os
-import tempfile
-
-import pandas
+import functools
 
 from nose.tools import eq_, assert_raises
 
 from varlens.commands import allele_support
 
-from . import data_path
+from . import data_path, run_and_parse_csv, cols_concat
 
-def run_command(args):
-    assert '--out' not in args
-    out_file = tempfile.NamedTemporaryFile(
-        suffix=".csv",
-        prefix="test_varlens_support",
-        delete=False).name
-    print("Running variant support with arguments: %s" % str(args))
-    try:
-        args.extend(['--out', out_file])
-        allele_support.run(args)
-        return pandas.read_csv(out_file)
-    finally:
-        os.unlink(out_file)
-
-def cols_concat(df, columns, delimiter="-"):
-    zipped = zip(*[df[c] for c in columns])
-    return set([delimiter.join(str(item) for item in row) for row in zipped])
+run = functools.partial(run_and_parse_csv, allele_support.run)
 
 def test_simple():
-    result = run_command([
+    result = run([
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
         "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
     ])
@@ -59,7 +41,7 @@ def test_simple():
 #        "filter==",
     ]
     for variant_filter in pick_first_variant:
-        result = run_command([
+        result = run([
             "--reads", data_path("CELSR1/bams/bam_0.bam"),
             "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
             "--variant-filter", variant_filter,

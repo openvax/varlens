@@ -26,7 +26,7 @@ parser.add_argument("--field", action="append", default=[], nargs="+")
 parser.add_argument("--no-standard-fields", action="store_true", default=False,
     help="Do not write standard fields (contig, genome, start, end, ref, alt)")
 
-parser.add_argument("--out-variants", required=True)
+parser.add_argument("--out")
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
@@ -54,9 +54,12 @@ def run(raw_args=sys.argv[1:]):
         for column in variants.STANDARD_DATAFRAME_COLUMNS:
             del df[column]
 
-    if args.out_csv.endswith(".csv"):
-        df.write_csv(args.out_variants)
+    if args.out is None:
+        # Write to stdout.
+        df.to_csv(sys.stdout, index=False)
+    elif args.out_csv.endswith(".csv"):
+        df.to_csv(args.out, index=False)
+        print("Wrote: %s" % args.out)
     else:
-        parser.error("Unsupported output file extension: %s" % args.out_variants)
+        parser.error("Unsupported output file extension: %s" % args.out)
 
-    print("Wrote: %s" % args.out_variants)
