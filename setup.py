@@ -40,7 +40,7 @@ except Exception as e:
 if __name__ == '__main__':
     setup(
         name='varlens',
-        packages=["varlens", "varlens.commands"],
+        packages=["varlens", "varlens.commands", "varlens.read_evidence"],
         version="0.0.1",
         description=(
             "tools for looking at somatic variation across multiple samples"),
