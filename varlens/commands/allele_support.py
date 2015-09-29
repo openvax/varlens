@@ -44,33 +44,32 @@ def run(raw_args=sys.argv[1:]):
 
     out_fd = open(args.out, "w") if args.out else sys.stdout
 
-    try:
-        writer = csv.writer(out_fd)
-        writer.writerow([
-            "source",
-            "contig",
-            "interbase_start",
-            "interbase_end",
-            "allele",
-            "count",
-        ])
-        for source in read_sources:
-            logging.info("Reading from: %s" % source.name)
-            for locus in loci:
-                summary = dict(source.pileups([locus]).allele_summary(locus))
-                for (allele, count) in summary.items():
-                    writer.writerow([
-                        source.name,
-                        locus.contig,
-                        str(locus.start),
-                        str(locus.end),
-                        allele,
-                        str(count),
-                    ])
-    finally:
-        if out_fd is not sys.stdout:
-            out_fd.close()
-            logging.info("Wrote: %s" % args.out)
+    writer = csv.writer(out_fd)
+    writer.writerow([
+        "source",
+        "contig",
+        "interbase_start",
+        "interbase_end",
+        "allele",
+        "count",
+    ])
+    for source in read_sources:
+        logging.info("Reading from: %s" % source.name)
+        for locus in loci:
+            summary = dict(source.pileups([locus]).allele_summary(locus))
+            for (allele, count) in summary.items():
+                writer.writerow([
+                    source.name,
+                    locus.contig,
+                    str(locus.start),
+                    str(locus.end),
+                    allele,
+                    str(count),
+                ])
+
+    if out_fd is not sys.stdout:
+        out_fd.close()
+        print("Wrote: %s" % args.out)
 
 
 

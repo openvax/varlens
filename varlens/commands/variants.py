@@ -19,10 +19,11 @@ import logging
 import collections
 
 from .. import variants_util
+from ..evaluation import parse_labeled_expression
 
 parser = argparse.ArgumentParser(usage=__doc__)
 variants_util.add_args(parser)
-parser.add_argument("--field", action="append", default=[], nargs="+")
+parser.add_argument("field", nargs="*")
 parser.add_argument("--no-standard-fields", action="store_true", default=False,
     help="Do not write standard fields (contig, genome, start, end, ref, alt)")
 
@@ -39,15 +40,9 @@ def run(raw_args=sys.argv[1:]):
     logging.info("Loaded %d variants." % len(variants))
 
     extra_columns = collections.OrderedDict()
-    for lst in args.field:
-        if len(lst) == 1:
-            name = expression = lst[0]
-        elif len(lst) == 2:
-            (name, expression) = lst
-        else:
-            parser.error("Expected 1 or 2 arguments ([name], expression) for "
-                "--field option, but got: %s" % lst)
-        extra_columns[name] = expression
+    for labeled_expression in args.field:
+        (label, expression) = parse_labeled_expression(labeled_expression)
+        extra_columns[label] = expression
 
     df = variants_util.variants_to_dataframe(variants, extra_columns)
     if args.no_standard_fields:

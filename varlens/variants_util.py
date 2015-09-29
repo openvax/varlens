@@ -29,7 +29,12 @@ def add_args(parser):
 def load_from_args(args):
     '''
     Given parsed variant-loading arguments, return a varcode.VariantCollection.
+
+    If no variant loading arguments are specified, return None.
     '''
+    if not args.variants:
+        return None
+
     variant_collections = [
         load(
             filename, filter=args.variant_filter, genome=args.variant_genome)
@@ -41,8 +46,7 @@ def load_from_args(args):
     if len(variant_collections) == 1:
         return variant_collections[0]
 
-    variants = set()
-    metadata = {}
+    variants_and_metadata = {}
     reference_name = None
     for collection in variant_collections:
         if not collection:
@@ -54,16 +58,26 @@ def load_from_args(args):
                 "Mixing references is not supported. "
                 "Reference %s != %s" % (
                     reference_name, collection[0].reference_name))
-        variants.update(collection)
-        metadata.update(collection.metadata)
+        
+        # Merge metadata
+        for variant in collection:
+            assert variant in collection.metadata
+            if variant in variants_and_metadata:
+                variants_and_metadata[variant]["sources"].update(
+                    collection.metadata[variant]["sources"])
+            else:
+                variants_and_metadata[variant] = collection.metadata[variant]
 
-    return varcode.VariantCollection(variants, metadata=metadata)
+    return varcode.VariantCollection(
+        variants_and_metadata.keys(),
+        metadata=variants_and_metadata)
 
 def load(url, filter=None, loader=None, **kwargs):
     (url_without_fragment, fragment) = evaluation.parse_url_fragment(url)
     filters = []
     params = {}
     collection_metadata = {}
+    name = url
     for (key, value) in fragment:
         if key == 'filter':
             filters.append(value)
@@ -76,6 +90,8 @@ def load(url, filter=None, loader=None, **kwargs):
             params[key] = value
         elif key == "max_variants":
             params[key] = int(value)
+        elif key == "name":
+            name = value
         else:
             raise ValueError("Unsupported operation: %s" % key)
     
@@ -99,15 +115,30 @@ def load(url, filter=None, loader=None, **kwargs):
                 % url_without_fragment)
 
     result = loader(url_without_fragment, **params)
-    if collection_metadata:
-        for variant in result:
-            result.metadata[variant].update(collection_metadata)
-    for expression in filters:
-        result = result.filter(
-            lambda variant:
-                evaluate_variant_expression(expression, result, variant))
-    return result
 
+    # Set metadata 'sources' dict to contain the original metadata
+    # of this variant from this source.
+    for variant in result:
+        assert variant in result.metadata
+        result.metadata[variant]["sources"] = {
+            name: dict(result.metadata[variant])
+        }
+        if collection_metadata:
+            result.metadata[variant].update(collection_metadata)
+
+    if filters:
+        subselected = set(
+            variant for variant in result
+            if all(evaluate_variant_expression(expression, result, variant)
+                for expression in filters))
+        result = varcode.VariantCollection(
+            subselected,
+            path=result.path,
+            metadata=dict(
+                (variant, result.metadata[variant])
+                for variant in subselected))
+        
+    return result
 
 def evaluate_variant_expression(
         expression,

@@ -121,3 +121,11 @@ def evaluate_expression(expression, bindings, error_value=RAISE):
             expression, bindings)
         traceback = sys.exc_info()[2]
         raise_(ValueError, str(e) + "\n" + extra, traceback)
+
+def parse_labeled_expression(labeled_expression):
+    match = re.match(r"^([\w ]+):(.*)$", labeled_expression)
+    if match is None:
+        label = expression = labeled_expression
+    else:
+        (label, expression) = match.groups()
+    return (label, expression)

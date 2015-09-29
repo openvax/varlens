@@ -33,6 +33,19 @@ def add_args(parser):
         nargs="+", type=int, default=[])
 
 def load_from_args(args):
+    """
+    Return a Loci object giving the loci specified on the command line.
+
+    If no loci-related arguments are specified, return None. This makes it
+    possible to distinguish an empty set of loci, for example due to filters
+    removing all loci, from the case where the user didn't specify any
+    arguments.
+    """
+    variants = variants_util.load_from_args(args)
+
+    if variants is None and not args.locus:
+        return None
+
     def loci():
         for locus in args.locus:
             match = re.match(r'(\w+):(\d+)(-(\d+))?', locus)
@@ -55,7 +68,6 @@ def load_from_args(args):
                     yield Locus(
                         locus.contig, locus.start + offset, locus.end + offset)
 
-    variants = variants_util.load_from_args(args)
     return Loci(expand_with_neighbors(itertools.chain(
         loci(),
         (read_evidence.pileup_collection.to_locus(variant)

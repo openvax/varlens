@@ -89,9 +89,8 @@ def test_fields():
     result = run([
         "--variants",
         data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37&filter=ref=='A'"),
-        "--field", "foo", "ref.lower()",
-        "--field", "gene_names[0]",
-
+        "foo:ref.lower()",
+        "gene_names[0]",
     ])
     eq_(sorted(cols_concat(result, expected_cols + ["foo", "gene_names[0]"])),
         sorted({
@@ -106,8 +105,8 @@ def test_round_trip():
             "--variants",
             data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37&filter=ref=='A'"),
             "--out", out_csv,
-            "--field", "foo", "ref.lower()",
-            "--field", "gene_names[0]",
+            "foo:ref.lower()",
+            "gene_names[0]",
         ])
         result1 = pandas.read_csv(out_csv)
         eq_(sorted(cols_concat(
@@ -120,8 +119,8 @@ def test_round_trip():
 
         result2 = run([
             "--variants", out_csv,
-            "--field", "foo",
-            "--field", "metadata['gene_names[0]']",
+            "foo",
+            "metadata['gene_names[0]']",
         ])
         eq_(sorted(cols_concat(
                 result2,
@@ -132,6 +131,23 @@ def test_round_trip():
                 "GRCh37-22-50875932-50875933-A-C-a-PPP6R2",
             }))
 
+def test_sources():
+    result = run([
+        "--variants",
+        data_path(
+            "CELSR1/vcfs/vcf_1.vcf#name=first&genome=b37&filter=ref=='A'"),
+        "--variants",
+        data_path(
+            "CELSR1/vcfs/vcf_1.vcf#name=second&genome=b37&filter=ref in ('T', 'A')"),
+        "sources:'_'.join(sorted(sources))",
+    ])
+    eq_(sorted(cols_concat(result, expected_cols + ["sources"])),
+        sorted({
+            "GRCh37-22-21829554-21829555-T-G-second",
+            "GRCh37-22-46931059-46931060-A-C-first_second",
+            "GRCh37-22-50636217-50636218-A-C-first_second",
+            "GRCh37-22-50875932-50875933-A-C-first_second",
+        }))
 
 def test_mixing_genomes():
     # Different genomes should raise an error.

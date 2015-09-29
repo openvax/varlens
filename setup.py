@@ -52,7 +52,7 @@ if __name__ == '__main__':
             'console_scripts': [
                 'varlens-allele-support = varlens.commands.allele_support:run',
                 'varlens-variants = varlens.commands.variants:run',
-                'varlens-extract-reads = varlens.commands.extract_reads:run',
+                'varlens-reads = varlens.commands.reads:run',
                 'varlens-fpkm2gsea = varlens.commands.fpkm2gsea:run',
             ],
         },
