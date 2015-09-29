@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+'''
 from .locus import Locus
 from .loci import Loci
 from . import read_evidence
@@ -23,3 +24,4 @@ __all__ = [
     "Locus",
     "read_evidence",
 ]
+'''

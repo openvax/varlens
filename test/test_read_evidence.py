@@ -22,7 +22,7 @@ from varcode import Variant as VarcodeVariant
 
 from . import data_path
 
-from varlens.loci import Locus
+from varlens.locus import Locus
 from varlens.read_evidence import PileupCollection
 
 Variant = collections.namedtuple("Variant", "locus ref alt")

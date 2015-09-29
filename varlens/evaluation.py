@@ -20,6 +20,20 @@ import json
 from future.utils import raise_
 
 import typechecks
+import pandas
+import numpy
+
+try:
+    # Python 2
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
+
+try:
+    # Python 2
+    from urlparse import parse_qsl
+except ImportError:
+    from urllib.parse import parse_qsl
 
 STANDARD_EVALUATION_ENVIRONMENT = {
     "os": os,
@@ -27,9 +41,36 @@ STANDARD_EVALUATION_ENVIRONMENT = {
     "collections": collections,
     "re": re,
     "json": json,
+    "pandas": pandas,
+    "numpy": numpy,
 }
 
-class AttributeToKeyWrapper(object):
+def parse_url_fragment(url):
+    parsed = urlparse(url)
+    try:
+        if parsed.fragment:
+            # If our fragment begins with an '&' symbol, we ignore it. 
+            unparsed_fragment = parsed.fragment
+            if unparsed_fragment.startswith("&"):
+                unparsed_fragment = unparsed_fragment[1:]
+            fragment = parse_qsl(unparsed_fragment, strict_parsing=True)
+        else:
+            fragment = []
+    except ValueError as e:
+        raise ValueError("Couldn't parse fragment '%s': %s" % (
+            parsed.fragment, e))
+
+    return (parsed._replace(fragment='').geturl(), fragment)
+
+def string_to_boolean(s):
+    value = str(s).lower()
+    if value in ("true", "1"):
+        return True
+    elif value in ("false", 0):
+        return False
+    raise ValueError("Not a boolean string: %s" % s)
+
+class EvaluationEnvironment(object):
     def __init__(self, wrapped_list, extra={}):
         self._wrapped_list = wrapped_list
         self._extra = extra
@@ -42,6 +83,18 @@ class AttributeToKeyWrapper(object):
             return self._extra[key]
         raise KeyError("No key: %s" % key)
 
+    def __str__(self):
+        all_bindings = []
+        for wrapped in self._wrapped_list:
+            all_bindings.extend(dir(wrapped))
+        all_bindings.extend(self._extra)
+        display_bindings = [
+            binding for binding in all_bindings
+            if not binding.startswith("_")
+        ]
+        return ("<Environment with bindings: %s>"
+            % " ".join(sorted(display_bindings)))
+
 RAISE = object()
 
 def evaluate_expression(expression, bindings, error_value=RAISE):
@@ -53,14 +106,14 @@ def evaluate_expression(expression, bindings, error_value=RAISE):
     error_box = [error_value] 
     try:
         # Give some basic modules.
-        environment = dict(STANDARD_EVALUATION_ENVIRONMENT)
+        standard_environment = dict(STANDARD_EVALUATION_ENVIRONMENT)
     
         # Add our "on_error" hack.
         def on_error(value):
             error_box[0] = value
-        environment["on_error"] = on_error
+        standard_environment["on_error"] = on_error
 
-        return eval(expression, environment, bindings)
+        return eval(expression, standard_environment, bindings)
     except Exception as e:
         if error_box[0] is not RAISE:
             return error_box[0]

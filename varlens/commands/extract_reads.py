@@ -14,12 +14,12 @@ import sys
 
 import pysam
 
-from .. import loci
-from .. import reads
+from .. import loci_util
+from .. import reads_util
 
 parser = argparse.ArgumentParser(usage=__doc__)
-loci.add_args(parser)
-reads.add_args(parser)
+loci_util.add_args(parser)
+reads_util.add_args(parser)
 
 parser.add_argument("--out", required=True)
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
@@ -27,11 +27,11 @@ parser.add_argument("-v", "--verbose", action="store_true", default=False)
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
 
-    sites = loci.load(args)
-    if not sites:
+    loci = loci_util.load(args)
+    if not loci:
         parser.error("No genomic loci (e.g. VCF files) specified.")
 
-    read_sources = reads.load(args)
+    read_sources = reads_util.load(args)
 
     if len(read_sources) != 1:
         parser.error("Exactly one read source must be specified.")
@@ -41,7 +41,7 @@ def run(raw_args=sys.argv[1:]):
     out_handle = pysam.AlignmentFile(
         args.out, "wb", template=read_source.handle)
 
-    for locus in sites:
+    for locus in loci:
         pileup_collection = read_source.pileups([locus]).reads()
         for read in pileup_collection:
             out_handle.write(read)

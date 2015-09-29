@@ -19,20 +19,20 @@ import re
 import intervaltree
 
 from . import read_evidence
-from . import load_variants
-from . import Locus
+from . import variants_util
+from .locus import Locus
 
 def add_args(parser):
     # TODO:
     # - Load intervals_list files
-    load_variants.add_args(parser)
+    variants_util.add_args(parser)
     parser.add_argument('--locus', action="append", default=[],
         help="Genomic locus, like chr1:2342332 or chr1:2342-23423. "
         "Can be listed multiple times.")
     parser.add_argument("--neighbor-offsets",
         nargs="+", type=int, default=[])
 
-def load(args):
+def load_from_args(args):
     def loci():
         for locus in args.locus:
             match = re.match(r'(\w+):(\d+)(-(\d+))?', locus)
@@ -55,7 +55,7 @@ def load(args):
                     yield Locus(
                         locus.contig, locus.start + offset, locus.end + offset)
 
-    variants = load_variants.load(args)
+    variants = variants_util.load_from_args(args)
     return Loci(expand_with_neighbors(itertools.chain(
         loci(),
         (read_evidence.pileup_collection.to_locus(variant)

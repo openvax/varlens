@@ -4,6 +4,8 @@ Utility functions for tests.
 
 import sys
 import os
+import tempfile
+from contextlib import contextmanager
 
 import pandas
 
@@ -40,6 +42,18 @@ def run_and_parse_csv(function, *args):
         raise
     return result
 
+@contextmanager
+def temp_file(suffix=".csv"):
+    fd = tempfile.NamedTemporaryFile(
+        suffix=suffix,
+        prefix="test_varlens_",
+        delete=False)
+    filename = fd.name
+    fd.close()
+    yield filename
+    os.unlink(filename)    
+
 def cols_concat(df, columns, delimiter="-"):
+    assert df is not None
     zipped = zip(*[df[c] for c in columns])
     return set([delimiter.join(str(item) for item in row) for row in zipped])

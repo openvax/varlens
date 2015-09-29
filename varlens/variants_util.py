@@ -18,7 +18,6 @@ import typechecks
 import pandas
 import varcode
 
-from . import util
 from . import evaluation
 
 def add_args(parser):
@@ -27,12 +26,12 @@ def add_args(parser):
     parser.add_argument("--variant-filter")
     parser.add_argument("--variant-genome")
 
-def load(args):
+def load_from_args(args):
     '''
     Given parsed variant-loading arguments, return a varcode.VariantCollection.
     '''
     variant_collections = [
-        load_vcf(
+        load(
             filename, filter=args.variant_filter, genome=args.variant_genome)
         for filename in args.variants
     ]
@@ -60,8 +59,8 @@ def load(args):
 
     return varcode.VariantCollection(variants, metadata=metadata)
 
-def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
-    (url_without_fragment, fragment) = util.parse_url_fragment(url)
+def load(url, filter=None, loader=None, **kwargs):
+    (url_without_fragment, fragment) = evaluation.parse_url_fragment(url)
     filters = []
     params = {}
     collection_metadata = {}
@@ -72,7 +71,7 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
             metadata_key = key[len("metadata."):]
             collection_metadata[metadata_key] = value
         elif key in ("only_passing", "allow_extended_nucleotides"):
-            params[key] = util.string_to_boolean(value)
+            params[key] = evaluation.string_to_boolean(value)
         elif key in ("genome", "reference_name", "reference_vcf_key"):
             params[key] = value
         elif key == "max_variants":
@@ -89,6 +88,16 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
     if filter:
         filters.append(filter)
 
+    if loader is None:
+        if url_without_fragment.endswith(".vcf"):
+            loader = varcode.load_vcf_fast
+        elif url_without_fragment.endswith(".csv"):
+            loader = load_csv
+        else:
+            raise ValueError(
+                "Unsupported input file extension for variants: %s"
+                % url_without_fragment)
+
     result = loader(url_without_fragment, **params)
     if collection_metadata:
         for variant in result:
@@ -99,6 +108,7 @@ def load_vcf(url, filter=None, loader=varcode.load_vcf_fast, **kwargs):
                 evaluate_variant_expression(expression, result, variant))
     return result
 
+
 def evaluate_variant_expression(
         expression,
         collection,
@@ -107,15 +117,18 @@ def evaluate_variant_expression(
         extra_bindings={}):
 
     if typechecks.is_string(expression):
-        bindings = evaluation.AttributeToKeyWrapper([variant], extra={
+        variant_metadata = collection.metadata.get(variant, {})
+        extra_bindings = {
             'inclusive_start': variant.start,
             'inclusive_end': variant.end,
             'interbase_start': variant.start - 1,
             'interbase_end': variant.end,
             'variant': variant,
             'collection': collection,
-            'metadata': collection.metadata.get(variant),
-        })
+            'metadata': variant_metadata,
+        }
+        extra_bindings.update(variant_metadata)
+        bindings = evaluation.EvaluationEnvironment([variant], extra_bindings)
         return evaluation.evaluate_expression(
             expression,
             bindings,
@@ -150,3 +163,28 @@ def variants_to_dataframe(variant_collection, extra_columns={}):
 
     return pandas.DataFrame(columns, index=list(variant_collection))
 
+def dataframe_to_variants(df):
+    for column in STANDARD_DATAFRAME_COLUMNS:
+        if column not in df:
+            raise ValueError("Missing column: %s" % column)
+
+    extra_columns = [
+        c for c in df.columns if c not in STANDARD_DATAFRAME_COLUMNS
+    ]
+    metadata = collections.OrderedDict()
+    for (i, row) in df.iterrows():
+        variant = varcode.Variant(
+            ensembl=row.genome,
+            contig=row.contig,
+            start=row.interbase_start + 1,
+            ref=row.ref,
+            alt=row.alt,
+            allow_extended_nucleotides=True)
+        assert variant.end == row.interbase_end
+        metadata[variant] = dict((c, row[c]) for c in extra_columns)
+
+    return varcode.VariantCollection(metadata.keys(), metadata=metadata)
+
+def load_csv(filename):
+    df = pandas.read_csv(filename)
+    return dataframe_to_variants(df)

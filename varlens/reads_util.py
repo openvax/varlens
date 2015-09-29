@@ -19,14 +19,13 @@ import typechecks
 import pysam
 
 from . import read_evidence
-from . import util
 from . import evaluation
 
 def add_args(parser):
     parser.add_argument("--reads", action="append", default=[])
     parser.add_argument("--read-filter", action="append", default=[])
 
-def load(args):
+def load_from_args(args):
     default_names = drop_prefix(args.reads)
     return [
         load_bam(url, name, args.read_filter)
@@ -40,7 +39,7 @@ def drop_prefix(strings):
     return [string[prefix_len:] for string in strings]
 
 def load_bam(url, name=None, read_filters=[]):
-    (url_without_fragment, fragment) = util.parse_url_fragment(url)
+    (url_without_fragment, fragment) = evaluation.parse_url_fragment(url)
     filters = []
     for (key, value) in fragment:
         if key == 'filter':

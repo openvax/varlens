@@ -18,10 +18,10 @@ import sys
 import logging
 import collections
 
-from .. import variants
+from .. import variants_util
 
 parser = argparse.ArgumentParser(usage=__doc__)
-variants.add_args(parser)
+variants_util.add_args(parser)
 parser.add_argument("--field", action="append", default=[], nargs="+")
 parser.add_argument("--no-standard-fields", action="store_true", default=False,
     help="Do not write standard fields (contig, genome, start, end, ref, alt)")
@@ -32,11 +32,11 @@ parser.add_argument("-v", "--verbose", action="store_true", default=False)
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
 
-    vc = variants.load(args)
-    if not vc:
+    variants = variants_util.load_from_args(args)
+    if not variants:
         parser.error("No variants specified.")
 
-    logging.info("Loaded %d variants." % len(vc))
+    logging.info("Loaded %d variants." % len(variants))
 
     extra_columns = collections.OrderedDict()
     for lst in args.field:
@@ -49,7 +49,7 @@ def run(raw_args=sys.argv[1:]):
                 "--field option, but got: %s" % lst)
         extra_columns[name] = expression
 
-    df = variants.variants_to_dataframe(vc, extra_columns)
+    df = variants_util.variants_to_dataframe(variants, extra_columns)
     if args.no_standard_fields:
         for column in variants.STANDARD_DATAFRAME_COLUMNS:
             del df[column]
@@ -57,7 +57,7 @@ def run(raw_args=sys.argv[1:]):
     if args.out is None:
         # Write to stdout.
         df.to_csv(sys.stdout, index=False)
-    elif args.out_csv.endswith(".csv"):
+    elif args.out.endswith(".csv"):
         df.to_csv(args.out, index=False)
         print("Wrote: %s" % args.out)
     else:
