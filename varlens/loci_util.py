@@ -77,9 +77,6 @@ class Loci(object):
         self.contigs = collections.defaultdict(intervaltree.IntervalTree)
         for locus in locus_iterator:
             self.contigs[locus.contig].addi(locus.start, locus.end)
-        
-        for tree in self.contigs.values():
-            tree.merge_overlaps()
 
     def __iter__(self):
         for contig in sorted(self.contigs):

@@ -58,17 +58,17 @@ def load_bam(url, name=None, read_filters=[]):
     return ReadSource(name if name else url, url_without_fragment, filters)
 
 class ReadSource(object):
-    def __init__(self, name, filename, read_filters=[], pilup_filters=[]):
+    def __init__(self, name, filename, read_filters=[]):
         self.name = name
         self.filename = filename
         self.handle = pysam.Samfile(filename)
         self.read_filters = read_filters
-        self.pileup_filters = pilup_filters
 
         self.chromosome_name_map = {}
         for name in self.handle.references:
             normalized = pyensembl.locus.normalize_chromosome(name)
             self.chromosome_name_map[normalized] = name
+            self.chromosome_name_map[name] = name
 
     def reads(self, loci=None):
         if self.handle.is_bam and not self.handle._hasIndex():
@@ -89,8 +89,14 @@ class ReadSource(object):
                 seen = set()
                 for locus in loci:
                     logging.warn(locus)
+                    try:
+                        chromosome = self.chromosome_name_map[locus.contig]
+                    except KeyError:
+                        logging.warn(
+                            "No such contig in bam: %s" % locus.contig)
+                        continue
                     for read in self.handle.fetch(
-                            locus.contig,
+                            chromosome,
                             locus.start,
                             locus.end):
                         key = alignment_key(read)
@@ -107,16 +113,14 @@ class ReadSource(object):
         collection = read_evidence.PileupCollection.from_bam(self.handle, loci)
         if self.read_filters:
             for (locus, pileup) in collection.pileups.items():
+                def evaluate(expression, element):
+                    return evaluate_read_expression(
+                        expression, element.alignment)
                 collection.pileups[locus] = pileup.filter([
-                    functools.partial(
-                        evaluate_pileup_element_expression,
-                        expression,
-                        collection,
-                        pileup)
-                    for expression in self.pilup_filters
+                    functools.partial(evaluate, expression)
+                    for expression in self.read_filters
                 ])
         return collection
-
 
 def evaluate_read_expression(
         expression,

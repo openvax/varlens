@@ -15,6 +15,7 @@
 import re
 from collections import namedtuple
 
+import pyensembl
 import typechecks
 
 class Locus(namedtuple("Locus", "contig start end")):
@@ -55,6 +56,7 @@ class Locus(namedtuple("Locus", "contig start end")):
         if end is None:
             end = start
         typechecks.require_integer(end)
+        contig = pyensembl.locus.normalize_chromosome(contig)
         return Locus(contig, start - 1, end)
 
     @staticmethod
@@ -68,6 +70,7 @@ class Locus(namedtuple("Locus", "contig start end")):
         if end is None:
             end = start + 1
         typechecks.require_integer(end)
+        contig = pyensembl.locus.normalize_chromosome(contig)
         return Locus(contig, start, end)
 
     @staticmethod

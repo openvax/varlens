@@ -24,6 +24,46 @@ from . import data_path, run_and_parse_csv, cols_concat
 
 run = functools.partial(run_and_parse_csv, allele_support.run)
 
+expected_cols = [
+    "contig", "interbase_start", "interbase_end", "allele", "count",
+]
+
+def test_basic():
+    result = run([
+        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        "--locus", "chr22:46929963",
+        "--locus", "chr22:46929964",
+    ])
+    eq_(cols_concat(result, expected_cols),
+        {"22-46929962-46929963-C-60", "22-46929963-46929964-A-81"})
+
+    result = run([
+        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        "--locus", "chr22:46929963",
+        "--locus", "chr22:46929964",
+        "--read-filter", "is_reverse"
+    ])
+    eq_(cols_concat(result, expected_cols),
+        {"22-46929962-46929963-C-37", "22-46929963-46929964-A-47"})
+
+    result = run([
+        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        "--locus", "chr22:46929963",
+        "--locus", "chr22:46929964",
+        "foo:is_reverse",
+    ])
+    eq_(cols_concat(result, expected_cols + ["foo"]),
+        {"22-46929962-46929963-C-60-37", "22-46929963-46929964-A-81-47"})
+
+    result = run([
+        "--reads", data_path("gatk_mini_bundle_extract.bam"),
+        "--locus", "chr20:10008951",
+        "is_reverse",
+    ])
+    eq_(cols_concat(result, expected_cols + ["is_reverse"]),
+        {"20-10008950-10008951-C-4-1", "20-10008950-10008951-A-1-0"})
+    
+
 def test_simple():
     result = run([
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
@@ -38,7 +78,6 @@ def test_simple():
         "inclusive_start==46931060",
         "interbase_start==46931059",
         "interbase_end==46931060",
-#        "filter==",
     ]
     for variant_filter in pick_first_variant:
         result = run([
