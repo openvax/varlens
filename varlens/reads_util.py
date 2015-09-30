@@ -65,6 +65,11 @@ class ReadSource(object):
         self.read_filters = read_filters
         self.pileup_filters = pilup_filters
 
+        self.chromosome_name_map = {}
+        for name in self.handle.references:
+            normalized = pyensembl.locus.normalize_chromosome(name)
+            self.chromosome_name_map[normalized] = name
+
     def reads(self, loci=None):
         if self.handle.is_bam and not self.handle._hasIndex():
             # pysam strangely requires and index even to iterate through a bam.
@@ -80,14 +85,10 @@ class ReadSource(object):
             def reads_iterator():
                 return self.handle.fetch()
         else:
-            chromosome_name_map = {}
-            for name in self.handle.references:
-                normalized = pyensembl.locus.normalize_chromosome(name)
-                chromosome_name_map[normalized] = name
-
             def reads_iterator():
                 seen = set()
                 for locus in loci:
+                    logging.warn(locus)
                     for read in self.handle.fetch(
                             locus.contig,
                             locus.start,

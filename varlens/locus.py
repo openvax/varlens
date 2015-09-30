@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from collections import namedtuple
 
 import typechecks
@@ -68,3 +69,24 @@ class Locus(namedtuple("Locus", "contig start end")):
             end = start + 1
         typechecks.require_integer(end)
         return Locus(contig, start, end)
+
+    @staticmethod
+    def parse(string):
+        match = re.match(r'(\w+)([:/])(\d+)(-(\d+))?', string)
+        if match is None:
+            raise ValueError("Couldn't parse locus: %s. "
+                "Expected format is: chr5:3332 or chr5:3332-5555 for "
+                "inclusive 1-based coordinates and chr5/3331 or "
+                "chr5/3331-5554 for half-open 0-based coordinates.")
+
+        (contig, symbol, start, _, maybe_end) = match.groups()
+        start = int(start)
+        end = int(maybe_end) if maybe_end is not None else None
+
+        if symbol == ":":
+            # inclusive coordinatess
+            return Locus.from_inclusive_coordinates(contig, start, end)
+        else:
+            # interbase coordinates
+            assert symbol == "/"
+            return Locus.from_interbase_coordinates(contig, start, end)

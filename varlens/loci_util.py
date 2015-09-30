@@ -43,35 +43,34 @@ def load_from_args(args):
     """
     variants = variants_util.load_from_args(args)
 
-    if variants is None and not args.locus:
-        return None
+    if variants is None:
+        if not args.locus:
+            return None
+        variant_loci = []
+    else:
+        variant_loci = (
+            read_evidence.pileup_collection.to_locus(variant)
+            for variant in variants)
 
-    def loci():
-        for locus in args.locus:
-            match = re.match(r'(\w+):(\d+)(-(\d+))?', locus)
-            if match is None:
-                raise ValueError("Couldn't parse locus: %s. "
-                    "Expected format is: chr5:3332 or chr5:3332-5555." % locus)
-            
-            (contig, start, _, maybe_end) = match.groups()
-            start = int(start)
-            end = int(maybe_end) if maybe_end is not None else start
+    loci_iterator = itertools.chain(
+        (Locus.parse(locus) for locus in args.locus),
+        variant_loci)
 
-            yield Locus.from_inclusive_coordinates(contig, start, end)
+    if args.neighbor_offsets:
+        loci_iterator = expand_with_neighbors(
+            loci_iterator, args.neighbor_offsets)
 
-    def expand_with_neighbors(iterator):
-        for locus in iterator:
-            for offset in sorted(set(args.neighbor_offsets + [0])):
-                if offset == 0:
-                    yield locus
-                else:
-                    yield Locus(
-                        locus.contig, locus.start + offset, locus.end + offset)
+    return Loci(loci_iterator)
 
-    return Loci(expand_with_neighbors(itertools.chain(
-        loci(),
-        (read_evidence.pileup_collection.to_locus(variant)
-            for variant in variants))))
+def expand_with_neighbors(loci_iterator, neighbor_offsets):
+    offsets = sorted(set(neighbor_offsets + [0]))
+    for locus in loci_iterator:
+        for offset in offsets:
+            if offset == 0:
+                yield locus
+            else:
+                yield Locus(
+                    locus.contig, locus.start + offset, locus.end + offset)
 
 class Loci(object):
     def __init__(self, locus_iterator):
