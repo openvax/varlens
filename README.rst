@@ -14,6 +14,22 @@ varlens-allele-support
 
 
 ``varlens`` is built on `varcode <https://github.com/hammerlab/varcode>`_ and `pysam <https://github.com/pysam-developers/pysam>`_.
+
+Installation
+-------------
+
+From a git checkout:
+
+::
+
+    pip install .
+
+To run the tests:
+
+::
+
+    nosetests .
+
     
 Examples
 -------------
@@ -43,22 +59,33 @@ overlapping the specified sites:
 
 ::
 
-    $ varlens-reads --reads test/data/CELSR1/bams/bam_1.bam --variants test/data/CELSR1/vcfs/vcf_1.vcf --variant-genome b37
+    $ varlens-reads \
+        --reads test/data/CELSR1/bams/bam_1.bam \
+        --variants test/data/CELSR1/vcfs/vcf_1.vcf \
+        --variant-genome b37
+
+(The ``--variant-genome`` argument is needed if your VCF file doesn't have a header specifying the genome reference being used.)
 
 Read filters are supported with a flexible Python-based filtering language:
 
 ::
-    $ varlens-reads --reads test/data/CELSR1/bams/bam_1.bam --read-filter 'not is_duplicate and mapping_quality > 30'
+
+    $ varlens-reads \
+        --reads test/data/CELSR1/bams/bam_1.bam \
+        --read-filter 'not is_duplicate and mapping_quality > 30'
 
 The variables in the filtering expression are coming from a
 `pysam.AlignedSegment
-<http://pysam.readthedocs.org/en/latest/api.html#pysam.AlignedSegment>`_.
+<http://pysam.readthedocs.org/en/latest/api.html#pysam.AlignedSegment>`_ object.
 
 By default, we get a few columns giving basic information on each read. We can add additional columns by specifying positional arguments:
 
 ::
 
-    $ varlens-reads --reads test/data/gatk_mini_bundle_extract.bam query_sequence mate_is_unmapped
+    $ varlens-reads \
+        --reads test/data/gatk_mini_bundle_extract.bam \
+        query_sequence \
+        mate_is_unmapped
 
     query_name,query_alignment_start,query_alignment_end,cigar,query_sequence,mate_is_unmapped
     20FUKAAXX100202:6:27:4968:125377,0,101,95M2I4M,TGTTAAAATTCAACTGACCATAGGTGTATTGGTTTATTTCTGTACTCTTAGTAGATTCCATTGACCTATATCTCTATCCTTATGCCAGTACCACACTGTTT,False
@@ -72,7 +99,7 @@ By default, we get a few columns giving basic information on each read. We can a
     20FUKAAXX100202:8:23:18439:98544,0,101,12M2I87M,GCCAGTACCACACTGTTTTGTTTACTACAGCTTTGTAGTAAATTTTGAACTCTAAAGTGTTAGTTCTCTAACTTTGTTTGTTTTTCAAGAGTGTTTTGACT,False
     ...
 
-The ``query_sequence`` and ``mate_is_unmapped`` are expressions that are evaluated in the same way as the read filters, and, like read filters, the names are coming from 
+Here ``query_sequence`` and ``mate_is_unmapped`` are expressions that are evaluated in the same way as the read filters, and, like read filters, the names are coming from 
 `pysam.AlignedSegment
 <http://pysam.readthedocs.org/en/latest/api.html#pysam.AlignedSegment>`_.
 
@@ -88,6 +115,7 @@ Here we use the ``varlens-variants`` tool to take the union of the variants in
 two VCF files and filter to only those where the reference nucleotide is 'A':
 
 ::
+
     $ varlens-variants \
         --variants test/data/CELSR1/vcfs/vcf_1.vcf \
         --variants test/data/CELSR1/vcfs/vcf_2.vcf \
@@ -100,7 +128,7 @@ two VCF files and filter to only those where the reference nucleotide is 'A':
     GRCh37,22,50875932,50875933,A,C
 
 Similarly to ``varlens-reads``, we can use Python expressions to filter variants and extract additional properties.
-The variables available to us are the attributes of a ``varcode.Variant`` object.
+The variables available to us are the attributes of a `varcode.Variant <https://github.com/hammerlab/varcode/blob/master/varcode/variant.py>`_ object.
 
 Here we extract the names of the genes each variant overlaps:
 
@@ -178,19 +206,4 @@ slash instead of a colon).
 
 See this `blog post <http://alternateallele.blogspot.com/2012/03/genome-coordinate-conventions.html>`_ for more details on coordinate systems.
 
-
-Installation
--------------
-
-From a git checkout:
-
-::
-
-    pip install .
-
-To run the tests:
-
-::
-
-    nosetests .
 
