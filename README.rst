@@ -34,6 +34,9 @@ To run the tests:
 Examples
 -------------
 
+varlens-reads
+``````````````
+
 Display reads in a BAM file:
 
 ::
@@ -111,6 +114,10 @@ Since these are full-fledged Python expressions, we can do things like:
 
 Which would include a column giving the minimum of the base qualities for each read.
 
+
+varlens-variants
+``````````````
+
 Here we use the ``varlens-variants`` tool to take the union of the variants in
 two VCF files and filter to only those where the reference nucleotide is 'A':
 
@@ -140,6 +147,8 @@ Here we extract the names of the genes each variant overlaps:
             --variant-genome b37 \
             gene_names
 
+varlens-allele-support
+``````````````
 
 Here's an example of the ``varlens-allele-support`` tool:
 
