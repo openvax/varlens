@@ -17,25 +17,7 @@ import os
 
 from setuptools import setup
 
-readme_filename = "README.md"
 current_directory = os.path.dirname(__file__)
-readme_path = os.path.join(current_directory, readme_filename)
-
-readme = ""
-try:
-    with open(readme_path, 'r') as f:
-        readme = f.read()
-except Exception as e:
-    print(e)
-    print("Failed to open %s" % readme_path)
-
-try:
-    import pypandoc
-    readme = pypandoc.convert(readme, to='rst', format='md')
-except Exception as e:
-    print(e)
-    print("Failed to convert %s from Markdown to reStructuredText"
-        % readme_filename)
 
 if __name__ == '__main__':
     setup(
@@ -43,9 +25,9 @@ if __name__ == '__main__':
         packages=["varlens", "varlens.commands", "varlens.read_evidence"],
         version="0.0.1",
         description=(
-            "tools for looking at somatic variation across multiple samples"),
-        long_description=readme,
-        url="https://github.com/timodonnell/varlens",
+            "tools for working with at genomic variants and NGS reads"),
+        long_description=open('README.rst').read(),
+        url="https://github.com/hammerlab/varlens",
         author="Tim O'Donnell",
         license="http://www.apache.org/licenses/LICENSE-2.0.html",
         entry_points={
@@ -53,7 +35,6 @@ if __name__ == '__main__':
                 'varlens-allele-support = varlens.commands.allele_support:run',
                 'varlens-variants = varlens.commands.variants:run',
                 'varlens-reads = varlens.commands.reads:run',
-                'varlens-fpkm2gsea = varlens.commands.fpkm2gsea:run',
             ],
         },
         classifiers=[
@@ -67,6 +48,7 @@ if __name__ == '__main__':
         ],
         install_requires=[
             'varcode',
+            'pysam',
             'matplotlib',
         ],
     )

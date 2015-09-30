@@ -88,7 +88,6 @@ class ReadSource(object):
             def reads_iterator():
                 seen = set()
                 for locus in loci:
-                    logging.warn(locus)
                     try:
                         chromosome = self.chromosome_name_map[locus.contig]
                     except KeyError:
