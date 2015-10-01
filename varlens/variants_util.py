@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import collections
+import logging
 
 import typechecks
 import pandas
@@ -211,7 +212,7 @@ def dataframe_to_variants(df):
             ref=row.ref,
             alt=row.alt,
             allow_extended_nucleotides=True)
-        assert variant.end == row.interbase_end
+        # We ignore the interbase_end field.
         metadata[variant] = dict((c, row[c]) for c in extra_columns)
 
     return varcode.VariantCollection(metadata.keys(), metadata=metadata)

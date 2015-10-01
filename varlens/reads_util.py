@@ -76,6 +76,7 @@ class ReadSource(object):
             logging.info("Attempting to create BAM index for file: %s" %
                 self.filename)
             pysam.index(self.filename)
+            logging.info("Done indexing.")
 
             # Reopen
             self.handle.close()
