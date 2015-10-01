@@ -77,8 +77,10 @@ class EvaluationEnvironment(object):
 
     def __getitem__(self, key):
         for wrapped in self._wrapped_list:
-            if hasattr(wrapped, key):
+            try:
                 return getattr(wrapped, key)
+            except AttributeError:
+                pass
         if key in self._extra:
             return self._extra[key]
         raise KeyError("No key: %s" % key)
