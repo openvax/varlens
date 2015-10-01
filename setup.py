@@ -50,5 +50,6 @@ if __name__ == '__main__':
             'varcode',
             'pysam',
             'matplotlib',
+            'intervaltree',
         ],
     )
