@@ -29,6 +29,11 @@ parser.add_argument("--out")
 parser.add_argument("field", nargs="*")
 parser.add_argument("--no-standard-fields", action="store_true", default=False)
 parser.add_argument("--no-sort", action="store_true", default=False)
+parser.add_argument("--header", action="store_true", default=False,
+    help="Output BAM/SAM header only.")
+parser.add_argument("--header-set", nargs=4, action="append",
+    help="Example --header-set RG . SM my_sample")
+
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
@@ -36,9 +41,14 @@ def run(raw_args=sys.argv[1:]):
 
     read_sources = reads_util.load_from_args(args)
     if not read_sources:
-        parser.error("No read sources specified.")
+        parser.error("No read sources specified.")        
 
-    loci = loci_util.load_from_args(args)  # may be None        
+    loci = loci_util.load_from_args(args)  # may be None
+    if args.header:
+        if loci is not None:
+            parser.error("If specifying --header don't specify loci.")
+        if args.field:
+            parser.error("If specifying --header don't specify fields.")
 
     out_pysam_handle = None
     out_csv_writer = out_csv_fd = None
@@ -46,34 +56,50 @@ def run(raw_args=sys.argv[1:]):
         if args.field:
             parser.error("Don't specify fields when outputting to bam or sam.")
 
+        header = update_header(args, read_sources[0].handle.header)
         out_pysam_handle = pysam.AlignmentFile(
             args.out,
             "wb" if args.out.endswith(".bam") else "w",
-            template=read_sources[0].handle)
+            header=header)
 
     elif not args.out or args.out.endswith(".csv"):
         out_csv_fd = open(args.out, "w") if args.out else sys.stdout
         out_csv_writer = csv.writer(out_csv_fd)
 
-        columns = collections.OrderedDict()
-        if not args.no_standard_fields:
-            columns["query_name"] = lambda x: x.query_name
-            columns["query_alignment_start"] = (
-                lambda x: x.query_alignment_start)
-            columns["query_alignment_end"] = lambda x: x.query_alignment_end
-            columns["cigar"] = lambda x: x.cigarstring
+        if args.header:
+            if args.field:
+                parser.error("Don't specify fields when outputting header.")
+            out_csv_writer.writerow([
+                "read_source", "group", "index", "key", "value",
+            ])
+        else:
+            columns = collections.OrderedDict()
+            if not args.no_standard_fields:
+                columns["query_name"] = lambda x: x.query_name
+                columns["query_alignment_start"] = (
+                    lambda x: x.query_alignment_start)
+                columns["query_alignment_end"] = (
+                    lambda x: x.query_alignment_end)
+                columns["cigar"] = lambda x: x.cigarstring
 
-        for labeled_expression in args.field:
-            (label, expression) = parse_labeled_expression(labeled_expression)
-            columns[label] = expression
+            for labeled_expression in args.field:
+                (label, expression) = parse_labeled_expression(
+                    labeled_expression)
+                columns[label] = expression
 
-        out_csv_writer.writerow(columns.keys())
+            out_csv_writer.writerow(columns.keys())
     else:
         parser.error(
             "Don't know how to write to file with output extension: %s. "
             "Supported extensions: csv, bam, sam." % args.out)
 
     for read_source in read_sources:
+        if args.header:
+            header = update_header(args, read_source.handle.header)
+            for (group, i, key, value) in reads_util.flatten_header(header):
+                out_csv_writer.writerow(
+                    [read_source.name, group, str(i), key, value])
+            continue  # we don't look at reads at all.
         for read in read_source.reads(loci):
             if out_pysam_handle is not None:
                 out_pysam_handle.write(read)
@@ -94,3 +120,17 @@ def run(raw_args=sys.argv[1:]):
         out_csv_fd.close()
         print("Wrote: %s" % args.out)
 
+def update_header(args, header):
+    print(header)
+    if args.header_set:
+        header = dict(header)
+        for (group, index_string, key, value) in args.header_set:
+            if not isinstance(header[group], list):
+                header[group] = [header[group]]
+            if index_string == ".":
+                indices = range(len(header[group]))
+            else:
+                indices = [int(x) for x in index_string.split(",")]
+            for index in indices:
+                header[group][index][key] = value
+    return header

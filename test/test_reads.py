@@ -16,9 +16,7 @@ from __future__ import absolute_import
 
 import functools
 
-import pandas
-from pandas.util.testing import assert_frame_equal
-from nose.tools import eq_, assert_raises
+from nose.tools import eq_
 
 from varlens.commands import reads
 

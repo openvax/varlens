@@ -188,3 +188,14 @@ def read_key(pysam_alignment_record):
         pysam_alignment_record.is_read1,
         pysam_alignment_record.is_read2,
     )
+
+def flatten_header(header):
+    for (group, rows) in header.items():
+        for (index, row) in enumerate(rows):
+            if not isinstance(row, dict):
+                key_values = [(row, "")]
+            else:
+                key_values = row.items()
+            for (key, value) in key_values:
+                yield (str(group), index, str(key), str(value))
+
