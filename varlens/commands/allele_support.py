@@ -1,4 +1,6 @@
 '''
+Count reads supporting 
+
 Given genomic loci (e.g. from a VCF file) and one or more BAM files, write a
 csv file giving read counts for each allele at each locus.
 
@@ -19,7 +21,6 @@ import csv
 import sys
 import logging
 import collections
-import functools
 
 from .. import loci_util
 from .. import reads_util

@@ -28,6 +28,7 @@ reads_util.add_args(parser)
 parser.add_argument("--out")
 parser.add_argument("field", nargs="*")
 parser.add_argument("--no-standard-fields", action="store_true", default=False)
+parser.add_argument("--no-sort", action="store_true", default=False)
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
@@ -84,6 +85,9 @@ def run(raw_args=sys.argv[1:]):
 
     if out_pysam_handle is not None:
         out_pysam_handle.close()
+        if not args.no_sort:
+            print("Sorting.")
+            pysam.sort(args.out, args.out)
         print("Wrote: %s" % args.out)
 
     if out_csv_fd is not None and out_csv_fd is not sys.stdout:
