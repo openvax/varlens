@@ -75,8 +75,9 @@ class ReadSource(object):
             # pysam strangely requires and index even to iterate through a bam.
             logging.info("Attempting to create BAM index for file: %s" %
                 self.filename)
-            pysam.index(self.filename)
-            logging.info("Done indexing.")
+            samtools_output = pysam.index(self.filename)
+            logging.info("Done indexing" +
+                ((": " + samtools_output) if samtools_output else ''))
 
             # Reopen
             self.handle.close()

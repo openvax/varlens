@@ -94,6 +94,7 @@ def test_round_trip():
     with temp_file(".bam") as out:
         reads.run([
             "--reads", data_path("CELSR1/bams/bam_5.bam"),
+            "--locus", "chr22/46930276",
             "--locus", "chr22/46930256",
             "--out", out,
         ])
@@ -102,7 +103,8 @@ def test_round_trip():
         ])
         result2 = run([
             "--reads", data_path("CELSR1/bams/bam_5.bam"),
+            "--locus", "chr22/46930276",
             "--locus", "chr22/46930256",
         ])
-        assert_frame_equal(result1, result2)
-
+        eq_(sorted(cols_concat(result1, expected_cols)),
+            sorted(cols_concat(result2, expected_cols)))
