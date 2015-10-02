@@ -121,7 +121,6 @@ def run(raw_args=sys.argv[1:]):
         print("Wrote: %s" % args.out)
 
 def update_header(args, header):
-    print(header)
     if args.header_set:
         header = dict(header)
         for (group, index_string, key, value) in args.header_set:
