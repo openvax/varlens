@@ -21,4 +21,9 @@ def configure_logging(args=None):
     else:
         level = logging.INFO
 
-    logging.basicConfig(stream=sys.stderr, level=level)
+    logging.basicConfig(
+        format="%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s:"
+        " %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        stream=sys.stderr,
+        level=level)

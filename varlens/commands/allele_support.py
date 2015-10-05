@@ -48,6 +48,9 @@ def run(raw_args=sys.argv[1:]):
 
     read_sources = reads_util.load_from_args(args)
 
+    if read_sources is None:
+        parser.error("No read sources (--reads argument) specified.")
+
     out_fd = open(args.out, "w") if args.out else sys.stdout
     writer = csv.writer(out_fd)
 

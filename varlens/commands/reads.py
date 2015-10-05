@@ -17,6 +17,7 @@ import logging
 
 import pysam
 
+from . import configure_logging
 from .. import loci_util
 from .. import reads_util
 from ..evaluation import parse_labeled_expression
@@ -38,6 +39,8 @@ parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
+    configure_logging(args)
+
 
     read_sources = reads_util.load_from_args(args)
     if not read_sources:

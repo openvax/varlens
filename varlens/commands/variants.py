@@ -18,6 +18,7 @@ import sys
 import logging
 import collections
 
+from . import configure_logging
 from .. import variants_util
 from ..evaluation import parse_labeled_expression
 
@@ -32,6 +33,7 @@ parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
+    configure_logging(args)
 
     variants = variants_util.load_from_args(args)
     if not variants:
