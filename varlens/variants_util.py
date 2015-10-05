@@ -106,7 +106,8 @@ def load(url, filter=None, loader=None, **kwargs):
         filters.append(filter)
 
     if loader is None:
-        if url_without_fragment.endswith(".vcf"):
+        if (url_without_fragment.endswith(".vcf") or
+                url_without_fragment.endswith(".vcf.gz")):
             loader = varcode.load_vcf_fast
         elif url_without_fragment.endswith(".csv"):
             loader = load_csv
@@ -217,6 +218,7 @@ def dataframe_to_variants(df):
 
     return varcode.VariantCollection(metadata.keys(), metadata=metadata)
 
-def load_csv(filename):
+def load_csv(filename, genome=None):
+    # Genome is ignored for now.
     df = pandas.read_csv(filename)
     return dataframe_to_variants(df)

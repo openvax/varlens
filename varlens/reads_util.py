@@ -70,7 +70,7 @@ class ReadSource(object):
             self.chromosome_name_map[normalized] = name
             self.chromosome_name_map[name] = name
 
-    def reads(self, loci=None):
+    def index_if_needed(self):
         if self.handle.is_bam and not self.handle._hasIndex():
             # pysam strangely requires and index even to iterate through a bam.
             logging.info("Attempting to create BAM index for file: %s" %
@@ -82,6 +82,9 @@ class ReadSource(object):
             # Reopen
             self.handle.close()
             self.handle = pysam.Samfile(self.filename)
+
+    def reads(self, loci=None):
+        self.index_if_needed()
 
         if loci is None:
             def reads_iterator():
@@ -111,6 +114,7 @@ class ReadSource(object):
                 yield alignment      
 
     def pileups(self, loci):
+        self.index_if_needed()
         collection = read_evidence.PileupCollection.from_bam(self.handle, loci)
         if self.read_filters:
             for (locus, pileup) in collection.pileups.items():
