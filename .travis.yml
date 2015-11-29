@@ -13,6 +13,7 @@ before_install:
   - conda update --yes conda
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas matplotlib
+  - pyensembl install --release 75 --species homo_sapiens
   - pip install .
 script:
   - nosetests .
