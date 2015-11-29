@@ -71,7 +71,7 @@ class ReadSource(object):
             self.chromosome_name_map[name] = name
 
     def index_if_needed(self):
-        if self.handle.is_bam and not self.handle._hasIndex():
+        if self.handle.is_bam and not self.handle.has_index():
             # pysam strangely requires and index even to iterate through a bam.
             logging.info("Attempting to create BAM index for file: %s" %
                 self.filename)
