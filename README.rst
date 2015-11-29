@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/hammerlab/varlens.svg?branch=ci)](https://travis-ci.org/hammerlab/varlens)
+.. image:: https://travis-ci.org/hammerlab/varlens.svg?branch=ci
+    :target: https://travis-ci.org/hammerlab/varlens
 
 varlens
 ======

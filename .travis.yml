@@ -15,4 +15,5 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas matplotlib
   - pip install .
 script:
+  - pyensembl install --release 75 --species human
   - nosetests .
