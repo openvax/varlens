@@ -1,4 +1,4 @@
-.. image:: https://travis-ci.org/hammerlab/varlens.svg?branch=ci
+.. image:: https://travis-ci.org/hammerlab/varlens.svg?branch=master
     :target: https://travis-ci.org/hammerlab/varlens
 
 varlens
