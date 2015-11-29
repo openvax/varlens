@@ -41,7 +41,6 @@ def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
     configure_logging(args)
 
-
     read_sources = reads_util.load_from_args(args)
     if not read_sources:
         parser.error("No read sources specified.")        

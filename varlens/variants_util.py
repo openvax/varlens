@@ -109,7 +109,8 @@ def load(url, filter=None, loader=None, **kwargs):
         if (url_without_fragment.endswith(".vcf") or
                 url_without_fragment.endswith(".vcf.gz")):
             loader = varcode.load_vcf_fast
-        elif url_without_fragment.endswith(".csv"):
+        elif (url_without_fragment.endswith(".csv") or
+            url_without_fragment.endswith(".csv.gz")):
             loader = load_csv
         else:
             raise ValueError(
