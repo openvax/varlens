@@ -48,7 +48,7 @@ if __name__ == '__main__':
         ],
         install_requires=[
             'varcode',
-            'pysam',
+            'pysam>=0.8.4',
             'matplotlib',
             'intervaltree',
         ],
