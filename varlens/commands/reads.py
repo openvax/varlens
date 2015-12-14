@@ -13,7 +13,6 @@ import argparse
 import sys
 import csv
 import collections
-import logging
 
 import pysam
 

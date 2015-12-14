@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import collections
-import logging
 
 import typechecks
 import pandas
@@ -27,53 +26,34 @@ def add_args(parser):
     parser.add_argument("--variant-filter")
     parser.add_argument("--variant-genome")
 
-def load_from_args(args):
+def load_from_args_as_dataframe(args):
     '''
-    Given parsed variant-loading arguments, return a varcode.VariantCollection.
+    Given parsed variant-loading arguments, return a pandas DataFrame.
 
     If no variant loading arguments are specified, return None.
     '''
     if not args.variants:
         return None
 
-    variant_collections = [
-        load(
+    dfs = [
+        load_as_dataframe(
             filename, filter=args.variant_filter, genome=args.variant_genome)
         for filename in args.variants
     ]
-    if not variant_collections:
-        return varcode.VariantCollection([])
-    
-    if len(variant_collections) == 1:
-        return variant_collections[0]
 
-    variants_and_metadata = {}
-    reference_name = None
-    for collection in variant_collections:
-        if not collection:
-            continue
-        if reference_name is None:
-            reference_name = collection[0].reference_name
-        if collection[0].reference_name != reference_name:
-            raise ValueError(
+    df = pandas.concat(dfs)
+    genomes = df["genome"].unique()
+    if len(genomes) > 1:
+        raise ValueError(
                 "Mixing references is not supported. "
-                "Reference %s != %s" % (
-                    reference_name, collection[0].reference_name))
-        
-        # Merge metadata
-        for variant in collection:
-            assert variant in collection.metadata
-            if variant in variants_and_metadata:
-                variants_and_metadata[variant]["sources"].update(
-                    collection.metadata[variant]["sources"])
-            else:
-                variants_and_metadata[variant] = collection.metadata[variant]
+                "Reference genomes: %s" % (", ".join(genomes)))
+    return df
 
-    return varcode.VariantCollection(
-        variants_and_metadata.keys(),
-        metadata=variants_and_metadata)
+ParsedVariantsURL = collections.namedtuple(
+    "ParsedVariantsURL",
+    "url_without_fragment filters params collection_metadata name")
 
-def load(url, filter=None, loader=None, **kwargs):
+def parse_variants_url(url, extra_filter=None, extra_params={}):
     (url_without_fragment, fragment) = evaluation.parse_url_fragment(url)
     filters = []
     params = {}
@@ -96,72 +76,82 @@ def load(url, filter=None, loader=None, **kwargs):
         else:
             raise ValueError("Unsupported operation: %s" % key)
     
-    # kwargs override URL.
-    for (key, value) in kwargs.items():
+    # extra params override URL.
+    for (key, value) in extra_params.items():
         if value is not None:
             params[key] = value
 
     # passed in filter is run after filters specified in the URL.
-    if filter:
-        filters.append(filter)
+    if extra_filter:
+        filters.append(extra_filter)
 
+    return ParsedVariantsURL(
+        url_without_fragment,
+        filters,
+        params,
+        collection_metadata,
+        name)
+
+def load_as_dataframe(url, filter=None, loader=None, **kwargs):
+    parsed = parse_variants_url(url, extra_filter=filter, extra_params=kwargs)
+    
     if loader is None:
-        if (url_without_fragment.endswith(".vcf") or
-                url_without_fragment.endswith(".vcf.gz")):
-            loader = varcode.load_vcf_fast
-        elif (url_without_fragment.endswith(".csv") or
-            url_without_fragment.endswith(".csv.gz")):
-            loader = load_csv
+        if (parsed.url_without_fragment.endswith(".vcf") or
+                parsed.url_without_fragment.endswith(".vcf.gz")):
+            
+            # Load from VCF
+            def loader(filename, **kwargs):
+                collection = varcode.load_vcf_fast(filename, **kwargs)
+                return variants_to_dataframe(collection, collection.metadata)
+
+        elif (parsed.url_without_fragment.endswith(".csv") or
+                parsed.url_without_fragment.endswith(".csv.gz")):
+            
+            # Load from csv
+            def loader(filename, genome=None, max_variants=None):
+                df = pandas.read_csv(filename, nrows=max_variants)
+                if genome is not None:
+                    df["genome"] = genome
+                df["variant"] = [
+                    dataframe_row_to_variant(row) for (i, row) in df.iterrows()
+                ]
+                return df
         else:
             raise ValueError(
                 "Unsupported input file extension for variants: %s"
-                % url_without_fragment)
+                % parsed.url_without_fragment)
 
-    result = loader(url_without_fragment, **params)
+    df = loader(parsed.url_without_fragment, **parsed.params)
+    df["variant_source"] = parsed.name
 
-    # Set metadata 'sources' dict to contain the original metadata
-    # of this variant from this source.
-    for variant in result:
-        assert variant in result.metadata
-        result.metadata[variant]["sources"] = {
-            name: dict(result.metadata[variant])
-        }
-        if collection_metadata:
-            result.metadata[variant].update(collection_metadata)
+    if parsed.filters:
+        df = df[[
+            bool(all(
+                evaluate_variant_expression(
+                    expression, row.to_dict(), row.variant)
+                for expression in parsed.filters))
+            for (i, row) in df.iterrows()
+        ]]
 
-    if filters:
-        subselected = set(
-            variant for variant in result
-            if all(evaluate_variant_expression(expression, result, variant)
-                for expression in filters))
-        result = varcode.VariantCollection(
-            subselected,
-            path=result.path,
-            metadata=dict(
-                (variant, result.metadata[variant])
-                for variant in subselected))
-        
-    return result
+    return df
 
 def evaluate_variant_expression(
         expression,
-        collection,
+        metadata,
         variant,
         error_value=evaluation.RAISE,
         extra_bindings={}):
 
     if typechecks.is_string(expression):
-        variant_metadata = collection.metadata.get(variant, {})
         extra_bindings = {
             'inclusive_start': variant.start,
             'inclusive_end': variant.end,
             'interbase_start': variant.start - 1,
             'interbase_end': variant.end,
             'variant': variant,
-            'collection': collection,
-            'metadata': variant_metadata,
+            'metadata': metadata,
         }
-        extra_bindings.update(variant_metadata)
+        extra_bindings.update(metadata)
         bindings = evaluation.EvaluationEnvironment([variant], extra_bindings)
         return evaluation.evaluate_expression(
             expression,
@@ -171,6 +161,7 @@ def evaluate_variant_expression(
         return expression(variant)  
 
 STANDARD_DATAFRAME_COLUMNS = [
+    "variant",
     "genome",
     "contig",
     "interbase_start",
@@ -179,23 +170,40 @@ STANDARD_DATAFRAME_COLUMNS = [
     "alt",
 ]
 
-def variants_to_dataframe(variant_collection, extra_columns={}):
-    columns = collections.OrderedDict(
-        (name, []) for name in STANDARD_DATAFRAME_COLUMNS)
-    for name in extra_columns:
-        columns[name] = []
-    for variant in variant_collection:
-        columns["genome"].append(str(variant.reference_name))
-        columns["contig"].append(variant.contig)
-        columns["interbase_start"].append(variant.start - 1)
-        columns["interbase_end"].append(variant.end)
-        columns["ref"].append(variant.ref)
-        columns["alt"].append(variant.alt)
-        for (column, callable_or_expression) in extra_columns.items():
-            columns[column].append(evaluate_variant_expression(
-                callable_or_expression, variant_collection, variant))
+def variants_to_dataframe(variants, metadata=None):
+    def record(variant):
+        d = {
+            'variant': variant,
+            'genome': str(variant.reference_name),
+            'contig': variant.contig,
+            'interbase_start': variant.start - 1,
+            'interbase_end': variant.end,
+            'ref': variant.ref,
+            'alt': variant.alt,
+        }
+        if metadata:
+            for (name, value) in metadata.get(variant, {}).items():
+                d["metadata_%s" % name.lower()] = value
+            if 'metadata_info' in d:
+                for (info_col, value) in d['metadata_info'].items():
+                    d['metadata_info_%s' % info_col] = value
+                del d['metadata_info']
+        return d
 
-    return pandas.DataFrame(columns, index=list(variant_collection))
+    df = pandas.DataFrame.from_records([record(v) for v in variants])
+    column_indices = dict(
+        (column, i) for (i, column) in enumerate(STANDARD_DATAFRAME_COLUMNS))
+    columns = sorted(df.columns, key=lambda col: column_indices.get(col, 100))
+    return df[columns]
+
+def dataframe_row_to_variant(row):
+    return varcode.Variant(
+            ensembl=row.genome,
+            contig=row.contig,
+            start=row.interbase_start + 1,
+            ref=row.ref,
+            alt=row.alt,
+            allow_extended_nucleotides=True)
 
 def dataframe_to_variants(df):
     for column in STANDARD_DATAFRAME_COLUMNS:
@@ -207,13 +215,7 @@ def dataframe_to_variants(df):
     ]
     metadata = collections.OrderedDict()
     for (i, row) in df.iterrows():
-        variant = varcode.Variant(
-            ensembl=row.genome,
-            contig=row.contig,
-            start=row.interbase_start + 1,
-            ref=row.ref,
-            alt=row.alt,
-            allow_extended_nucleotides=True)
+        variant = dataframe_row_to_variant(row)
         # We ignore the interbase_end field.
         metadata[variant] = dict((c, row[c]) for c in extra_columns)
 

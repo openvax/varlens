@@ -41,16 +41,16 @@ def load_from_args(args):
     removing all loci, from the case where the user didn't specify any
     arguments.
     """
-    variants = variants_util.load_from_args(args)
+    variants_df = variants_util.load_from_args_as_dataframe(args)
 
-    if variants is None:
+    if variants_df is None:
         if not args.locus:
             return None
         variant_loci = []
     else:
         variant_loci = (
             read_evidence.pileup_collection.to_locus(variant)
-            for variant in variants)
+            for variant in variants_df["variant"])
 
     loci_iterator = itertools.chain(
         (Locus.parse(locus) for locus in args.locus),
