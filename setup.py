@@ -47,11 +47,12 @@ if __name__ == '__main__':
             'Topic :: Scientific/Engineering :: Bio-Informatics',
         ],
         install_requires=[
+            'matplotlib',
+            'intervaltree',
+            'pysam>=0.8.4',
             'typechecks',
             'varcode',
             'pyfaidx',
-            'pysam>=0.8.4',
-            'matplotlib',
-            'intervaltree',
+            'mhctools',
         ],
     )
