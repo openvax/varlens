@@ -9,6 +9,7 @@ import pyfaidx
 
 from . import sequence_context
 from . import mhc_binding
+from . import reads_util
 
 class Includeable(object):
     columns = None
@@ -20,9 +21,6 @@ class Includeable(object):
     def process_chunk(self, df):
         raise NotImplementedError()
 
-    def init(self, df):
-        pass
-
     def compute(self, df, chunk_rows=None):
         for column in self.columns:
             if column not in df.columns:
@@ -30,8 +28,6 @@ class Includeable(object):
         rows_to_annotate = pandas.isnull(df[self.columns[0]])
         for column in self.columns[1:]:
             rows_to_annotate = rows_to_annotate | pandas.isnull(df[column])
-
-        self.init(df)
 
         while rows_to_annotate.sum() > 0:
             if chunk_rows:
@@ -243,5 +239,96 @@ class MHCBindingAffinity(Includeable):
         if drop_donor:
             del df["donor"]
         return df
+
+class ReadEvidence(Includeable):
+    name = "read evidence"
+    
+    @staticmethod
+    def add_args(parser):
+        parser.add_argument("--include-read-evidence",
+            action="store_true", default=False,
+            help="Include counts of supporting / contradicting reads")
+        parser.add_argument("--read-sources-file",
+            help="Load paths to BAMs from the given csv file.")
+        parser.add_argument("--read-sources-id-column",
+            default="source_id",
+            help="Column to use to join read sources with the variants "
+            "dataframe.")
+        parser.add_argument("--read-sources-column", action="append",
+            default=[],
+            help="Column containing path to reads (e.g. path to a BAM). Can "
+            "be specified any number of times. If not specified, all "
+            "columns are used.")
+        reads_util.add_args(parser)
+
+    @classmethod
+    def from_args(cls, args):
+        read_sources = reads_util.load_from_args(args)
+        read_sources_df = None
+        if args.read_sources_file is not None:
+            read_sources_df = pandas.read_csv(
+                args.read_sources_file,
+                index=args.read_sources_id_column)
+            if args.read_sources_column:
+                read_sources_df = read_sources_df[args.read_sources_column]
+        return cls(
+            read_sources_list=read_sources,
+            read_sources_df=read_sources_df)
+
+    def __init__(
+            self,
+            read_sources_dict=None,
+            read_sources_list=None,
+            read_sources_df=None):
+        """
+        
+        """
+        if sum(x is not None for x in [
+                read_sources_dict, read_sources_list, read_sources_df]) != 1:
+            raise TypeError(
+                "Specify exactly one of read_sources_dict, read_sources_list, "
+                "read_sources_df")
+        if read_sources_df is None:
+            if read_sources_list is not None:
+                read_sources_dict = dict(
+                    (source.name, source) for source in read_sources_list)
+        self.read_sources_dict = read_sources_dict
+        self.read_sources_df = read_sources_df
+
+    @staticmethod
+    def requested(args):
+        return args.include_read_evidence
+
+    def process_chunk(self, df):
+        if self.read_sources_df is None:
+            def rows_and_read_sources():
+                all_rows = numpy.ones(df.shape[0], dtype=bool)
+                yield (all_rows, self.read_sources_dict)
+        else:
+            def rows_and_read_sources():
+                join_col = self.read_sources_df.index.name
+                for join_value in df[join_col].unique():
+                    read_paths = self.read_sources_df.ix[join_value]
+                    read_sources_dict = (
+                        (name, reads_util.ReadSource(name, filename))
+                        for (name, filename) in read_paths.iteritems()
+                        if not pandas.isnull(filename))
+                    rows = df[df[join_col] == join_value]
+                    yield (rows, read_sources_dict)
+
+        for (rows, sources_dict) in rows_and_read_sources():
+            sub_df = df.loc[rows]
+            alleles = self.hla if self.hla else self.donor_to_hla.get(donor)
+            if alleles and sub_df.shape[0] > 0:
+                result = mhc_binding.binding_affinities(
+                    sub_df.variant, alleles)
+                df.loc[rows, "binding_affinity"] = (
+                    result["binding_affinity"].values)
+                df.loc[rows, "binding_allele"] = (
+                    result["binding_allele"].values)
+        if drop_donor:
+            del df["donor"]
+        return df
+
     
 INCLUDEABLES = Includeable.__subclasses__()

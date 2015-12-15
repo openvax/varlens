@@ -1,6 +1,10 @@
 import collections
+import logging
 
 import pandas
+
+from .evaluation import parse_labeled_expression
+from . import read_evidence, reads_util
 
 EXPECTED_COLUMNS = [
     "source",
@@ -9,7 +13,44 @@ EXPECTED_COLUMNS = [
     "interbase_end",
     "allele"
 ]
-def support(variants, allele_support_df):
+
+def allele_support_df(loci, sources, expressions={}):
+    return pandas.DataFrame(
+        allele_support_rows(loci, sources, expressions))
+
+def allele_support_rows(loci, sources, expressions=[]):
+    extra_columns = collections.OrderedDict()
+    for labeled_expression in expressions:
+        (label, expression) = parse_labeled_expression(labeled_expression)
+        extra_columns[label] = expression
+        
+    for source in sources:
+        logging.info("Reading from: %s" % source.name)
+        for locus in loci:
+            grouped = dict(source.pileups([locus]).group_by_allele(locus))
+            for (allele, group) in grouped.items():
+                d = collections.OrderedDict([
+                    ("source", source.name),
+                    ("contig", locus.contig),
+                    ("interbase_start", str(locus.start)),
+                    ("interbase_end", str(locus.end)),
+                    ("allele", allele),
+                    ("count", str(group.num_reads())),
+                ])
+                for (key, expression) in extra_columns.items():
+                    num_reads = len(set(
+                        read_evidence.read_key(element.alignment)
+                        for pileup in group.pileups.values()
+                        for element in pileup
+                        if reads_util.evaluate_pileup_element_expression(
+                            expression,
+                            group,
+                            pileup,
+                            element)))
+                    d[key] = num_reads
+                yield pandas.Series(d)
+
+def variant_support(variants, allele_support_df):
     '''
     Collect the read evidence support for the given variants.
 

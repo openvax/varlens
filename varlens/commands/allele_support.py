@@ -26,7 +26,7 @@ from .. import loci_util
 from .. import reads_util
 from . import configure_logging
 from ..evaluation import parse_labeled_expression
-from .. import read_evidence
+from .. import support
 
 parser = argparse.ArgumentParser(usage=__doc__)
 loci_util.add_args(parser)
@@ -54,44 +54,17 @@ def run(raw_args=sys.argv[1:]):
     out_fd = open(args.out, "w") if args.out else sys.stdout
     writer = csv.writer(out_fd)
 
+    rows_generator = support.allele_support_rows(
+        loci, read_sources, args.field)
+    for (i, row) in enumerate(rows_generator):
+        if i == 0:
+            writer.writerow(row.index.tolist())
+        writer.writerow([str(x) for x in row])
+
     extra_columns = collections.OrderedDict()
     for labeled_expression in args.field:
         (label, expression) = parse_labeled_expression(labeled_expression)
         extra_columns[label] = expression
-
-    writer.writerow([
-        "source",
-        "contig",
-        "interbase_start",
-        "interbase_end",
-        "allele",
-        "count",
-    ] + extra_columns.keys())
-    for source in read_sources:
-        logging.info("Reading from: %s" % source.name)
-        for locus in loci:
-            grouped = dict(source.pileups([locus]).group_by_allele(locus))
-            for (allele, group) in grouped.items():
-                extra_values = []
-                for expression in extra_columns.values():
-                    num_reads = len(set(
-                        read_evidence.read_key(element.alignment)
-                        for pileup in group.pileups.values()
-                        for element in pileup
-                        if reads_util.evaluate_pileup_element_expression(
-                            expression,
-                            group,
-                            pileup,
-                            element)))
-                    extra_values.append(str(num_reads))
-                writer.writerow([
-                    source.name,
-                    locus.contig,
-                    str(locus.start),
-                    str(locus.end),
-                    allele,
-                    str(group.num_reads()),
-                ] + extra_values)
 
     if out_fd is not sys.stdout:
         out_fd.close()
