@@ -14,16 +14,23 @@ EXPECTED_COLUMNS = [
     "allele"
 ]
 
-def allele_support_df(loci, sources, expressions={}):
-    return pandas.DataFrame(
-        allele_support_rows(loci, sources, expressions))
+def add_args(parser):
+    parser.add_argument("--count-group", action="append", default=[],
+        help="Pileup element filter giving reads to count. Can be specified "
+        "multiple times. A count of matching reads will be computed for each "
+        "occurrence of this argument.")
 
-def allele_support_rows(loci, sources, expressions=[]):
-    extra_columns = collections.OrderedDict()
-    for labeled_expression in expressions:
+def allele_support_df(loci, sources, filter_groups=[]):
+    return pandas.DataFrame(
+        allele_support_rows(loci, sources, filter_groups))
+
+def allele_support_rows(loci, sources, count_groups=["count:all"]):
+    assert count_groups
+    count_groups_dict = collections.OrderedDict()
+    for labeled_expression in count_groups:
         (label, expression) = parse_labeled_expression(labeled_expression)
-        extra_columns[label] = expression
-        
+        count_groups_dict[label] = expression.strip()
+
     for source in sources:
         logging.info("Reading from: %s" % source.name)
         for locus in loci:
@@ -35,18 +42,20 @@ def allele_support_rows(loci, sources, expressions=[]):
                     ("interbase_start", str(locus.start)),
                     ("interbase_end", str(locus.end)),
                     ("allele", allele),
-                    ("count", str(group.num_reads())),
                 ])
-                for (key, expression) in extra_columns.items():
-                    num_reads = len(set(
-                        read_evidence.read_key(element.alignment)
-                        for pileup in group.pileups.values()
-                        for element in pileup
-                        if reads_util.evaluate_pileup_element_expression(
-                            expression,
-                            group,
-                            pileup,
-                            element)))
+                for (key, expression) in count_groups_dict.items():
+                    if expression == "all":
+                        num_reads = group.num_reads()
+                    else:
+                        num_reads = len(set(
+                            read_evidence.read_key(element.alignment)
+                            for pileup in group.pileups.values()
+                            for element in pileup
+                            if reads_util.evaluate_pileup_element_expression(
+                                expression,
+                                group,
+                                pileup,
+                                element)))
                     d[key] = num_reads
                 yield pandas.Series(d)
 

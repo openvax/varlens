@@ -25,8 +25,9 @@ from . import evaluation
 
 def add_args(parser):
     parser.add_argument("--reads", action="append", default=[])
-    parser.add_argument("--read-filter", action="append", default=[])
-
+    parser.add_argument("--read-filter", action="append", default=[],
+            help="Read filter expression, can be specified any number of "
+            "times")
 def load_from_args(args):
     if not args.reads:
         return None

@@ -10,6 +10,8 @@ import pyfaidx
 from . import sequence_context
 from . import mhc_binding
 from . import reads_util
+from . import support
+from . import read_evidence
 
 class Includeable(object):
     columns = None
@@ -248,6 +250,7 @@ class ReadEvidence(Includeable):
         parser.add_argument("--include-read-evidence",
             action="store_true", default=False,
             help="Include counts of supporting / contradicting reads")
+        support.add_args(parser)
         parser.add_argument("--read-sources-file",
             help="Load paths to BAMs from the given csv file.")
         parser.add_argument("--read-sources-id-column",
@@ -259,6 +262,9 @@ class ReadEvidence(Includeable):
             help="Column containing path to reads (e.g. path to a BAM). Can "
             "be specified any number of times. If not specified, all "
             "columns are used.")
+        
+        # Note: We also use the --read-filter argument added here, even if
+        # --reads isn't specified.
         reads_util.add_args(parser)
 
     @classmethod
@@ -272,28 +278,38 @@ class ReadEvidence(Includeable):
             if args.read_sources_column:
                 read_sources_df = read_sources_df[args.read_sources_column]
         return cls(
-            read_sources_list=read_sources,
-            read_sources_df=read_sources_df)
+            read_sources=read_sources,
+            read_sources_df=read_sources_df,
+            filter_groups=args.read_filter)
 
-    def __init__(
-            self,
-            read_sources_dict=None,
-            read_sources_list=None,
-            read_sources_df=None):
+    def __init__(self,
+            read_sources=None,
+            read_sources_df=None,
+            count_groups=[],
+            read_filters=[]):
         """
         
         """
-        if sum(x is not None for x in [
-                read_sources_dict, read_sources_list, read_sources_df]) != 1:
+        if sum(x is not None for x in [read_sources, read_sources_df]) != 1:
             raise TypeError(
-                "Specify exactly one of read_sources_dict, read_sources_list, "
-                "read_sources_df")
-        if read_sources_df is None:
-            if read_sources_list is not None:
-                read_sources_dict = dict(
-                    (source.name, source) for source in read_sources_list)
-        self.read_sources_dict = read_sources_dict
+                "Specify exactly one of read_sources, read_sources_df")
+ 
+        self.read_sources = read_sources
         self.read_sources_df = read_sources_df
+        self.count_groups = ["count:all"] + count_groups
+        self.read_filters = read_filters
+        
+        # Set columns
+        if read_sources is not None:
+            source_names = [x.name for x in read_sources]
+        else:
+            source_names = read_sources_df.columns.tolist()
+        self.columns = []
+        for source_name in source_names:
+            for expression in count_groups:
+                label = support.parse_labeled_expression(expression)
+                for suffix in ["alt", "ref", "total"]:
+                    self.columns.append("_".join([source_name, label, suffix]))
 
     @staticmethod
     def requested(args):
@@ -303,32 +319,38 @@ class ReadEvidence(Includeable):
         if self.read_sources_df is None:
             def rows_and_read_sources():
                 all_rows = numpy.ones(df.shape[0], dtype=bool)
-                yield (all_rows, self.read_sources_dict)
+                yield (all_rows, self.read_sources)
         else:
             def rows_and_read_sources():
                 join_col = self.read_sources_df.index.name
                 for join_value in df[join_col].unique():
                     read_paths = self.read_sources_df.ix[join_value]
-                    read_sources_dict = (
-                        (name, reads_util.ReadSource(name, filename))
+                    read_sources = [
+                        reads_util.load_bam(
+                            filename, name=name, filters=self.read_filters)
                         for (name, filename) in read_paths.iteritems()
-                        if not pandas.isnull(filename))
+                        if not pandas.isnull(filename)  
+                    ]
                     rows = df[df[join_col] == join_value]
-                    yield (rows, read_sources_dict)
+                    yield (rows, read_sources)
 
-        for (rows, sources_dict) in rows_and_read_sources():
-            sub_df = df.loc[rows]
-            alleles = self.hla if self.hla else self.donor_to_hla.get(donor)
-            if alleles and sub_df.shape[0] > 0:
-                result = mhc_binding.binding_affinities(
-                    sub_df.variant, alleles)
-                df.loc[rows, "binding_affinity"] = (
-                    result["binding_affinity"].values)
-                df.loc[rows, "binding_allele"] = (
-                    result["binding_allele"].values)
-        if drop_donor:
-            del df["donor"]
-        return df
+        for (rows, sources) in rows_and_read_sources():
+            variants = df.variant[rows]
+            variant_loci = (
+                read_evidence.pileup_collection.to_locus(variant)
+                for variant in variants)
 
-    
+            allele_support_df = support.allele_support_df(
+                variant_loci, sources)
+            variant_support_df = support.variant_support_df(
+                variants, allele_support_df)
+            for label in variant_support_df.labels:
+                panel = variant_support_df[label]
+                for item in ["num_alt", "num_ref", "total_depth"]:
+                    sub_panel = panel[item, variants]
+                    for source_column in sub_panel.columns:
+                        dest_column = "_".join(source_column, label, item)
+                        assert dest_column in self.columns
+                        df.loc[rows, dest_column] = sub_panel[source_column]
+
 INCLUDEABLES = Includeable.__subclasses__()

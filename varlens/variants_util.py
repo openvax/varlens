@@ -161,7 +161,6 @@ def evaluate_variant_expression(
         return expression(variant)  
 
 STANDARD_DATAFRAME_COLUMNS = [
-    "variant",
     "genome",
     "contig",
     "interbase_start",

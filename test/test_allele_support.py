@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 import functools
 
-from nose.tools import eq_, assert_raises
+from nose.tools import eq_
 
 from varlens.commands import allele_support
 
@@ -34,6 +34,7 @@ def test_basic():
         "--locus", "chr22:46929963",
         "--locus", "chr22:46929964",
     ])
+    print(result)
     eq_(cols_concat(result, expected_cols),
         {"22-46929962-46929963-C-60", "22-46929963-46929964-A-81"})
 
@@ -50,7 +51,7 @@ def test_basic():
         "--reads", data_path("CELSR1/bams/bam_5.bam"),
         "--locus", "chr22:46929963",
         "--locus", "chr22:46929964",
-        "foo:is_reverse",
+        "--count-group", "foo:is_reverse",
     ])
     eq_(cols_concat(result, expected_cols + ["foo"]),
         {"22-46929962-46929963-C-60-37", "22-46929963-46929964-A-81-47"})
@@ -58,7 +59,7 @@ def test_basic():
     result = run([
         "--reads", data_path("gatk_mini_bundle_extract.bam"),
         "--locus", "chr20:10008951",
-        "is_reverse",
+        "--count-group", "is_reverse",
     ])
     eq_(cols_concat(result, expected_cols + ["is_reverse"]),
         {"20-10008950-10008951-C-4-1", "20-10008950-10008951-A-1-0"})

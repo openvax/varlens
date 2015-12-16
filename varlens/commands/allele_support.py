@@ -20,12 +20,10 @@ import argparse
 import csv
 import sys
 import logging
-import collections
 
 from .. import loci_util
 from .. import reads_util
 from . import configure_logging
-from ..evaluation import parse_labeled_expression
 from .. import support
 
 parser = argparse.ArgumentParser(usage=__doc__)
@@ -33,7 +31,7 @@ loci_util.add_args(parser)
 reads_util.add_args(parser)
 
 parser.add_argument("--out")
-parser.add_argument("field", nargs="*")
+support.add_args(parser)
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
@@ -55,16 +53,11 @@ def run(raw_args=sys.argv[1:]):
     writer = csv.writer(out_fd)
 
     rows_generator = support.allele_support_rows(
-        loci, read_sources, args.field)
+        loci, read_sources, ["count:all"] + args.count_group)
     for (i, row) in enumerate(rows_generator):
         if i == 0:
             writer.writerow(row.index.tolist())
         writer.writerow([str(x) for x in row])
-
-    extra_columns = collections.OrderedDict()
-    for labeled_expression in args.field:
-        (label, expression) = parse_labeled_expression(labeled_expression)
-        extra_columns[label] = expression
 
     if out_fd is not sys.stdout:
         out_fd.close()
