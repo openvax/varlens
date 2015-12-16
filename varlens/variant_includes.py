@@ -1,5 +1,6 @@
 import logging
 import time
+import collections
 
 import pandas
 import numpy
@@ -24,6 +25,7 @@ class Includeable(object):
         raise NotImplementedError()
 
     def compute(self, df, chunk_rows=None):
+        assert self.columns
         for column in self.columns:
             if column not in df.columns:
                 df[column] = numpy.nan
@@ -274,13 +276,13 @@ class ReadEvidence(Includeable):
         if args.read_sources_file is not None:
             read_sources_df = pandas.read_csv(
                 args.read_sources_file,
-                index=args.read_sources_id_column)
+                index_col=args.read_sources_id_column)
             if args.read_sources_column:
                 read_sources_df = read_sources_df[args.read_sources_column]
         return cls(
             read_sources=read_sources,
             read_sources_df=read_sources_df,
-            filter_groups=args.read_filter)
+            count_groups=args.read_filter)
 
     def __init__(self,
             read_sources=None,
@@ -298,18 +300,22 @@ class ReadEvidence(Includeable):
         self.read_sources_df = read_sources_df
         self.count_groups = ["count:all"] + count_groups
         self.read_filters = read_filters
-        
-        # Set columns
-        if read_sources is not None:
-            source_names = [x.name for x in read_sources]
+        self.set_columns()
+   
+    def set_columns(self):
+        assert self.count_groups
+        if self.read_sources is not None:
+            source_names = [x.name for x in self.read_sources]
         else:
-            source_names = read_sources_df.columns.tolist()
+            source_names = self.read_sources_df.columns.tolist()
+        assert source_names
         self.columns = []
         for source_name in source_names:
-            for expression in count_groups:
-                label = support.parse_labeled_expression(expression)
-                for suffix in ["alt", "ref", "total"]:
+            for expression in self.count_groups:
+                (label, _) = support.parse_labeled_expression(expression)
+                for suffix in ["num_alt", "num_ref", "total_depth"]:
                     self.columns.append("_".join([source_name, label, suffix]))
+        assert self.columns
 
     @staticmethod
     def requested(args):
@@ -324,33 +330,50 @@ class ReadEvidence(Includeable):
             def rows_and_read_sources():
                 join_col = self.read_sources_df.index.name
                 for join_value in df[join_col].unique():
+                    rows = df[join_col] == join_value
                     read_paths = self.read_sources_df.ix[join_value]
                     read_sources = [
                         reads_util.load_bam(
-                            filename, name=name, filters=self.read_filters)
+                            filename, name=name, read_filters=self.read_filters)
                         for (name, filename) in read_paths.iteritems()
                         if not pandas.isnull(filename)  
                     ]
-                    rows = df[df[join_col] == join_value]
-                    yield (rows, read_sources)
+                    if rows.sum() > 0 and read_sources:
+                        logging.info("Processing %s=%s (%d rows, %d read sources)" % (
+                            join_col, join_value, rows.sum(), len(read_sources)))
+                        yield (rows, read_sources)
+                    else:
+                        logging.info("Skipping %s=%s (%d rows, %d read sources)" % (
+                            join_col, join_value, rows.sum(), len(read_sources)))
 
         for (rows, sources) in rows_and_read_sources():
             variants = df.variant[rows]
+            counter = collections.Counter(variants)
+            duplicate_variants = dict((v, c) for (v, c) in counter.items() if c > 1)
+            if duplicate_variants:
+                raise ValueError("Duplicate variant(s) for this source: %s" %
+                        duplicate_variants)
             variant_loci = (
                 read_evidence.pileup_collection.to_locus(variant)
                 for variant in variants)
 
             allele_support_df = support.allele_support_df(
                 variant_loci, sources)
-            variant_support_df = support.variant_support_df(
+            variant_support_df = support.variant_support(
                 variants, allele_support_df)
+
             for label in variant_support_df.labels:
                 panel = variant_support_df[label]
                 for item in ["num_alt", "num_ref", "total_depth"]:
                     sub_panel = panel[item, variants]
                     for source_column in sub_panel.columns:
-                        dest_column = "_".join(source_column, label, item)
-                        assert dest_column in self.columns
-                        df.loc[rows, dest_column] = sub_panel[source_column]
+                        dest_column = "_".join([source_column, label, item])
+                        assert dest_column in self.columns, (
+                                "Bad column: %s not in %s" % (
+                                    dest_column, " ".join(self.columns)))
+                        values = sub_panel[source_column].values
+                        assert len(values) == rows.sum(), "%d != %d" % (len(values), rows.sum())
+                        df.loc[rows, dest_column] = values
+        return df
 
 INCLUDEABLES = Includeable.__subclasses__()

@@ -20,11 +20,20 @@ def add_args(parser):
         "multiple times. A count of matching reads will be computed for each "
         "occurrence of this argument.")
 
-def allele_support_df(loci, sources, filter_groups=[]):
+def allele_support_df(loci, sources, count_groups=None):
+    if count_groups is None:
+        count_groups = ["count:all"]
+    columns = list(EXPECTED_COLUMNS)
+    for group in count_groups:
+        (label, _) = parse_labeled_expression(group)
+        columns.append(label)
     return pandas.DataFrame(
-        allele_support_rows(loci, sources, filter_groups))
+        allele_support_rows(loci, sources, count_groups),
+        columns=columns)
 
-def allele_support_rows(loci, sources, count_groups=["count:all"]):
+def allele_support_rows(loci, sources, count_groups=None):
+    if count_groups is None:
+        count_groups = ["count:all"]
     assert count_groups
     count_groups_dict = collections.OrderedDict()
     for labeled_expression in count_groups:
@@ -89,14 +98,20 @@ def variant_support(variants, allele_support_df):
 
     minor axis (axis=3) : the sources
     '''
-    columns = list(allele_support_df.columns)
-    if columns[:len(EXPECTED_COLUMNS)] != EXPECTED_COLUMNS:
-        raise ValueError("Expected columns: %s" % EXPECTED_COLUMNS)
+    missing = [c for c in EXPECTED_COLUMNS if c not in allele_support_df.columns]
+    if missing:
+        raise ValueError("Missing columns: %s" % " ".join(missing))
+    
+    count_fields = [
+        x for x in allele_support_df.columns if x not in EXPECTED_COLUMNS
+    ]
+
+    # Ensure our start and end fields are ints.
+    allele_support_df[["interbase_start", "interbase_end"]] = (
+        allele_support_df[["interbase_start", "interbase_end"]].astype(int))
 
     sources = sorted(allele_support_df["source"].unique())
     
-    count_fields = allele_support_df.columns[len(EXPECTED_COLUMNS):]
-
     panels = {}
     for field in count_fields:
         allele_support_dict = collections.defaultdict(dict)
@@ -107,6 +122,9 @@ def variant_support(variants, allele_support_df):
                 row.interbase_start,
                 row.interbase_end)
             allele_support_dict[key][row.allele] = row[field]
+        
+        # We want an exception on bad lookups, so convert to a regular dict.
+        allele_support_dict = dict(allele_support_dict)
 
         dataframe_dicts = collections.defaultdict(
             lambda: collections.defaultdict(list))
