@@ -184,7 +184,7 @@ expressions:
         --reads test/data/CELSR1/bams/bam_5.bam \
         --locus chr22:46930257 \
         --locus chr22:46930259-46930260 \
-        'not is_duplicate'
+        --count-group 'not is_duplicate'
 
     source,contig,interbase_start,interbase_end,allele,count,not is_duplicate
     bam_5.bam,22,46930256,46930257,GCC,1,0

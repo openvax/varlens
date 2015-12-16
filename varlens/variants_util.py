@@ -20,11 +20,22 @@ import varcode
 
 from . import evaluation
 
+STANDARD_DATAFRAME_COLUMNS = [
+    "genome",
+    "contig",
+    "interbase_start",
+    "interbase_end",
+    "ref",
+    "alt",
+]
+
 def add_args(parser):
     parser.add_argument("--variants", action="append", default=[],
         help="Path to VCF file. Can be specified multiple times.")
     parser.add_argument("--variant-filter")
     parser.add_argument("--variant-genome")
+    parser.add_argument("--distinct-variants",
+        action="store_true", default=False)
 
 def load_from_args_as_dataframe(args):
     '''
@@ -47,6 +58,17 @@ def load_from_args_as_dataframe(args):
         raise ValueError(
                 "Mixing references is not supported. "
                 "Reference genomes: %s" % (", ".join(genomes)))
+
+    if args.distinct_variants:
+        # We return a dataframe of only unique variants. Instead of the usual
+        # metadata fields, we have only one called "variant_sources", which 
+        # for each variant gives a dict from source name -> the metadata for
+        # the variant that was read from that source.
+        sources = (
+            df.groupby(["variant"] + STANDARD_DATAFRAME_COLUMNS)
+            .apply(lambda group: dict(iter(group.groupby("variant_source")))))
+        sources.name = "variant_sources"
+        df = sources.reset_index()
     return df
 
 ParsedVariantsURL = collections.namedtuple(
@@ -159,15 +181,6 @@ def evaluate_variant_expression(
             error_value=error_value)
     else:
         return expression(variant)  
-
-STANDARD_DATAFRAME_COLUMNS = [
-    "genome",
-    "contig",
-    "interbase_start",
-    "interbase_end",
-    "ref",
-    "alt",
-]
 
 def variants_to_dataframe(variants, metadata=None):
     def record(variant):

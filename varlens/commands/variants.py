@@ -83,17 +83,19 @@ def run(raw_args=sys.argv[1:]):
             columns = [x for x in df.columns.tolist() if x != "variant"]
             if not args.include_metadata:
                 columns = [
-                    x for x in columns if not x.startswith("metadata_")
+                    x for x in columns
+                    if x in extra_columns or not x.startswith("metadata_")
                 ]
             if args.no_standard_columns:
                 columns = [
                     x for x in columns
-                    if x not in variants_util.STANDARD_DATAFRAME_COLUMNS
+                    if x in extra_columns or (
+                        x not in variants_util.STANDARD_DATAFRAME_COLUMNS)
                 ]
             if not args.include_variant_source:
                 columns = [
                     x for x in columns
-                    if x != "variant_source"
+                    if x in extra_columns or x != "variant_source"
                 ]
 
         df_save = df[columns]

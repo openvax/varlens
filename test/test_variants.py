@@ -42,6 +42,20 @@ def test_basic():
         "GRCh37-22-50875932-50875933-A-C",
     }))
 
+def test_genes_and_effects():
+    result = run([
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--include-effect",
+        "--include-gene",
+    ])
+    eq_(sorted(cols_concat(result, expected_cols + ["effect", "gene"])), sorted({
+       'GRCh37-22-21829554-21829555-T-G-non-coding-transcript-PI4KAP2',
+       'GRCh37-22-46931059-46931060-A-C-p.S670A-CELSR1',
+       'GRCh37-22-46931061-46931062-G-A-p.S669F-CELSR1',
+       'GRCh37-22-50636217-50636218-A-C-intronic-TRABD',
+       'GRCh37-22-50875932-50875933-A-C-splice-acceptor-PPP6R2',
+    }))
+
 def test_filtering():
     result = run([
         "--variants",
@@ -123,17 +137,18 @@ def test_round_trip():
                 "GRCh37-22-50875932-50875933-A-C-a-PPP6R2",
             }))
 
-def Xtest_sources():
+def test_distinct_variants():
     result = run([
+        "--distinct-variants",
         "--variants",
         data_path(
             "CELSR1/vcfs/vcf_1.vcf#name=first&genome=b37&filter=ref=='A'"),
         "--variants",
         data_path(
             "CELSR1/vcfs/vcf_1.vcf#name=second&genome=b37&filter=ref in ('T', 'A')"),
-        "sources:'_'.join(sorted(sources))",
+        "sources:'_'.join(sorted(variant_sources))",
     ])
-    eq_(sorted(cols_concat(result, expected_cols + ["variant_source"])),
+    eq_(sorted(cols_concat(result, expected_cols + ["sources"])),
         sorted({
             "GRCh37-22-21829554-21829555-T-G-second",
             "GRCh37-22-46931059-46931060-A-C-first_second",
