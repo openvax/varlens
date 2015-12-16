@@ -353,14 +353,17 @@ class ReadEvidence(Includeable):
             if duplicate_variants:
                 raise ValueError("Duplicate variant(s) for this source: %s" %
                         duplicate_variants)
-            variant_loci = (
+            variant_loci = [
                 read_evidence.pileup_collection.to_locus(variant)
-                for variant in variants)
+                for variant in variants]
 
             allele_support_df = support.allele_support_df(
                 variant_loci, sources)
+            assert set(s.name for s in sources) == set(allele_support_df.source.unique())
+
             variant_support_df = support.variant_support(
                 variants, allele_support_df)
+            assert set(s.name for s in sources) == set(variant_support_df.minor_axis)
 
             for label in variant_support_df.labels:
                 panel = variant_support_df[label]

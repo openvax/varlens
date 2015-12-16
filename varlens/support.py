@@ -44,7 +44,11 @@ def allele_support_rows(loci, sources, count_groups=None):
         logging.info("Reading from: %s" % source.name)
         for locus in loci:
             grouped = dict(source.pileups([locus]).group_by_allele(locus))
-            for (allele, group) in grouped.items():
+            if grouped:
+                items = grouped.items()
+            else:
+                items = [("N" * (locus.end - locus.start), None)]
+            for (allele, group) in items:
                 d = collections.OrderedDict([
                     ("source", source.name),
                     ("contig", locus.contig),
@@ -53,7 +57,9 @@ def allele_support_rows(loci, sources, count_groups=None):
                     ("allele", allele),
                 ])
                 for (key, expression) in count_groups_dict.items():
-                    if expression == "all":
+                    if group is None:
+                        num_reads = 0
+                    elif expression == "all":
                         num_reads = group.num_reads()
                     else:
                         num_reads = len(set(
