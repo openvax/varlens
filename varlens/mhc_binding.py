@@ -21,10 +21,11 @@ import varcode
 
 CACHED_BINDING_AFFINITIES = {}  # (variant, allele -> nm affinity)
 BINDING_PREDICTORS = {}
-def binding_affinities(variants, alleles):
+def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
     for allele in alleles:
         if allele not in BINDING_PREDICTORS:
-            BINDING_PREDICTORS[allele] = mhctools.NetMHCpan([allele])
+            BINDING_PREDICTORS[allele] = mhctools.NetMHCpan(
+                [allele], epitope_lengths=epitope_lengths)
         predictor = BINDING_PREDICTORS[allele]
         predictions = topiary.predict_epitopes_from_variants(
             varcode.VariantCollection([
@@ -47,6 +48,8 @@ def binding_affinities(variants, alleles):
             (CACHED_BINDING_AFFINITIES.get((variant, allele), float('nan')),
                 allele)
             for allele in alleles)
+        if pandas.isnull(binding_affinity):
+            binding_allele = None
         result_df["variant"].append(variant)
         result_df["binding_affinity"].append(binding_affinity)
         result_df["binding_allele"].append(binding_allele)

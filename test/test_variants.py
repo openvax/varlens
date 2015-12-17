@@ -79,7 +79,7 @@ def Xtest_context():
            'GRCh37-22-50875932-50875933-',
         }))
 
-def Xtest_mhc_binding_affinity():
+def test_mhc_binding_affinity():
     with temp_file(".csv") as out_csv:
         run([
             "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
@@ -90,11 +90,11 @@ def Xtest_mhc_binding_affinity():
         eq_(sorted(cols_concat(pandas.read_csv(out_csv),
                 expected_cols + ["binding_affinity", "binding_allele"])),
             sorted({
-               'GRCh37-22-21829554-21829555-',
-               'GRCh37-22-46931059-46931060-',
-               'GRCh37-22-46931061-46931062-',
-               'GRCh37-22-50636217-50636218-',
-               'GRCh37-22-50875932-50875933-',
+               'GRCh37-22-21829554-21829555-T-G-nan-nan',
+               'GRCh37-22-46931059-46931060-A-C-142.13-A:02:02',
+               'GRCh37-22-46931061-46931062-G-A-115.77-A:02:02',
+               'GRCh37-22-50636217-50636218-A-C-nan-nan',
+               'GRCh37-22-50875932-50875933-A-C-nan-nan',
             }))
 
 def test_read_evidence():
