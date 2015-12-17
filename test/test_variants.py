@@ -49,13 +49,14 @@ def test_genes_and_effects():
         "--include-gene",
         "--rename-column", "gene", "genez",
     ])
-    eq_(sorted(cols_concat(result, expected_cols + ["effect", "genez"])), sorted({
-       'GRCh37-22-21829554-21829555-T-G-non-coding-transcript-PI4KAP2',
-       'GRCh37-22-46931059-46931060-A-C-p.S670A-CELSR1',
-       'GRCh37-22-46931061-46931062-G-A-p.S669F-CELSR1',
-       'GRCh37-22-50636217-50636218-A-C-intronic-TRABD',
-       'GRCh37-22-50875932-50875933-A-C-splice-acceptor-PPP6R2',
-    }))
+    eq_(sorted(cols_concat(result, expected_cols + ["effect", "genez"])),
+        sorted({
+           'GRCh37-22-21829554-21829555-T-G-non-coding-transcript-PI4KAP2',
+           'GRCh37-22-46931059-46931060-A-C-p.S670A-CELSR1',
+           'GRCh37-22-46931061-46931062-G-A-p.S669F-CELSR1',
+           'GRCh37-22-50636217-50636218-A-C-intronic-TRABD',
+           'GRCh37-22-50875932-50875933-A-C-splice-acceptor-PPP6R2',
+        }))
 
 def test_read_evidence():
     result = run([

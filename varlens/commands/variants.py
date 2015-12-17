@@ -68,6 +68,18 @@ def run(raw_args=sys.argv[1:]):
 
     logging.info("Loaded %d variants." % df.shape[0])
 
+    # We run the inverse of the column renames on the input df.
+    column_renames = {}
+    if args.rename_column:
+        column_renames = dict(args.rename_column)
+        column_renames_inverse = dict((v, k) for (k, v) in args.rename_column)
+        if len(column_renames) != len(column_renames_inverse):
+            raise ValueError("Column renames are not 1:1")
+
+        df.columns = [
+            column_renames_inverse.get(col, col) for col in df.columns
+        ]
+
     extra_columns = collections.OrderedDict()
     for labeled_expression in args.field:
         (label, expression) = parse_labeled_expression(labeled_expression)
@@ -81,8 +93,7 @@ def run(raw_args=sys.argv[1:]):
         ]
 
     def save(df):
-        if args.rename_column:
-            column_renames = dict(args.rename_column)
+        if column_renames:
             df = df.copy()
             df.columns = [column_renames.get(col, col) for col in df.columns]
 

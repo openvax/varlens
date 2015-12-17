@@ -269,6 +269,9 @@ class ReadEvidence(Includeable):
             default=False,
             help="Always prefix the column names with the source name and "
             "count group, even when there is only one of each.")
+        parser.add_argument("--survive-errors", action="store_true",
+            default=False,
+            help="If an error is encountered log it and try to continue.")
         
         # Note: We also use the --read-filter argument added here, even if
         # --reads isn't specified.
@@ -296,14 +299,16 @@ class ReadEvidence(Includeable):
             read_sources=read_sources,
             read_sources_df=read_sources_df,
             count_groups=args.count_group,
-            column_format=column_format)
+            column_format=column_format,
+            survive_errors=args.survive_errors)
 
     def __init__(self,
             read_sources=None,
             read_sources_df=None,
             count_groups=[],
             read_filters=[],
-            column_format=default_column_format):
+            column_format=default_column_format,
+            survive_errors=False):
         """
         
         """
@@ -316,6 +321,7 @@ class ReadEvidence(Includeable):
         self.count_groups = ["count:all"] + count_groups
         self.read_filters = read_filters
         self.column_format = column_format
+        self.survive_errors = survive_errors
         self.set_columns()
 
     @staticmethod
@@ -414,8 +420,16 @@ class ReadEvidence(Includeable):
                 read_evidence.pileup_collection.to_locus(variant)
                 for variant in variants]
 
-            allele_support_df = support.allele_support_df(
-                variant_loci, sources)
+            try:
+                allele_support_df = support.allele_support_df(
+                    variant_loci, sources)
+            except ValueError as e:
+                logging.error("Error gathering evidence. %s in %s" %
+                    (str(e), "\n".join([x.filename for x in sources])))
+                if not self.survive_errors:
+                    raise
+                continue
+
             assert set(s.name for s in sources) == set(
                 allele_support_df.source.unique())
             variant_support_df = support.variant_support(
