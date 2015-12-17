@@ -27,7 +27,7 @@ from . import data_path, run_and_parse_csv, cols_concat, temp_file
 run = functools.partial(run_and_parse_csv, variants.run)
 
 # TODO!! Add a small reference to the repo.
-reference_fasta = "/Users/tim/sinai/data/human_g1k_v37_reformatted.fasta"
+reference_fasta = data_path("chr22.no_line_wrap.fa")
 
 expected_cols = [
     "genome", "contig", "interbase_start", "interbase_end", "ref", "alt",
@@ -61,7 +61,7 @@ def test_genes_and_effects():
            'GRCh37-22-50875932-50875933-A-C-splice-acceptor-PPP6R2',
         }))
 
-def Xtest_context():
+def test_context():
     result = run([
         "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
         "--include-context",

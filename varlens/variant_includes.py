@@ -392,14 +392,21 @@ class ReadEvidence(Includeable):
                 for join_value in df[join_col].unique():
                     rows = df[join_col] == join_value
                     read_paths = self.read_sources_df.ix[join_value]
-                    read_sources = [
-                        reads_util.load_bam(
-                            filename,
-                            name=name,
-                            read_filters=self.read_filters)
-                        for (name, filename) in read_paths.iteritems()
-                        if not pandas.isnull(filename)  
-                    ]
+                    read_sources = []
+                    for (name, filename) in read_paths.iteritems():
+                        try:
+                            read_sources.append(reads_util.load_bam(
+                                filename,
+                                name=name,
+                                read_filters=self.read_filters))
+                        except Exception as e:
+                            logging.error("Error loading bam. %s in %s" %
+                                (str(e),
+                                    "\n".join([x.filename for x in sources])))
+                            if not self.survive_errors:
+                                raise
+                            continue
+                            
                     if rows.sum() > 0 and read_sources:
                         logging.info(
                             "Processing %s=%s (%d rows, %d read sources)" % (
