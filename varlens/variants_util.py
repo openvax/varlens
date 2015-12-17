@@ -17,8 +17,9 @@ import collections
 import typechecks
 import pandas
 import varcode
+import varcode.reference
 
-from . import evaluation
+from . import evaluation, Locus
 
 STANDARD_DATAFRAME_COLUMNS = [
     "genome",
@@ -36,6 +37,9 @@ def add_args(parser):
     parser.add_argument("--variant-genome")
     parser.add_argument("--distinct-variants",
         action="store_true", default=False)
+    parser.add_argument("--single-variant", nargs=3, action="append",
+        default=[], metavar=("LOCUS", "REF", "ALT"),
+        help="Literal variant. Can be specified any number of times.")
 
 def load_from_args_as_dataframe(args):
     '''
@@ -43,7 +47,7 @@ def load_from_args_as_dataframe(args):
 
     If no variant loading arguments are specified, return None.
     '''
-    if not args.variants:
+    if not args.variants and not args.single_variant:
         return None
 
     dfs = [
@@ -51,6 +55,23 @@ def load_from_args_as_dataframe(args):
             filename, filter=args.variant_filter, genome=args.variant_genome)
         for filename in args.variants
     ]
+    if args.single_variant:
+        variants = []
+        extra_args = {}
+        if args.variant_genome:
+            extra_args = {
+                'ensembl': varcode.reference.infer_genome(args.variant_genome)
+            }
+        for (locus_str, ref, alt) in args.single_variant:
+            locus = Locus.parse(locus_str)
+            variants.append(
+                varcode.Variant(
+                    locus.contig,
+                    locus.inclusive_start,
+                    ref,
+                    alt,
+                    **extra_args))
+        dfs.append(variants_to_dataframe(variants))
 
     df = pandas.concat(dfs)
     genomes = df["genome"].unique()

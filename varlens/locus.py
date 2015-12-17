@@ -27,6 +27,14 @@ class Locus(namedtuple("Locus", "contig start end")):
     '''
 
     @property
+    def inclusive_start(self):
+        return self.start + 1
+
+    @property
+    def inclusive_end(self):
+        return self.end
+    
+    @property
     def positions(self):
         '''
         A Python range object giving the bases included in this locus.

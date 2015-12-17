@@ -57,7 +57,6 @@ for includeable in variant_includes.INCLUDEABLES:
 
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
-
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
     configure_logging(args)

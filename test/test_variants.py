@@ -26,6 +26,9 @@ from . import data_path, run_and_parse_csv, cols_concat, temp_file
 
 run = functools.partial(run_and_parse_csv, variants.run)
 
+# TODO!! Add a small reference to the repo.
+reference_fasta = "/Users/tim/sinai/data/human_g1k_v37_reformatted.fasta"
+
 expected_cols = [
     "genome", "contig", "interbase_start", "interbase_end", "ref", "alt",
 ]
@@ -58,11 +61,47 @@ def test_genes_and_effects():
            'GRCh37-22-50875932-50875933-A-C-splice-acceptor-PPP6R2',
         }))
 
+def Xtest_context():
+    result = run([
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--include-context",
+        "--context-num-bases", "5",
+        "--reference", reference_fasta,
+    ])
+    eq_(sorted(cols_concat(result,
+            expected_cols + [
+                "context_5_prime", "context_3_prime", "context_mutation"])),
+        sorted({
+           'GRCh37-22-21829554-21829555-',
+           'GRCh37-22-46931059-46931060-',
+           'GRCh37-22-46931061-46931062-',
+           'GRCh37-22-50636217-50636218-',
+           'GRCh37-22-50875932-50875933-',
+        }))
+
+def Xtest_mhc_binding_affinity():
+    with temp_file(".csv") as out_csv:
+        run([
+            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+            "--include-mhc-binding",
+            "--hla", "A:02:01 A:02:02",
+            "--out", out_csv,
+        ])
+        eq_(sorted(cols_concat(pandas.read_csv(out_csv),
+                expected_cols + ["binding_affinity", "binding_allele"])),
+            sorted({
+               'GRCh37-22-21829554-21829555-',
+               'GRCh37-22-46931059-46931060-',
+               'GRCh37-22-46931061-46931062-',
+               'GRCh37-22-50636217-50636218-',
+               'GRCh37-22-50875932-50875933-',
+            }))
+
 def test_read_evidence():
     result = run([
+        "--include-read-evidence",
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
         "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
-        "--include-read-evidence",
     ])
     allele_groups = ["num_ref", "num_alt", "total_depth"]
     for allele_group in allele_groups:
@@ -77,6 +116,21 @@ def test_read_evidence():
             "22-46931059-50-0-50",
             "22-46931061-51-0-51",
     })
+
+    result = run([
+        "--include-read-evidence",
+        "--reads", data_path("gatk_mini_bundle_extract.bam#name=foo"),
+        "--single-variant", "chr20:10008951", "C", "A",
+        "--variant-genome", "b37",
+        "--count-group", "is_reverse",
+    ])
+    allele_groups = (
+        ["foo_count_%s" % g for g in allele_groups] +
+        ["foo_is_reverse_%s" % g for g in allele_groups])
+    for allele_group in allele_groups:
+        result[allele_group] = result[allele_group].astype(int)
+    eq_(cols_concat(result, expected_cols + allele_groups),
+        {"GRCh37-20-10008950-10008951-C-A-4-1-5-1-0-1"})
 
 
 def test_filtering():

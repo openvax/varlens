@@ -54,5 +54,6 @@ if __name__ == '__main__':
             'varcode',
             'pyfaidx',
             'mhctools',
+            'topiary',
         ],
     )

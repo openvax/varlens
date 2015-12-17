@@ -36,7 +36,7 @@ def run_and_parse_csv(function, *args):
         function(*args)
     try:
         result = pandas.read_csv(StringIO("\n".join(output)))
-    except Exception:
+    except:
         print("Couldn't parse csv. Function: %s. Args: %s.\nOutput:\n%s"
             % (str(function), str(args), "\n".join(output)))
         raise

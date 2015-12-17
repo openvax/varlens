@@ -40,11 +40,14 @@ class Includeable(object):
             else:
                 this_chunk_rows = rows_to_annotate
 
-            logging.info("%s: %d / %d rows remaining. Processing %d rows." % (
-                self.name,
-                rows_to_annotate.sum(),
-                len(rows_to_annotate),
-                this_chunk_rows.sum()))
+            num_remaining = rows_to_annotate.sum()
+            logging.info("%s: %d / %d (%0.1f%%) remaining. Processing %d rows."
+                % (
+                    self.name,
+                    num_remaining,
+                    len(rows_to_annotate),
+                    num_remaining * 100.0 / len(rows_to_annotate),
+                    this_chunk_rows.sum()))
 
             rows_to_annotate = rows_to_annotate & (~ this_chunk_rows)
             
@@ -114,6 +117,9 @@ class Context(Includeable):
 
     @classmethod
     def from_args(cls, args):
+        if not args.reference:
+            raise ValueError(
+                "The --reference argument is required when including context")
         return cls(
             reference=pyfaidx.Fasta(args.reference),
             context_num_bases=args.context_num_bases)
@@ -173,6 +179,8 @@ class MHCBindingAffinity(Includeable):
 
     @classmethod
     def from_args(cls, args):
+        if bool(args.hla) + bool(args.hla_file) != 1:
+            raise ValueError("Must specify exactly one of --hla or --hla-file")
         return cls(
             hla=args.hla,
             hla_dataframe=(
@@ -198,9 +206,9 @@ class MHCBindingAffinity(Includeable):
         donor_to_hla : dict of string -> string list
             Map from donor to HLA alleles for that donor.
         """
-        if sum(x is not None for x in [hla, hla_dataframe, donor_to_hla]) != 1:
+        if bool(hla) + bool(hla_dataframe) + bool(donor_to_hla) != 1:
             raise TypeError(
-                "Specify exactly one of hla, hla_dataframe, donor_to_hla")
+                "Must specify exactly one of hla, hla_dataframe, donor_to_hla")
         
         self.hla = (
             self.string_to_hla_alleles(hla) if typechecks.is_string(hla)
@@ -422,7 +430,7 @@ class ReadEvidence(Includeable):
 
             try:
                 allele_support_df = support.allele_support_df(
-                    variant_loci, sources)
+                    variant_loci, sources, count_groups=self.count_groups)
             except ValueError as e:
                 logging.error("Error gathering evidence. %s in %s" %
                     (str(e), "\n".join([x.filename for x in sources])))
