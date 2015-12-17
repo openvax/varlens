@@ -39,6 +39,10 @@ parser.add_argument("--limit", metavar="N", type=int,
 parser.add_argument("--columns",
     help="Column separated list of columns to output")
 
+parser.add_argument("--rename-column", nargs=2, action="append", default=[],
+    metavar=("FROM", "TO"),
+    help="Rename output column FROM to TO. Can be specified multiple times.")
+
 parser.add_argument("--out")
 
 parser.add_argument('--include-metadata', action="store_true", default=False,
@@ -76,7 +80,12 @@ def run(raw_args=sys.argv[1:]):
             for (i, row) in df.iterrows()
         ]
 
-    def save():
+    def save(df):
+        if args.rename_column:
+            column_renames = dict(args.rename_column)
+            df = df.copy()
+            df.columns = [column_renames.get(col, col) for col in df.columns]
+
         if args.columns:
             columns = [x.strip() for x in args.columns.split(",")]
         else:
@@ -114,7 +123,8 @@ def run(raw_args=sys.argv[1:]):
             instance = includeable.from_args(args)
             for num_rows in instance.compute(df, chunk_rows=args.chunk_rows):
                 if args.chunk_rows is not None:
-                    save()
+                    save(df)
 
-    save()
+    if args.chunk_rows is None:
+        save(df)
  

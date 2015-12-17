@@ -70,17 +70,25 @@ def test_simple():
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
         "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
     ])
-    eq_(cols_concat(result, ["contig", "interbase_start", "interbase_end"]),
-        {"22-46931059-46931060", "22-46931061-46931062"})
+    eq_(cols_concat(
+            result,
+            ["contig", "interbase_start", "interbase_end", "allele", "count"]),
+        {
+            '22-50636217-50636218-N-0',
+            '22-50875932-50875933-N-0',
+            '22-21829554-21829555-N-0',
+            "22-46931059-46931060-A-50",
+            "22-46931061-46931062-G-51",
+    })
 
-    pick_first_variant = [
-        "ref=='A'",
-        "alt=='C'",
-        "inclusive_start==46931060",
-        "interbase_start==46931059",
-        "interbase_end==46931060",
+    pick_one_variant = [
+        "ref=='G'",
+        "alt=='A'",
+        "inclusive_start==46931062",
+        "interbase_start==46931061",
+        "interbase_end==46931062",
     ]
-    for variant_filter in pick_first_variant:
+    for variant_filter in pick_one_variant:
         result = run([
             "--reads", data_path("CELSR1/bams/bam_0.bam"),
             "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
@@ -90,5 +98,5 @@ def test_simple():
             eq_,
             cols_concat(
                 result, ["contig", "interbase_start", "interbase_end"]),
-            {"22-46931059-46931060"})
+            {"22-46931061-46931062"})
 
