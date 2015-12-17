@@ -57,6 +57,27 @@ def test_genes_and_effects():
        'GRCh37-22-50875932-50875933-A-C-splice-acceptor-PPP6R2',
     }))
 
+def test_read_evidence():
+    result = run([
+        "--reads", data_path("CELSR1/bams/bam_0.bam"),
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--include-read-evidence",
+    ])
+    allele_groups = ["num_ref", "num_alt", "total_depth"]
+    for allele_group in allele_groups:
+        result[allele_group] = result[allele_group].astype(int)
+    eq_(cols_concat(
+            result,
+            ["contig", "interbase_start"] + allele_groups),
+        {
+            '22-50636217-0-0-0',
+            '22-50875932-0-0-0',
+            '22-21829554-0-0-0',
+            "22-46931059-50-0-50",
+            "22-46931061-51-0-51",
+    })
+
+
 def test_filtering():
     result = run([
         "--variants",

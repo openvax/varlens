@@ -56,7 +56,9 @@ def load_bam(url, name=None, read_filters=[]):
             raise ValueError("Unsupported operation: %s" % key)
 
     filters.extend(read_filters)
-    return ReadSource(name if name else url, url_without_fragment, filters)
+    if not name:
+        name = url
+    return ReadSource(name, url_without_fragment, filters)
 
 class ReadSource(object):
     def __init__(self, name, filename, read_filters=[]):
