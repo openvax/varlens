@@ -72,11 +72,11 @@ def test_context():
             expected_cols + [
                 "context_5_prime", "context_3_prime", "context_mutation"])),
         sorted({
-           'GRCh37-22-21829554-21829555-',
-           'GRCh37-22-46931059-46931060-',
-           'GRCh37-22-46931061-46931062-',
-           'GRCh37-22-50636217-50636218-',
-           'GRCh37-22-50875932-50875933-',
+            "GRCh37-22-46931059-46931060-A-C",
+            "GRCh37-22-21829554-21829555-T-G-CATGA-AGTGA-T>G",
+            "GRCh37-22-46931061-46931062-G-A",
+            "GRCh37-22-50636217-50636218-A-C",
+            "GRCh37-22-50875932-50875933-A-C",
         }))
 
 def test_mhc_binding_affinity():

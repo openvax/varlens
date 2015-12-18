@@ -394,6 +394,8 @@ class ReadEvidence(Includeable):
                     read_paths = self.read_sources_df.ix[join_value]
                     read_sources = []
                     for (name, filename) in read_paths.iteritems():
+                        if pandas.isnull(filename):
+                            continue
                         try:
                             read_sources.append(reads_util.load_bam(
                                 filename,
@@ -434,16 +436,8 @@ class ReadEvidence(Includeable):
                 read_evidence.pileup_collection.to_locus(variant)
                 for variant in variants]
 
-            try:
-                allele_support_df = support.allele_support_df(
+            allele_support_df = support.allele_support_df(
                     variant_loci, sources, count_groups=self.count_groups)
-            except ValueError as e:
-                logging.error("Error gathering evidence. %s in %s" %
-                    (str(e), "\n".join([x.filename for x in sources])))
-                if not self.survive_errors:
-                    raise
-                continue
-
             assert set(s.name for s in sources) == set(
                 allele_support_df.source.unique())
             variant_support_df = support.variant_support(
