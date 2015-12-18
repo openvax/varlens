@@ -400,13 +400,12 @@ class ReadEvidence(Includeable):
                                 name=name,
                                 read_filters=self.read_filters))
                         except Exception as e:
-                            logging.error("Error loading bam. %s in %s" %
-                                (str(e),
-                                    "\n".join([x.filename for x in sources])))
+                            logging.error("Error loading bam: %s in %s" %
+                                (str(e), filename))
                             if not self.survive_errors:
                                 raise
                             continue
-                            
+
                     if rows.sum() > 0 and read_sources:
                         logging.info(
                             "Processing %s=%s (%d rows, %d read sources)" % (
