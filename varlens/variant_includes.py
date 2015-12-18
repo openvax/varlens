@@ -206,7 +206,7 @@ class MHCBindingAffinity(Includeable):
         donor_to_hla : dict of string -> string list
             Map from donor to HLA alleles for that donor.
         """
-        if bool(hla) + bool(hla_dataframe) + bool(donor_to_hla) != 1:
+        if bool(hla) + (hla_dataframe is not None) + bool(donor_to_hla) != 1:
             raise TypeError(
                 "Must specify exactly one of hla, hla_dataframe, donor_to_hla")
         
