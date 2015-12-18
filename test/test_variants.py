@@ -15,9 +15,10 @@
 from __future__ import absolute_import
 
 import functools
+import subprocess
+import warnings
 
 import pandas
-from pandas.util.testing import assert_frame_equal
 from nose.tools import eq_, assert_raises
 
 from varlens.commands import variants
@@ -79,6 +80,15 @@ def test_context():
         }))
 
 def test_mhc_binding_affinity():
+    # If netMHC is not installed, we skip this test
+    try:
+        # If this succeeds (no exception), we do nothing.
+        subprocess.call(
+            "netMHC", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        warnings.warn("netMHC not installed, skipping mhc binding test")
+        return
+
     with temp_file(".csv") as out_csv:
         run([
             "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),

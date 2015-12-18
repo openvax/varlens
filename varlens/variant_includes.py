@@ -432,9 +432,9 @@ class ReadEvidence(Includeable):
             if duplicate_variants:
                 raise ValueError("Duplicate variant(s) for this source: %s" %
                         duplicate_variants)
-            variant_loci = [
+            variant_loci = sorted(set(
                 read_evidence.pileup_collection.to_locus(variant)
-                for variant in variants]
+                for variant in variants))
 
             allele_support_df = support.allele_support_df(
                     variant_loci, sources, count_groups=self.count_groups)
