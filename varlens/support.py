@@ -41,7 +41,7 @@ def allele_support_rows(loci, sources, count_groups=None):
         count_groups_dict[label] = expression.strip()
 
     for source in sources:
-        logging.info("Reading from: %s" % source.name)
+        logging.info("Reading from: %s (%s)" % (source.name, source.filename))
         for locus in loci:
             grouped = dict(source.pileups([locus]).group_by_allele(locus))
             if grouped:

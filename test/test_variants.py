@@ -26,7 +26,6 @@ from . import data_path, run_and_parse_csv, cols_concat, temp_file
 
 run = functools.partial(run_and_parse_csv, variants.run)
 
-# TODO!! Add a small reference to the repo.
 reference_fasta = data_path("chr22.no_line_wrap.fa")
 
 expected_cols = [
@@ -72,11 +71,11 @@ def test_context():
             expected_cols + [
                 "context_5_prime", "context_3_prime", "context_mutation"])),
         sorted({
-            "GRCh37-22-46931059-46931060-A-C",
+            "GRCh37-22-46931059-46931060-A-C-GCTCC-CCACC-T>G",
             "GRCh37-22-21829554-21829555-T-G-CATGA-AGTGA-T>G",
-            "GRCh37-22-46931061-46931062-G-A",
-            "GRCh37-22-50636217-50636218-A-C",
-            "GRCh37-22-50875932-50875933-A-C",
+            "GRCh37-22-46931061-46931062-G-A-GAGCT-CTCCA-C>T",
+            "GRCh37-22-50636217-50636218-A-C-AGGGA-GGGCA-T>G",
+            "GRCh37-22-50875932-50875933-A-C-AGGCC-GGGAG-T>G",
         }))
 
 def test_mhc_binding_affinity():
