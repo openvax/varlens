@@ -74,7 +74,7 @@ def allele_support_rows(loci, sources, count_groups=None):
                     d[key] = num_reads
                 yield pandas.Series(d)
 
-def variant_support(variants, allele_support_df):
+def variant_support(variants, allele_support_df, ignore_missing=False):
     '''
     Collect the read evidence support for the given variants.
 
@@ -88,6 +88,11 @@ def variant_support(variants, allele_support_df):
         It should have columns: source, contig, interbase_start, interbase_end,
         allele. The remaining columns are interpreted as read counts of various
         subsets of reads (e.g. all reads, non-duplicate reads, etc.)
+
+    ignore_missing : boolean
+        If True, then varaints with no allele counts will be interpreted as
+        having 0 depth. If False, then an exception will be raised if any
+        variants have no allele counts.
 
     Returns
     ----------
@@ -104,7 +109,9 @@ def variant_support(variants, allele_support_df):
 
     minor axis (axis=3) : the sources
     '''
-    missing = [c for c in EXPECTED_COLUMNS if c not in allele_support_df.columns]
+    missing = [
+        c for c in EXPECTED_COLUMNS if c not in allele_support_df.columns
+    ]
     if missing:
         raise ValueError("Missing columns: %s" % " ".join(missing))
     
@@ -138,7 +145,16 @@ def variant_support(variants, allele_support_df):
         for variant in variants:
             for source in sources:
                 key = (source, variant.contig, variant.start - 1, variant.end)
-                alleles = allele_support_dict[key]
+                try:
+                    alleles = allele_support_dict[key]
+                except KeyError:
+                    message = ("No allele counts in source %s for variant %s"
+                        % (source, str(variant)))
+                    if ignore_missing:
+                        logging.warning(message)
+                        alleles = {}
+                    else:
+                        raise ValueError(message)                        
 
                 alt = alleles.get(variant.alt, 0)
                 ref = alleles.get(variant.ref, 0)
