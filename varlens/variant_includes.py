@@ -344,15 +344,16 @@ class ReadEvidence(Includeable):
             read_sources=self.read_sources,
             read_sources_df=self.read_sources_df)
         assert source_names
-        self.columns = []
+        self.columns_dict = collections.OrderedDict()
         for source_name in source_names:
             for expression in self.count_groups:
                 (count_group, _) = support.parse_labeled_expression(expression)
                 for allele_group in ["num_alt", "num_ref", "total_depth"]:
                     column_name = self.column_name(
                         source_name, count_group, allele_group)
-                    self.columns.append(column_name)
-                        
+                    self.columns_dict[column_name] = (
+                        source_name, count_group, allele_group)
+        self.columns = list(self.columns_dict)                
         assert self.columns
 
     def column_name(self, source, count_group, allele_group):
@@ -395,6 +396,17 @@ class ReadEvidence(Includeable):
                     read_sources = []
                     for (name, filename) in read_paths.iteritems():
                         if pandas.isnull(filename):
+                            continue
+                        relevant_columns = [
+                            col for (col, (
+                                source_name, count_sgroup, allele_group))
+                            in self.columns_dict.items()
+                            if source_name == name
+                        ]
+                        if (~pandas.isnull(df[relevant_columns].values)).all():
+                            logging.info(
+                                "Skipping source %s (%s) for %s: data exists" %
+                                (name, filename, join_value))
                             continue
                         try:
                             read_sources.append(reads_util.load_bam(
