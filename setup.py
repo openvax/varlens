@@ -47,6 +47,7 @@ if __name__ == '__main__':
             'Topic :: Scientific/Engineering :: Bio-Informatics',
         ],
         install_requires=[
+            'numpy',
             'matplotlib',
             'intervaltree',
             'pysam>=0.8.4',
