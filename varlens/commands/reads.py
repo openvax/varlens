@@ -94,6 +94,7 @@ def run(raw_args=sys.argv[1:]):
             "Don't know how to write to file with output extension: %s. "
             "Supported extensions: csv, bam, sam." % args.out)
 
+    num_reads = 0
     for read_source in read_sources:
         if args.header:
             header = update_header(args, read_source.handle.header)
@@ -102,6 +103,7 @@ def run(raw_args=sys.argv[1:]):
                     [read_source.name, group, str(i), key, value])
             continue  # we don't look at reads at all.
         for read in read_source.reads(loci):
+            num_reads += 1
             if out_pysam_handle is not None:
                 out_pysam_handle.write(read)
             if out_csv_writer is not None:
@@ -115,7 +117,7 @@ def run(raw_args=sys.argv[1:]):
         if not args.no_sort:
             print("Sorting.")
             pysam.sort("-o", args.out, "-T", "varlens_reads", args.out)
-        print("Wrote: %s" % args.out)
+        print("Wrote %d reads: %s" % (num_reads, args.out))
 
     if out_csv_fd is not None and out_csv_fd is not sys.stdout:
         out_csv_fd.close()

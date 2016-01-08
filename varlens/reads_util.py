@@ -74,7 +74,7 @@ class ReadSource(object):
             self.chromosome_name_map[name] = name
 
     def index_if_needed(self):
-        if self.handle.is_bam and not self.handle.has_index():
+        if self.filename.endswith(".bam") and not self.handle.has_index():
             # pysam strangely requires and index even to iterate through a bam.
             logging.info("Attempting to create BAM index for file: %s" %
                 self.filename)
@@ -87,12 +87,36 @@ class ReadSource(object):
             self.handle = pysam.Samfile(self.filename)
 
     def reads(self, loci=None):
-        self.index_if_needed()
-
         if loci is None:
             def reads_iterator():
-                return self.handle.fetch()
+                return self.handle.fetch(until_eof=True)
+        elif self.filename.endswith(".sam"):
+            # Inefficient.
+            chromosome_intervals = {}
+            for (contig, intervals) in loci.contigs.items():
+                try:
+                    chromosome = self.chromosome_name_map[contig]
+                except KeyError:
+                    logging.warn(
+                        "No such contig in bam: %s" % contig)
+                    continue
+                chromosome_intervals[chromosome] = intervals
+
+            def reads_iterator():
+                seen = set()
+                for read in self.handle.fetch(until_eof=True):
+                    intervals = chromosome_intervals.get(read.reference_name)
+                    if not intervals or not intervals.overlaps_range(
+                            read.reference_start,
+                            read.reference_end):
+                        continue
+                    key = alignment_key(read)
+                    if key not in seen:
+                        yield read
+                        seen.add(key)
         else:
+            self.index_if_needed()
+
             def reads_iterator():
                 seen = set()
                 for locus in loci:
