@@ -53,7 +53,6 @@ def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
         result_df["variant"].append(variant)
         result_df["binding_affinity"].append(binding_affinity)
         result_df["binding_allele"].append(binding_allele)
-    with open("/tmp/log.log", "a") as fd:
-        fd.write((str((variants.tolist(), alleles, epitope_lengths, pandas.DataFrame(result_df)))))
+
     return pandas.DataFrame(result_df)
     
