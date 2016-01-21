@@ -153,6 +153,8 @@ def load_as_dataframe(url, filter=None, loader=None, **kwargs):
             # Load from csv
             def loader(filename, genome=None, max_variants=None):
                 df = pandas.read_csv(filename, nrows=max_variants)
+                for column in ['ref', 'alt']:
+                    df[column] = df[column].fillna('')
                 if genome is not None:
                     df["genome"] = genome
                 df["variant"] = [
