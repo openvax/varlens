@@ -45,11 +45,12 @@ STANDARD_EVALUATION_ENVIRONMENT = {
     "numpy": numpy,
 }
 
+
 def parse_url_fragment(url):
     parsed = urlparse(url)
     try:
         if parsed.fragment:
-            # If our fragment begins with an '&' symbol, we ignore it. 
+            # If our fragment begins with an '&' symbol, we ignore it.
             unparsed_fragment = parsed.fragment
             if unparsed_fragment.startswith("&"):
                 unparsed_fragment = unparsed_fragment[1:]
@@ -62,6 +63,7 @@ def parse_url_fragment(url):
 
     return (parsed._replace(fragment='').geturl(), fragment)
 
+
 def string_to_boolean(s):
     value = str(s).lower()
     if value in ("true", "1"):
@@ -69,6 +71,7 @@ def string_to_boolean(s):
     elif value in ("false", 0):
         return False
     raise ValueError("Not a boolean string: %s" % s)
+
 
 class EvaluationEnvironment(object):
     def __init__(self, wrapped_list, extra={}):
@@ -94,10 +97,10 @@ class EvaluationEnvironment(object):
             binding for binding in all_bindings
             if not binding.startswith("_")
         ]
-        return ("<Environment with bindings: %s>"
-            % " ".join(sorted(display_bindings)))
+        return ("<Environment with bindings: %s>" % " ".join(sorted(display_bindings)))
 
 RAISE = object()
+
 
 def evaluate_expression(expression, bindings, error_value=RAISE):
     typechecks.require_string(expression)
@@ -105,11 +108,11 @@ def evaluate_expression(expression, bindings, error_value=RAISE):
     # Since Python 2 doesn't have a nonlocal keyword, we have to box up the
     # error_value, so we can reassign to it in the ``on_error`` function
     # below.
-    error_box = [error_value] 
+    error_box = [error_value]
     try:
         # Give some basic modules.
         standard_environment = dict(STANDARD_EVALUATION_ENVIRONMENT)
-    
+
         # Add our "on_error" hack.
         def on_error(value):
             error_box[0] = value
@@ -123,6 +126,7 @@ def evaluate_expression(expression, bindings, error_value=RAISE):
             expression, bindings)
         traceback = sys.exc_info()[2]
         raise_(ValueError, str(e) + "\n" + extra, traceback)
+
 
 def parse_labeled_expression(labeled_expression):
     match = re.match(r"^([\w ]+):(.*)$", labeled_expression)

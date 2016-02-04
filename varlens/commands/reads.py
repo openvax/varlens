@@ -20,6 +20,7 @@ from . import configure_logging
 from .. import loci_util
 from .. import reads_util
 from ..evaluation import parse_labeled_expression
+from ..read_source_helpers import evaluate_read_expression
 
 parser = argparse.ArgumentParser(usage=__doc__)
 loci_util.add_args(parser)
@@ -29,12 +30,19 @@ parser.add_argument("--out")
 parser.add_argument("field", nargs="*")
 parser.add_argument("--no-standard-fields", action="store_true", default=False)
 parser.add_argument("--no-sort", action="store_true", default=False)
-parser.add_argument("--header", action="store_true", default=False,
+parser.add_argument(
+    "--header",
+    action="store_true",
+    default=False,
     help="Output BAM/SAM header only.")
-parser.add_argument("--header-set", nargs=4, action="append",
+parser.add_argument(
+    "--header-set",
+    nargs=4,
+    action="append",
     help="Example --header-set RG . SM my_sample")
 
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
+
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
@@ -42,7 +50,7 @@ def run(raw_args=sys.argv[1:]):
 
     read_sources = reads_util.load_from_args(args)
     if not read_sources:
-        parser.error("No read sources specified.")        
+        parser.error("No read sources specified.")
 
     loci = loci_util.load_from_args(args)  # may be None
     if args.header:
@@ -88,7 +96,7 @@ def run(raw_args=sys.argv[1:]):
                     labeled_expression)
                 columns[label] = expression
 
-            out_csv_writer.writerow(columns.keys())
+            out_csv_writer.writerow(list(columns.keys()))
     else:
         parser.error(
             "Don't know how to write to file with output extension: %s. "
@@ -108,20 +116,21 @@ def run(raw_args=sys.argv[1:]):
                 out_pysam_handle.write(read)
             if out_csv_writer is not None:
                 out_csv_writer.writerow([
-                    str(reads_util.evaluate_read_expression(e, read))
+                    str(evaluate_read_expression(e, read))
                     for e in columns.values()
                 ])
 
     if out_pysam_handle is not None:
         out_pysam_handle.close()
         if not args.no_sort:
-            print("Sorting.")
+            print("Sorting read file %s" % args.out)
             pysam.sort("-o", args.out, "-T", "varlens_reads", args.out)
         print("Wrote %d reads: %s" % (num_reads, args.out))
 
     if out_csv_fd is not None and out_csv_fd is not sys.stdout:
         out_csv_fd.close()
         print("Wrote: %s" % args.out)
+
 
 def update_header(args, header):
     if args.header_set:

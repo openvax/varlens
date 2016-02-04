@@ -1,10 +1,26 @@
+# Copyright (c) 2016. Mount Sinai School of Medicine
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import collections
 import logging
 
 import pandas
 
 from .evaluation import parse_labeled_expression
-from . import read_evidence, reads_util
+from . import read_evidence
+from .read_source_helpers import evaluate_pileup_element_expression
 
 EXPECTED_COLUMNS = [
     "source",
@@ -14,13 +30,26 @@ EXPECTED_COLUMNS = [
     "allele"
 ]
 
+
 def add_args(parser):
-    parser.add_argument("--count-group", action="append", default=[],
-        help="Pileup element filter giving reads to count. Can be specified "
-        "multiple times. A count of matching reads will be computed for each "
-        "occurrence of this argument.")
+    """
+    Given a commandline argument parser, adds one extra argument:
+        --count-group : Filtering criterion to count
+    """
+    parser.add_argument(
+        "--count-group",
+        action="append",
+        default=[],
+        help=(
+            "Pileup element filter giving reads to count. Can be specified "
+            "multiple times. A count of matching reads will be computed for each "
+            "occurrence of this argument."))
+
 
 def allele_support_df(loci, sources, count_groups=None):
+    """
+    Returns a DataFrame of allele counts for all given loci in the read sources
+    """
     if count_groups is None:
         count_groups = ["count:all"]
     columns = list(EXPECTED_COLUMNS)
@@ -30,6 +59,7 @@ def allele_support_df(loci, sources, count_groups=None):
     return pandas.DataFrame(
         allele_support_rows(loci, sources, count_groups),
         columns=columns)
+
 
 def allele_support_rows(loci, sources, count_groups=None):
     if count_groups is None:
@@ -62,17 +92,20 @@ def allele_support_rows(loci, sources, count_groups=None):
                     elif expression == "all":
                         num_reads = group.num_reads()
                     else:
-                        num_reads = len(set(
+                        filtered_read_keys = {
                             read_evidence.read_key(element.alignment)
                             for pileup in group.pileups.values()
                             for element in pileup
-                            if reads_util.evaluate_pileup_element_expression(
+                            if evaluate_pileup_element_expression(
                                 expression,
                                 group,
                                 pileup,
-                                element)))
+                                element)
+                        }
+                        num_reads = len(filtered_read_keys)
                     d[key] = num_reads
                 yield pandas.Series(d)
+
 
 def variant_support(variants, allele_support_df, ignore_missing=False):
     '''
@@ -114,7 +147,7 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
     ]
     if missing:
         raise ValueError("Missing columns: %s" % " ".join(missing))
-    
+
     count_fields = [
         x for x in allele_support_df.columns if x not in EXPECTED_COLUMNS
     ]
@@ -124,7 +157,7 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
         allele_support_df[["interbase_start", "interbase_end"]].astype(int))
 
     sources = sorted(allele_support_df["source"].unique())
-    
+
     panels = {}
     for field in count_fields:
         allele_support_dict = collections.defaultdict(dict)
@@ -135,26 +168,27 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
                 row.interbase_start,
                 row.interbase_end)
             allele_support_dict[key][row.allele] = row[field]
-        
+
         # We want an exception on bad lookups, so convert to a regular dict.
         allele_support_dict = dict(allele_support_dict)
 
         dataframe_dicts = collections.defaultdict(
             lambda: collections.defaultdict(list))
-        
+
         for variant in variants:
             for source in sources:
                 key = (source, variant.contig, variant.start - 1, variant.end)
                 try:
                     alleles = allele_support_dict[key]
                 except KeyError:
-                    message = ("No allele counts in source %s for variant %s"
-                        % (source, str(variant)))
+                    message = (
+                        "No allele counts in source %s for variant %s" % (
+                            source, str(variant)))
                     if ignore_missing:
                         logging.warning(message)
                         alleles = {}
                     else:
-                        raise ValueError(message)                        
+                        raise ValueError(message)
 
                 alt = alleles.get(variant.alt, 0)
                 ref = alleles.get(variant.ref, 0)
@@ -177,4 +211,3 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
         panels[field] = pandas.Panel(dataframes)
 
     return pandas.Panel4D(panels)
-    

@@ -12,23 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import os
 
-import typechecks
-import pysam
-import pyensembl
-import logging
-
-from . import read_evidence
 from . import evaluation
+from .read_source import ReadSource
+
 
 def add_args(parser):
+    """
+    Extends a commandline argument parser with arguments for specifying
+    a read source:
+        --reads : One or more paths to SAM or BAM files
+        --read-filter : Python expression for filtering reads
+    """
     parser.add_argument("--reads", action="append", default=[])
-    parser.add_argument("--read-filter", action="append", default=[],
-            help="Read filter expression, can be specified any number of "
-            "times")
+
+    parser.add_argument(
+        "--read-filter",
+        action="append",
+        default=[],
+        help="Read filter expression, can be specified any number of times")
+
+
 def load_from_args(args):
+    """
+    Given parsed commandline arguments, returns a list of ReadSource objects
+    """
     if not args.reads:
         return None
 
@@ -38,11 +47,16 @@ def load_from_args(args):
         for (url, name) in zip(args.reads, default_names)
     ]
 
+
 def drop_prefix(strings):
+    """
+    Removes common prefix from a collection of strings
+    """
     if len(strings) == 1:
         return [os.path.basename(strings[0])]
     prefix_len = len(os.path.commonprefix(strings))
     return [string[prefix_len:] for string in strings]
+
 
 def load_bam(url, name=None, read_filters=[]):
     (url_without_fragment, fragment) = evaluation.parse_url_fragment(url)
@@ -60,165 +74,6 @@ def load_bam(url, name=None, read_filters=[]):
         name = url
     return ReadSource(name, url_without_fragment, filters)
 
-class ReadSource(object):
-    def __init__(self, name, filename, read_filters=[]):
-        self.name = name
-        self.filename = filename
-        self.handle = pysam.Samfile(filename)
-        self.read_filters = read_filters
-
-        self.chromosome_name_map = {}
-        for name in self.handle.references:
-            normalized = pyensembl.locus.normalize_chromosome(name)
-            self.chromosome_name_map[normalized] = name
-            self.chromosome_name_map[name] = name
-
-    def index_if_needed(self):
-        if self.filename.endswith(".bam") and not self.handle.has_index():
-            # pysam strangely requires and index even to iterate through a bam.
-            logging.info("Attempting to create BAM index for file: %s" %
-                self.filename)
-            samtools_output = pysam.index(self.filename)
-            logging.info("Done indexing" +
-                ((": " + samtools_output) if samtools_output else ''))
-
-            # Reopen
-            self.handle.close()
-            self.handle = pysam.Samfile(self.filename)
-
-    def reads(self, loci=None):
-        if loci is None:
-            def reads_iterator():
-                return self.handle.fetch(until_eof=True)
-        elif self.filename.endswith(".sam"):
-            # Inefficient.
-            chromosome_intervals = {}
-            for (contig, intervals) in loci.contigs.items():
-                try:
-                    chromosome = self.chromosome_name_map[contig]
-                except KeyError:
-                    logging.warn(
-                        "No such contig in bam: %s" % contig)
-                    continue
-                chromosome_intervals[chromosome] = intervals
-
-            def reads_iterator():
-                seen = set()
-                for read in self.handle.fetch(until_eof=True):
-                    intervals = chromosome_intervals.get(read.reference_name)
-                    if not intervals or not intervals.overlaps_range(
-                            read.reference_start,
-                            read.reference_end):
-                        continue
-                    key = alignment_key(read)
-                    if key not in seen:
-                        yield read
-                        seen.add(key)
-        else:
-            self.index_if_needed()
-
-            def reads_iterator():
-                seen = set()
-                for locus in loci:
-                    try:
-                        chromosome = self.chromosome_name_map[locus.contig]
-                    except KeyError:
-                        logging.warn(
-                            "No such contig in bam: %s" % locus.contig)
-                        continue
-                    for read in self.handle.fetch(
-                            chromosome,
-                            locus.start,
-                            locus.end):
-                        key = alignment_key(read)
-                        if key not in seen:
-                            yield read
-                            seen.add(key)
-
-        for alignment in reads_iterator():
-            if all(evaluate_read_expression(expression, alignment)
-                    for expression in self.read_filters):
-                yield alignment      
-
-    def pileups(self, loci):
-        self.index_if_needed()
-        collection = read_evidence.PileupCollection.from_bam(self.handle, loci)
-        if self.read_filters:
-            for (locus, pileup) in collection.pileups.items():
-                def evaluate(expression, element):
-                    return evaluate_read_expression(
-                        expression, element.alignment)
-                collection.pileups[locus] = pileup.filter([
-                    functools.partial(evaluate, expression)
-                    for expression in self.read_filters
-                ])
-        return collection
-
-def evaluate_read_expression(
-        expression,
-        alignment,
-        error_value=evaluation.RAISE,
-        extra_bindings={}):
-
-    if typechecks.is_string(expression):
-        bindings = evaluation.EvaluationEnvironment(
-            [alignment],
-            extra={})
-        return evaluation.evaluate_expression(
-            expression,
-            bindings,
-            error_value=error_value)
-    else:
-        return expression(alignment) 
-
-
-def evaluate_pileup_element_expression(
-        expression,
-        collection,
-        pileup,
-        element,
-        error_value=evaluation.RAISE,
-        extra_bindings={}):
-
-    if typechecks.is_string(expression):
-        bindings = evaluation.EvaluationEnvironment(
-            [element, element.alignment, pileup],
-            extra={
-                'element': element,
-                'pileup': pileup,
-                'collection': collection,
-            })
-        return evaluation.evaluate_expression(
-            expression,
-            bindings,
-            error_value=error_value)
-    else:
-        return expression(pileup)   
-
-def alignment_key(pysam_alignment_record):
-    '''
-    Return the identifying attributes of a `pysam.AlignedSegment` instance.
-    This is necessary since these objects do not support a useful notion of
-    equality (they compare on identify by default).
-    '''
-    return (
-        read_key(pysam_alignment_record),
-        pysam_alignment_record.query_alignment_start,
-        pysam_alignment_record.query_alignment_end,
-    )
-
-def read_key(pysam_alignment_record):
-    '''
-    Given a `pysam.AlignedSegment` instance, return the attributes identifying
-    the *read* it comes from (not the alignment). There may be more than one
-    alignment for a read, e.g. chimeric and secondary alignments.
-    '''
-    return (
-        pysam_alignment_record.query_name,
-        pysam_alignment_record.is_duplicate,
-        pysam_alignment_record.is_read1,
-        pysam_alignment_record.is_read2,
-    )
 
 def flatten_header(header):
     for (group, rows) in header.items():
@@ -229,4 +84,3 @@ def flatten_header(header):
                 key_values = row.items()
             for (key, value) in key_values:
                 yield (str(group), index, str(key), str(value))
-
