@@ -31,8 +31,9 @@ To run the tests:
 
 ::
 
-    nosetests .
+    nosetests -s .
 
+On Python 3, running nosetests with the `-s` argument to disable output buffering is currently required due to a `pysam` issue.
     
 Examples
 -------------

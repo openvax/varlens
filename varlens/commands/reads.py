@@ -88,7 +88,7 @@ def run(raw_args=sys.argv[1:]):
                     labeled_expression)
                 columns[label] = expression
 
-            out_csv_writer.writerow(columns.keys())
+            out_csv_writer.writerow(list(columns.keys()))
     else:
         parser.error(
             "Don't know how to write to file with output extension: %s. "
