@@ -124,7 +124,10 @@ def run(raw_args=sys.argv[1:]):
         out_pysam_handle.close()
         if not args.no_sort:
             print("Sorting read file %s" % args.out)
-            pysam.sort("-o", args.out, "-T", "varlens_reads", args.out)
+            pysam.sort(
+                "-o", args.out,
+                "-T", "varlens_reads", args.out,
+                catch_stdout=False)
         print("Wrote %d reads: %s" % (num_reads, args.out))
 
     if out_csv_fd is not None and out_csv_fd is not sys.stdout:
