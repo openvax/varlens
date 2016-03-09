@@ -12,7 +12,7 @@ def evaluate_read_expression(
     if typechecks.is_string(expression):
         bindings = evaluation.EvaluationEnvironment(
             [alignment],
-            extra={})
+            extra=extra_bindings)
         return evaluation.evaluate_expression(
             expression,
             bindings,

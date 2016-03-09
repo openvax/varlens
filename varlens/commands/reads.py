@@ -116,7 +116,11 @@ def run(raw_args=sys.argv[1:]):
                 out_pysam_handle.write(read)
             if out_csv_writer is not None:
                 out_csv_writer.writerow([
-                    str(evaluate_read_expression(e, read))
+                    str(evaluate_read_expression(
+                        e, read, extra_bindings={
+                            'read_source': read_source,
+                            'filename': read_source.filename,
+                        }))
                     for e in columns.values()
                 ])
 
