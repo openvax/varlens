@@ -35,7 +35,8 @@ expected_cols = [
 
 def test_basic():
     result = run([
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--variant-genome", "b37",
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
         "GRCh37-22-46931059-46931060-A-C",
@@ -47,7 +48,8 @@ def test_basic():
 
 def test_genes_and_effects():
     result = run([
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--variant-genome", "b37",
         "--include-effect",
         "--include-gene",
         "--rename-column", "gene", "genez",
@@ -63,7 +65,8 @@ def test_genes_and_effects():
 
 def test_context():
     result = run([
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--variant-genome", "b37",
         "--include-context",
         "--context-num-bases", "5",
         "--reference", reference_fasta,
@@ -91,7 +94,8 @@ def test_mhc_binding_affinity():
 
     with temp_file(".csv") as out_csv:
         run([
-            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+            "--variant-genome", "b37",
             "--include-mhc-binding",
             "--hla", "A:02:01 A:02:02",
             "--out", out_csv,
@@ -110,7 +114,8 @@ def test_read_evidence():
     result = run([
         "--include-read-evidence",
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--variant-genome", "b37",
     ])
     allele_groups = ["num_ref", "num_alt", "total_depth"]
     for allele_group in allele_groups:
@@ -128,7 +133,8 @@ def test_read_evidence():
 
     result = run([
         "--include-read-evidence",
-        "--reads", data_path("gatk_mini_bundle_extract.bam#name=foo"),
+        "--reads", data_path("gatk_mini_bundle_extract.bam"),
+        "--read-source-name", "foo",
         "--single-variant", "chr20:10008951", "C", "A",
         "--variant-genome", "b37",
         "--count-group", "is_reverse",
@@ -145,7 +151,9 @@ def test_read_evidence():
 def test_filtering():
     result = run([
         "--variants",
-        data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37&filter=ref=='A'"),
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--variant-genome", "b37",
+        "--variant-filter", "ref=='A'",
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
         "GRCh37-22-46931059-46931060-A-C",
@@ -155,7 +163,9 @@ def test_filtering():
 
     result = run([
         "--variants",
-        data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37&filter=ref=='A'"),
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--variant-genome", "b37",
+        "--variant-filter", "ref=='A'",
         "--variant-filter", "inclusive_start==50636218"
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
@@ -164,9 +174,9 @@ def test_filtering():
 
     result = run([
         "--variants",
-        data_path("CELSR1/vcfs/vcf_1.vcf#filter=ref=='A'"),
-        "--variants",
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
         data_path("CELSR1/vcfs/vcf_2.vcf"),
+        "--variant-filter", "ref=='A'", '',
         "--variant-genome", "b37"
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
@@ -178,11 +188,12 @@ def test_filtering():
     }))
 
 def test_fields():
-    result = run([
-        "--variants",
-        data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37&filter=ref=='A'"),
+    result = run([ 
         "foo:ref.lower()",
         "gene_names[0]",
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--variant-filter", "ref=='A'",
+        "--variant-genome", "b37"
     ])
     eq_(sorted(cols_concat(result, expected_cols + ["foo", "gene_names[0]"])),
         sorted({
@@ -194,11 +205,12 @@ def test_fields():
 def test_round_trip():
     with temp_file(".csv") as out_csv:
         variants.run([
-            "--variants",
-            data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37&filter=ref=='A'"),
-            "--out", out_csv,
             "foo:ref.lower()",
             "gene_names[0]",
+            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+            "--out", out_csv,
+            "--variant-genome", "b37",
+            "--variant-filter", "ref=='A'",
         ])
         result1 = pandas.read_csv(out_csv)
         eq_(sorted(cols_concat(
@@ -210,9 +222,9 @@ def test_round_trip():
             }))
 
         result2 = run([
-            "--variants", out_csv,
             "foo",
             "metadata['gene_names[0]']",
+            "--variants", out_csv,
         ])
         eq_(sorted(cols_concat(
                 result2,
@@ -225,14 +237,14 @@ def test_round_trip():
 
 def test_distinct_variants():
     result = run([
-        "--distinct-variants",
-        "--variants",
-        data_path(
-            "CELSR1/vcfs/vcf_1.vcf#name=first&genome=b37&filter=ref=='A'"),
-        "--variants",
-        data_path(
-            "CELSR1/vcfs/vcf_1.vcf#name=second&genome=b37&filter=ref in ('T', 'A')"),
         "sources:'_'.join(sorted(variant_sources))",
+        "--distinct-variants",
+        "--variant-genome", "b37",
+        "--variant-filter", "ref=='A'", "ref in ('T', 'A')",
+        "--variant-source-name", "first", "second",
+        "--variants",
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
     ])
     eq_(sorted(cols_concat(result, expected_cols + ["sources"])),
         sorted({
@@ -242,9 +254,3 @@ def test_distinct_variants():
             "GRCh37-22-50875932-50875933-A-C-first_second",
         }))
 
-def test_mixing_genomes():
-    # Different genomes should raise an error.
-    assert_raises(ValueError, run, [
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b38"),
-    ])

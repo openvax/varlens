@@ -18,6 +18,7 @@ import typechecks
 import pandas
 import varcode
 import varcode.reference
+from . import util
 
 from . import evaluation, Locus
 
@@ -31,10 +32,15 @@ STANDARD_DATAFRAME_COLUMNS = [
 ]
 
 def add_args(parser):
-    parser.add_argument("--variants", action="append", default=[],
-        help="Path to VCF file. Can be specified multiple times.")
-    parser.add_argument("--variant-filter")
+    parser.add_argument("--variants", nargs="+", default=[],
+        help="Path to VCF file. Any number of VCF files may be specified.")
+    parser.add_argument("--variant-filter",
+        nargs="+", action="append", default=[])
     parser.add_argument("--variant-genome")
+    parser.add_argument("--include-failing-variants",
+        action="store_true", default=False)
+    parser.add_argument("--variant-source-name", nargs="+")
+    parser.add_argument("--max-variants-per-source", type=int)
     parser.add_argument("--distinct-variants",
         action="store_true", default=False)
     parser.add_argument("--single-variant", nargs=3, action="append",
@@ -50,10 +56,37 @@ def load_from_args_as_dataframe(args):
     if not args.variants and not args.single_variant:
         return None
 
+    if args.variant_source_name:
+        variant_source_names = util.expand(
+            args.variant_source_name,
+            'variant_source_name',
+            'variant source',
+            len(args.variants))
+    else:
+        variant_source_names = util.drop_prefix(args.variants)
+
+    variant_filters = zip(*[
+        util.expand(
+            value, 'variant_filter', 'variant source', len(args.variants))
+        for value in args.variant_filter
+    ])
+    if not variant_filters:
+        variant_filters = [[]] * len(args.variants)
+
+    assert len(variant_filters) == len(args.variants)
+
     dfs = [
         load_as_dataframe(
-            filename, filter=args.variant_filter, genome=args.variant_genome)
-        for filename in args.variants
+            filename,
+            filters=filters,
+            name=name,
+            genome=args.variant_genome,
+            max_variants=args.max_variants_per_source,
+            only_passing=not args.include_failing_variants)
+        for (filename, filters, name) in zip(
+            args.variants,
+            variant_filters,
+            variant_source_names)
     ]
     if args.single_variant:
         variants = []
@@ -92,66 +125,34 @@ def load_from_args_as_dataframe(args):
         df = sources.reset_index()
     return df
 
-ParsedVariantsURL = collections.namedtuple(
-    "ParsedVariantsURL",
-    "url_without_fragment filters params collection_metadata name")
+def load_as_dataframe(
+        filename,
+        loader=None,
+        filters=None,
+        name=None,
+        genome=None,
+        max_variants=None,
+        only_passing=True):
 
-def parse_variants_url(url, extra_filter=None, extra_params={}):
-    (url_without_fragment, fragment) = evaluation.parse_url_fragment(url)
-    filters = []
-    params = {}
-    collection_metadata = {}
-    name = url
-    for (key, value) in fragment:
-        if key == 'filter':
-            filters.append(value)
-        elif key.startswith('metadata.'):
-            metadata_key = key[len("metadata."):]
-            collection_metadata[metadata_key] = value
-        elif key in ("only_passing", "allow_extended_nucleotides"):
-            params[key] = evaluation.string_to_boolean(value)
-        elif key in ("genome", "reference_name", "reference_vcf_key"):
-            params[key] = value
-        elif key == "max_variants":
-            params[key] = int(value)
-        elif key == "name":
-            name = value
-        else:
-            raise ValueError("Unsupported operation: %s" % key)
-    
-    # extra params override URL.
-    for (key, value) in extra_params.items():
-        if value is not None:
-            params[key] = value
+    if name is None:
+        name = filename
 
-    # passed in filter is run after filters specified in the URL.
-    if extra_filter:
-        filters.append(extra_filter)
-
-    return ParsedVariantsURL(
-        url_without_fragment,
-        filters,
-        params,
-        collection_metadata,
-        name)
-
-def load_as_dataframe(url, filter=None, loader=None, **kwargs):
-    parsed = parse_variants_url(url, extra_filter=filter, extra_params=kwargs)
-    
     if loader is None:
-        if (parsed.url_without_fragment.endswith(".vcf") or
-                parsed.url_without_fragment.endswith(".vcf.gz")):
-            
+        if (filename.endswith(".vcf") or filename.endswith(".vcf.gz")):
             # Load from VCF
-            def loader(filename, **kwargs):
-                collection = varcode.load_vcf_fast(filename, **kwargs)
+            def loader(filename):
+                collection = varcode.load_vcf_fast(
+                    filename,
+                    genome=genome,
+                    max_variants=max_variants,
+                    only_passing=only_passing,
+                    allow_extended_nucleotides=True)
                 return variants_to_dataframe(collection, collection.metadata)
 
-        elif (parsed.url_without_fragment.endswith(".csv") or
-                parsed.url_without_fragment.endswith(".csv.gz")):
-            
+        elif (filename.endswith(".csv") or filename.endswith(".csv.gz")):
             # Load from csv
-            def loader(filename, genome=None, max_variants=None):
+            def loader(filename):
+                # Ignores only_passing
                 df = pandas.read_csv(filename, nrows=max_variants)
                 for column in ['ref', 'alt']:
                     df[column] = df[column].fillna('')
@@ -163,18 +164,17 @@ def load_as_dataframe(url, filter=None, loader=None, **kwargs):
                 return df
         else:
             raise ValueError(
-                "Unsupported input file extension for variants: %s"
-                % parsed.url_without_fragment)
+                "Unsupported input file extension for variants: %s" % filename)
 
-    df = loader(parsed.url_without_fragment, **parsed.params)
-    df["variant_source"] = parsed.name
+    df = loader(filename)
+    df["variant_source"] = name
 
-    if parsed.filters:
+    if filters:
         df = df[[
             bool(all(
                 evaluate_variant_expression(
                     expression, row.to_dict(), row.variant)
-                for expression in parsed.filters))
+                for expression in filters))
             for (i, row) in df.iterrows()
         ]]
 

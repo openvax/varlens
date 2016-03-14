@@ -16,10 +16,11 @@ from __future__ import absolute_import
 
 from .locus import Locus
 from .loci_util import Loci
-from . import read_evidence
+from . import read_evidence, util
 
 __all__ = [
     "Loci",
     "Locus",
     "read_evidence",
+    "util",
 ]

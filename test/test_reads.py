@@ -87,6 +87,30 @@ def test_loci_filtering():
     ])
     eq_(result.shape, (1753, len(expected_cols)))
 
+def test_read_filtering():
+    result = run([
+        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        "--read-filter", 'reference_start == 46932059',
+    ])
+    eq_(result.shape, (26, len(expected_cols)))
+
+    result = run([
+        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        "--read-filter", 'reference_start == 46932059',
+        "--read-filter", 'query_name.split(":")[-1] == "57841"',
+    ])
+    eq_(result.shape, (1, len(expected_cols)))
+
+    result = run([
+        "--reads",
+        data_path("CELSR1/bams/bam_5.bam"),
+        data_path("CELSR1/bams/bam_6.bam"),
+        "--read-filter",
+        'reference_start == 46932059',
+        'reference_start == 46931732',
+        "--read-filter", 'int(query_name.split(":")[-1]) % 3 == 0',
+    ])
+    eq_(result.shape, (14, len(expected_cols)))
 
 def test_round_trip():
     with temp_file(".bam") as out:

@@ -23,18 +23,6 @@ import typechecks
 import pandas
 import numpy
 
-try:
-    # Python 2
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
-
-try:
-    # Python 2
-    from urlparse import parse_qsl
-except ImportError:
-    from urllib.parse import parse_qsl
-
 STANDARD_EVALUATION_ENVIRONMENT = {
     "os": os,
     "sys": sys,
@@ -45,25 +33,6 @@ STANDARD_EVALUATION_ENVIRONMENT = {
     "numpy": numpy,
 }
 
-
-def parse_url_fragment(url):
-    parsed = urlparse(url)
-    try:
-        if parsed.fragment:
-            # If our fragment begins with an '&' symbol, we ignore it.
-            unparsed_fragment = parsed.fragment
-            if unparsed_fragment.startswith("&"):
-                unparsed_fragment = unparsed_fragment[1:]
-            fragment = parse_qsl(unparsed_fragment, strict_parsing=True)
-        else:
-            fragment = []
-    except ValueError as e:
-        raise ValueError("Couldn't parse fragment '%s': %s" % (
-            parsed.fragment, e))
-
-    return (parsed._replace(fragment='').geturl(), fragment)
-
-
 def string_to_boolean(s):
     value = str(s).lower()
     if value in ("true", "1"):
@@ -71,7 +40,6 @@ def string_to_boolean(s):
     elif value in ("false", 0):
         return False
     raise ValueError("Not a boolean string: %s" % s)
-
 
 class EvaluationEnvironment(object):
     def __init__(self, wrapped_list, extra={}):
@@ -97,13 +65,16 @@ class EvaluationEnvironment(object):
             binding for binding in all_bindings
             if not binding.startswith("_")
         ]
-        return ("<Environment with bindings: %s>" % " ".join(sorted(display_bindings)))
+        return ("<Environment with bindings: %s>" % " ".join(
+            sorted(display_bindings)))
 
 RAISE = object()
 
 
 def evaluate_expression(expression, bindings, error_value=RAISE):
     typechecks.require_string(expression)
+    if not expression:
+        return True
 
     # Since Python 2 doesn't have a nonlocal keyword, we have to box up the
     # error_value, so we can reassign to it in the ``on_error`` function
