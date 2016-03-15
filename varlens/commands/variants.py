@@ -25,7 +25,7 @@ from ..evaluation import parse_labeled_expression
 
 parser = argparse.ArgumentParser(usage=__doc__)
 variants_util.add_args(parser)
-parser.add_argument("field", nargs="*")
+parser.add_argument("--field", nargs="+", default=[])
 parser.add_argument("--no-standard-columns",
     action="store_true", default=False,
     help="Don't write standard columns (genome, contig, start, end, ref, alt)")
@@ -115,7 +115,7 @@ def run(raw_args=sys.argv[1:]):
                 columns = [
                     x for x in columns
                     if x in extra_columns or x != "variant_source"
-                ]
+                ]   
 
         df_save = df[columns]
         if args.out is None:

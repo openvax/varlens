@@ -188,7 +188,8 @@ def test_filtering():
     }))
 
 def test_fields():
-    result = run([ 
+    result = run([
+        "--field",
         "foo:ref.lower()",
         "gene_names[0]",
         "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
@@ -205,6 +206,7 @@ def test_fields():
 def test_round_trip():
     with temp_file(".csv") as out_csv:
         variants.run([
+            "--field", 
             "foo:ref.lower()",
             "gene_names[0]",
             "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
@@ -222,6 +224,7 @@ def test_round_trip():
             }))
 
         result2 = run([
+            "--field", 
             "foo",
             "metadata['gene_names[0]']",
             "--variants", out_csv,
@@ -237,6 +240,7 @@ def test_round_trip():
 
 def test_distinct_variants():
     result = run([
+        "--field",
         "sources:'_'.join(sorted(variant_sources))",
         "--distinct-variants",
         "--variant-genome", "b37",
