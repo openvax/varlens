@@ -131,6 +131,32 @@ def test_read_evidence():
             "22-46931061-51-0-51",
     })
 
+    # Same thing but with chunk rows = 1
+    with temp_file(".csv") as out_csv:
+        run([
+            "--include-read-evidence",
+            "--reads", data_path("CELSR1/bams/bam_0.bam"),
+            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+            "--variant-genome", "b37",
+            "--chunk-rows", "1",
+            "--out", out_csv,
+        ])
+        result = pandas.read_csv(out_csv)
+    
+        allele_groups = ["num_ref", "num_alt", "total_depth"]
+        for allele_group in allele_groups:
+            result[allele_group] = result[allele_group].astype(int)
+        eq_(cols_concat(
+                result,
+                ["contig", "interbase_start"] + allele_groups),
+            {
+                '22-50636217-0-0-0',
+                '22-50875932-0-0-0',
+                '22-21829554-0-0-0',
+                "22-46931059-50-0-50",
+                "22-46931061-51-0-51",
+        })
+
     result = run([
         "--include-read-evidence",
         "--reads", data_path("gatk_mini_bundle_extract.bam"),
@@ -241,8 +267,7 @@ def test_round_trip():
 def test_distinct_variants():
     result = run([
         "--field",
-        "sources:'_'.join(sorted(variant_sources))",
-        "--distinct-variants",
+        "sources:'_'.join(sorted(sources.split()))",
         "--variant-genome", "b37",
         "--variant-filter", "ref=='A'", "ref in ('T', 'A')",
         "--variant-source-name", "first", "second",

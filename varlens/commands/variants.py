@@ -5,8 +5,7 @@ Collect variants specified on the commandline or in VCF or CSV files, apply
 filters, and write out a CSV file.
 
 %(prog)s 
-    --variants /path/to/first.vcf \
-    --variants /path/to/second.vcf \
+    --variants /path/to/first.vcf /path/to/second.vcf \
     --variant-filter "ref=='A'" \
     --out-variants result.csv
 
@@ -47,10 +46,6 @@ parser.add_argument("--out")
 
 parser.add_argument('--include-metadata', action="store_true", default=False,
     help="Output variant metadata when loading from VCF (info column, etc).")
-
-parser.add_argument('--include-variant-source',
-    action="store_true", default=False,
-    help="Output the source file each variant originates from")
 
 for includeable in variant_includes.INCLUDEABLES:
     includeable.add_args(parser)
@@ -103,7 +98,7 @@ def run(raw_args=sys.argv[1:]):
             if not args.include_metadata:
                 columns = [
                     x for x in columns
-                    if x in extra_columns or not x.startswith("metadata_")
+                    if x in extra_columns or not x.startswith("metadata")
                 ]
             if args.no_standard_columns:
                 columns = [
@@ -111,13 +106,11 @@ def run(raw_args=sys.argv[1:]):
                     if x in extra_columns or (
                         x not in variants_util.STANDARD_DATAFRAME_COLUMNS)
                 ]
-            if not args.include_variant_source:
-                columns = [
-                    x for x in columns
-                    if x in extra_columns or x != "variant_source"
-                ]   
 
-        df_save = df[columns]
+        df_save = df[columns].copy()
+        df_save.interbase_start = df_save.interbase_start.astype(int)
+        df_save.interbase_end = df_save.interbase_end.astype(int)
+
         if args.out is None:
             # Write to stdout.
             df_save.to_csv(sys.stdout, index=False)
