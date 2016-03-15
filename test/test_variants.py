@@ -19,7 +19,7 @@ import subprocess
 import warnings
 
 import pandas
-from nose.tools import eq_, assert_raises
+from nose.tools import eq_
 
 from varlens.commands import variants
 
