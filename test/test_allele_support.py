@@ -68,7 +68,8 @@ def test_basic():
 def test_simple():
     result = run([
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+        "--variant-genome", "b37",
+        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
     ])
     eq_(cols_concat(
             result,
@@ -91,7 +92,8 @@ def test_simple():
     for variant_filter in pick_one_variant:
         result = run([
             "--reads", data_path("CELSR1/bams/bam_0.bam"),
-            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf#genome=b37"),
+            "--variant-genome", "b37",
+            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
             "--variant-filter", variant_filter,
         ])
         yield (

@@ -48,7 +48,6 @@ if __name__ == '__main__':
         ],
         install_requires=[
             'numpy',
-            'matplotlib',
             'intervaltree',
             'pysam>=0.8.4',
             'typechecks',

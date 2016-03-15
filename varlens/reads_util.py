@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
-from . import evaluation
 from .read_source import ReadSource
-
+from . import util
 
 def add_args(parser):
     """
@@ -25,14 +22,19 @@ def add_args(parser):
         --reads : One or more paths to SAM or BAM files
         --read-filter : Python expression for filtering reads
     """
-    parser.add_argument("--reads", action="append", default=[])
+    parser.add_argument("--reads", nargs="+", default=[])
 
     parser.add_argument(
         "--read-filter",
         action="append",
         default=[],
+        nargs="+",
         help="Read filter expression, can be specified any number of times")
 
+    parser.add_argument(
+        "--read-source-name",
+        nargs="+",
+        help="Read source name")
 
 def load_from_args(args):
     """
@@ -41,39 +43,35 @@ def load_from_args(args):
     if not args.reads:
         return None
 
-    default_names = drop_prefix(args.reads)
+    if args.read_source_name:
+        read_source_names = util.expand(
+            args.read_source_name,
+            'read_source_name',
+            'read source',
+            len(args.reads))
+    else:
+        read_source_names = util.drop_prefix(args.reads)
+
+    read_filters = zip(*[
+        util.expand(
+            value, 'read_filter', 'read source', len(args.reads))
+        for value in args.read_filter
+    ])
+    if not read_filters:
+        read_filters = [[]] * len(args.reads)
+
+    assert len(read_filters) == len(args.reads)
+
     return [
-        load_bam(url, name, args.read_filter)
-        for (url, name) in zip(args.reads, default_names)
+        load_bam(filename, name, read_filter)
+        for (filename, name, read_filter)
+        in zip(args.reads, read_source_names, read_filters)
     ]
 
-
-def drop_prefix(strings):
-    """
-    Removes common prefix from a collection of strings
-    """
-    if len(strings) == 1:
-        return [os.path.basename(strings[0])]
-    prefix_len = len(os.path.commonprefix(strings))
-    return [string[prefix_len:] for string in strings]
-
-
-def load_bam(url, name=None, read_filters=[]):
-    (url_without_fragment, fragment) = evaluation.parse_url_fragment(url)
-    filters = []
-    for (key, value) in fragment:
-        if key == 'filter':
-            filters.append(value)
-        elif key == "name":
-            name = value
-        else:
-            raise ValueError("Unsupported operation: %s" % key)
-
-    filters.extend(read_filters)
+def load_bam(filename, name=None, read_filters=[]):
     if not name:
-        name = url
-    return ReadSource(name, url_without_fragment, filters)
-
+        name = filename
+    return ReadSource(name, filename, read_filters)
 
 def flatten_header(header):
     for (group, rows) in header.items():
