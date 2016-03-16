@@ -27,7 +27,7 @@ loci_util.add_args(parser)
 reads_util.add_args(parser)
 
 parser.add_argument("--out")
-parser.add_argument("field", nargs="*")
+parser.add_argument("--field", nargs="+", default=[])
 parser.add_argument("--no-standard-fields", action="store_true", default=False)
 parser.add_argument("--no-sort", action="store_true", default=False)
 parser.add_argument(
@@ -42,7 +42,6 @@ parser.add_argument(
     help="Example --header-set RG . SM my_sample")
 
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
-
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)

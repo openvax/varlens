@@ -18,6 +18,7 @@ import typechecks
 import pandas
 import varcode
 import varcode.reference
+import logging
 from . import util
 
 from . import evaluation, Locus
@@ -41,8 +42,6 @@ def add_args(parser):
         action="store_true", default=False)
     parser.add_argument("--variant-source-name", nargs="+")
     parser.add_argument("--max-variants-per-source", type=int)
-    parser.add_argument("--distinct-variants",
-        action="store_true", default=False)
     parser.add_argument("--single-variant", nargs=3, action="append",
         default=[], metavar=("LOCUS", "REF", "ALT"),
         help="Literal variant. Can be specified any number of times.")
@@ -75,19 +74,29 @@ def load_from_args_as_dataframe(args):
 
     assert len(variant_filters) == len(args.variants)
 
-    dfs = [
-        load_as_dataframe(
-            filename,
-            filters=filters,
+    variant_to_sources = collections.defaultdict(list)
+
+    dfs = []
+    for i in range(len(args.variants)):
+        name = variant_source_names[i]
+        prefix = (
+            'metadata:' if len(args.variants) == 1 else "metadata:%s:" % name)
+        df = load_as_dataframe(
+            args.variants[i],
+            filters=variant_filters[i],
             name=name,
             genome=args.variant_genome,
             max_variants=args.max_variants_per_source,
-            only_passing=not args.include_failing_variants)
-        for (filename, filters, name) in zip(
-            args.variants,
-            variant_filters,
-            variant_source_names)
-    ]
+            only_passing=not args.include_failing_variants,
+            metadata_column_prefix=prefix)
+
+        if df.shape[0] == 0:
+            logging.warn("No variants loaded from: %s" % args.variants[i])
+        else:
+            for variant in df.variant:
+                variant_to_sources[variant].append(name)
+            dfs.append(df)
+
     if args.single_variant:
         variants = []
         extra_args = {}
@@ -97,32 +106,31 @@ def load_from_args_as_dataframe(args):
             }
         for (locus_str, ref, alt) in args.single_variant:
             locus = Locus.parse(locus_str)
-            variants.append(
-                varcode.Variant(
+            variant = varcode.Variant(
                     locus.contig,
                     locus.inclusive_start,
                     ref,
                     alt,
-                    **extra_args))
+                    **extra_args)
+            variants.append(variant)
+            variant_to_sources[variant].append("commandline")
         dfs.append(variants_to_dataframe(variants))
 
-    df = pandas.concat(dfs)
+    df = dfs.pop(0)
+    for other_df in dfs:
+        df = pandas.merge(
+            df,
+            other_df,
+            how='outer',
+            on=["variant"] + STANDARD_DATAFRAME_COLUMNS)
+
     genomes = df["genome"].unique()
     if len(genomes) > 1:
         raise ValueError(
                 "Mixing references is not supported. "
                 "Reference genomes: %s" % (", ".join(genomes)))
 
-    if args.distinct_variants:
-        # We return a dataframe of only unique variants. Instead of the usual
-        # metadata fields, we have only one called "variant_sources", which 
-        # for each variant gives a dict from source name -> the metadata for
-        # the variant that was read from that source.
-        sources = (
-            df.groupby(["variant"] + STANDARD_DATAFRAME_COLUMNS)
-            .apply(lambda group: dict(iter(group.groupby("variant_source")))))
-        sources.name = "variant_sources"
-        df = sources.reset_index()
+    df["sources"] = [" ".join(variant_to_sources[v]) for v in df.variant]
     return df
 
 def load_as_dataframe(
@@ -132,7 +140,8 @@ def load_as_dataframe(
         name=None,
         genome=None,
         max_variants=None,
-        only_passing=True):
+        only_passing=True,
+        metadata_column_prefix=''):
 
     if name is None:
         name = filename
@@ -147,7 +156,10 @@ def load_as_dataframe(
                     max_variants=max_variants,
                     only_passing=only_passing,
                     allow_extended_nucleotides=True)
-                return variants_to_dataframe(collection, collection.metadata)
+                return variants_to_dataframe(
+                    collection,
+                    collection.metadata,
+                    metadata_column_prefix=metadata_column_prefix)
 
         elif (filename.endswith(".csv") or filename.endswith(".csv.gz")):
             # Load from csv
@@ -156,8 +168,6 @@ def load_as_dataframe(
                 df = pandas.read_csv(filename, nrows=max_variants)
                 for column in ['ref', 'alt']:
                     df[column] = df[column].fillna('')
-                if genome is not None:
-                    df["genome"] = genome
                 df["variant"] = [
                     dataframe_row_to_variant(row) for (i, row) in df.iterrows()
                 ]
@@ -167,7 +177,13 @@ def load_as_dataframe(
                 "Unsupported input file extension for variants: %s" % filename)
 
     df = loader(filename)
-    df["variant_source"] = name
+
+    if 'genome' not in df:
+        df["genome"] = genome
+
+    df["variant"] = [
+        dataframe_row_to_variant(row) for (i, row) in df.iterrows()
+    ]
 
     if filters:
         df = df[[
@@ -205,7 +221,8 @@ def evaluate_variant_expression(
     else:
         return expression(variant)  
 
-def variants_to_dataframe(variants, metadata=None):
+def variants_to_dataframe(
+        variants, metadata=None, metadata_column_prefix=""):
     def record(variant):
         d = {
             'variant': variant,
@@ -218,11 +235,13 @@ def variants_to_dataframe(variants, metadata=None):
         }
         if metadata:
             for (name, value) in metadata.get(variant, {}).items():
-                d["metadata_%s" % name.lower()] = value
-            if 'metadata_info' in d:
-                for (info_col, value) in d['metadata_info'].items():
-                    d['metadata_info_%s' % info_col] = value
-                del d['metadata_info']
+                if name == 'info':
+                    for (info_col, value) in value.items():
+                        column = '%sinfo:%s' % (
+                            metadata_column_prefix, info_col)
+                        d[column] = value
+                else:
+                    d["%s%s" % (metadata_column_prefix, name.lower())] = value
         return d
 
     df = pandas.DataFrame.from_records([record(v) for v in variants])
