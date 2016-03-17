@@ -12,22 +12,25 @@ from __future__ import absolute_import
 import argparse
 import sys
 import csv
-import collections
 
 import pysam
 
 from . import configure_logging
 from .. import loci_util
 from .. import reads_util
-from ..evaluation import parse_labeled_expression
-from ..read_source_helpers import evaluate_read_expression
+from .. import variants_util
+from ..read_evidence.pileup_collection import PileupCollection, to_locus
 
 parser = argparse.ArgumentParser(usage=__doc__)
+reads_util.add_args(parser, positional=True)
 loci_util.add_args(parser)
-reads_util.add_args(parser)
+variants_util.add_args(parser)
 
 parser.add_argument("--out")
-parser.add_argument("--field", nargs="+", default=[])
+parser.add_argument("--field", nargs="+", default=[],
+    help="Possible fields include: %s" % (
+        " ".join(PileupCollection._READ_ATTRIBUTE_NAMES)))
+
 parser.add_argument("--no-standard-fields", action="store_true", default=False)
 parser.add_argument("--no-sort", action="store_true", default=False)
 parser.add_argument(
@@ -43,6 +46,13 @@ parser.add_argument(
 
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
+STANDARD_FIELDS = [
+    "query_name",
+    "reference_start",
+    "reference_end",
+    "cigarstring",
+]
+
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
     configure_logging(args)
@@ -52,6 +62,13 @@ def run(raw_args=sys.argv[1:]):
         parser.error("No read sources specified.")
 
     loci = loci_util.load_from_args(args)  # may be None
+    variants_df = variants_util.load_from_args_as_dataframe(args)
+    if variants_df is not None:
+        variant_loci = loci_util.Loci(
+            to_locus(variant)
+            for variant in variants_df["variant"])
+        loci = variant_loci if loci is None else loci.union(variant_loci)
+
     if args.header:
         if loci is not None:
             parser.error("If specifying --header don't specify loci.")
@@ -81,21 +98,10 @@ def run(raw_args=sys.argv[1:]):
                 "read_source", "group", "index", "key", "value",
             ])
         else:
-            columns = collections.OrderedDict()
-            if not args.no_standard_fields:
-                columns["query_name"] = lambda x: x.query_name
-                columns["query_alignment_start"] = (
-                    lambda x: x.query_alignment_start)
-                columns["query_alignment_end"] = (
-                    lambda x: x.query_alignment_end)
-                columns["cigar"] = lambda x: x.cigarstring
-
-            for labeled_expression in args.field:
-                (label, expression) = parse_labeled_expression(
-                    labeled_expression)
-                columns[label] = expression
-
-            out_csv_writer.writerow(list(columns.keys()))
+            columns = (
+                ([] if args.no_standard_fields else STANDARD_FIELDS) +
+                args.field)
+            out_csv_writer.writerow(columns)
     else:
         parser.error(
             "Don't know how to write to file with output extension: %s. "
@@ -115,12 +121,7 @@ def run(raw_args=sys.argv[1:]):
                 out_pysam_handle.write(read)
             if out_csv_writer is not None:
                 out_csv_writer.writerow([
-                    str(evaluate_read_expression(
-                        e, read, extra_bindings={
-                            'read_source': read_source,
-                            'filename': read_source.filename,
-                        }))
-                    for e in columns.values()
+                    str(read_field(read, field)) for field in columns
                 ])
 
     if out_pysam_handle is not None:
@@ -137,6 +138,17 @@ def run(raw_args=sys.argv[1:]):
         out_csv_fd.close()
         print("Wrote: %s" % args.out)
 
+
+def read_field(read, field_name):
+    if field_name.startswith("tag:"):
+        tag_name = field_name[len("tag:"):]
+        return read.get_tags().get(tag_name)
+
+    try:
+        return getattr(read, field_name)
+    except AttributeError:
+        raise ValueError("Invalid read field '%s'. Valid fields include: %s"
+            % (field_name, ' '.join(dir(read))))
 
 def update_header(args, header):
     if args.header_set:

@@ -12,29 +12,127 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
+import functools
+
 from .read_source import ReadSource
 from . import util
 
-def add_args(parser):
+BOOLEAN_PROPERTIES = """
+is_paired is_proper_pair is_qcfail is_read1 is_read2 is_reverse is_secondary
+is_unmapped mate_is_reverse mate_is_unmapped is_duplicate
+""".split()
+
+STRING_PROPERTIES = """
+cigarstring query_alignment_sequence query_name
+""".split()
+
+INT_PROPERTIES = """
+inferred_length mapping_quality query_alignment_length query_alignment_start
+query_length reference_length reference_start template_length
+""".split()
+
+# name -> (type, help, filter function)
+READ_FILTERS = collections.OrderedDict()
+
+for prop in BOOLEAN_PROPERTIES:
+    READ_FILTERS[prop] = (
+        bool,
+        "Only reads where %s is True" % prop,
+        functools.partial(
+            (lambda field_name, parsed_value, read:
+                bool(getattr(read, field_name))),
+            prop)
+    )
+
+    READ_FILTERS["not_" + prop] = (
+        bool,
+        "Only reads where %s is False" % prop,
+        functools.partial(
+            (lambda field_name, parsed_value, read:
+                not getattr(read, field_name)),
+            prop)
+    )
+
+for prop in STRING_PROPERTIES:
+    READ_FILTERS["%s" % prop] = (
+        str,
+        "Only reads with the specified %s" % prop,
+        functools.partial(
+            (lambda field_name, parsed_value, read:
+                getattr(read, field_name) == parsed_value),
+            prop)
+    )
+
+    READ_FILTERS["%s_contains" % prop] = (
+        str,
+        "Only reads where %s contains the given string" % prop,
+        functools.partial(
+            (lambda field_name, parsed_value, read:
+                parsed_value in getattr(read, field_name)),
+            prop)
+    )
+
+for prop in INT_PROPERTIES:
+    READ_FILTERS["%s" % prop] = (
+        int,
+        "Only reads with the specified %s" % prop,
+        functools.partial(
+            (lambda field_name, parsed_value, read:
+                getattr(read, field_name) == parsed_value),
+            prop)
+    )
+
+    READ_FILTERS["min_%s" % prop] = (
+        int,
+        "Only reads where %s >=N" % prop,
+        functools.partial(
+            (lambda field_name, parsed_value, read:
+                getattr(read, field_name) >= parsed_value),
+            prop)
+    )
+
+    READ_FILTERS["max_%s" % prop] = (
+        int,
+        "Only reads where %s <=N" % prop,
+        functools.partial(
+            (lambda field_name, parsed_value, read:
+                getattr(read, field_name) <= parsed_value),
+            prop)
+    )
+
+def add_args(parser, positional=False):
     """
     Extends a commandline argument parser with arguments for specifying
     a read source:
         --reads : One or more paths to SAM or BAM files
-        --read-filter : Python expression for filtering reads
+        --read-source-name : corresponding names for read inputs
     """
-    parser.add_argument("--reads", nargs="+", default=[])
+    group = parser.add_argument_group("read loading")
+    group.add_argument("reads" if positional else "--reads",
+        nargs="+", default=[])
 
-    parser.add_argument(
-        "--read-filter",
-        action="append",
-        default=[],
-        nargs="+",
-        help="Read filter expression, can be specified any number of times")
-
-    parser.add_argument(
+    group.add_argument(
         "--read-source-name",
         nargs="+",
         help="Read source name")
+
+    # Add filters
+    group = parser.add_argument_group("read filtering")
+
+    for (name, (kind, message, function)) in READ_FILTERS.items():
+        extra = {}
+        if kind is bool:
+            extra["action"] = "store_true"
+            extra["default"] = None
+        elif kind is int:
+            extra["type"] = int
+            extra["metavar"] = "N"
+        elif kind is str:
+            extra["metavar"] = "STRING"
+        group.add_argument("--" + name.replace("_", "-"),
+            help=message,
+            **extra)
 
 def load_from_args(args):
     """
@@ -52,26 +150,22 @@ def load_from_args(args):
     else:
         read_source_names = util.drop_prefix(args.reads)
 
-    read_filters = zip(*[
-        util.expand(
-            value, 'read_filter', 'read source', len(args.reads))
-        for value in args.read_filter
-    ])
-    if not read_filters:
-        read_filters = [[]] * len(args.reads)
-
-    assert len(read_filters) == len(args.reads)
+    filters = []
+    for (name, info) in READ_FILTERS.items():
+        value = getattr(args, name)
+        if value is not None:
+            filters.append(functools.partial(info[-1], value))
 
     return [
-        load_bam(filename, name, read_filter)
-        for (filename, name, read_filter)
-        in zip(args.reads, read_source_names, read_filters)
+        load_bam(filename, name, filters)
+        for (filename, name)
+        in zip(args.reads, read_source_names)
     ]
 
-def load_bam(filename, name=None, read_filters=[]):
+def load_bam(filename, name=None, filters=[]):
     if not name:
         name = filename
-    return ReadSource(name, filename, read_filters)
+    return ReadSource(name, filename, filters)
 
 def flatten_header(header):
     for (group, rows) in header.items():

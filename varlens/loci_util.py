@@ -13,22 +13,16 @@
 # limitations under the License.
 
 import collections
-import itertools
-import re
-
 import intervaltree
 
-from . import read_evidence
-from . import variants_util
 from .locus import Locus
 
 def add_args(parser):
     # TODO:
     # - Load intervals_list files
-    variants_util.add_args(parser)
-    parser.add_argument('--locus', action="append", default=[],
+    parser.add_argument('--locus', nargs="+", default=[],
         help="Genomic locus, like chr1:2342332 or chr1:2342-23423. "
-        "Can be listed multiple times.")
+        "Any number of loci may be specified.")
     parser.add_argument("--neighbor-offsets",
         nargs="+", type=int, default=[])
 
@@ -41,21 +35,10 @@ def load_from_args(args):
     removing all loci, from the case where the user didn't specify any
     arguments.
     """
-    variants_df = variants_util.load_from_args_as_dataframe(args)
+    if not args.locus:
+        return None
 
-    if variants_df is None:
-        if not args.locus:
-            return None
-        variant_loci = []
-    else:
-        variant_loci = (
-            read_evidence.pileup_collection.to_locus(variant)
-            for variant in variants_df["variant"])
-
-    loci_iterator = itertools.chain(
-        (Locus.parse(locus) for locus in args.locus),
-        variant_loci)
-
+    loci_iterator = (Locus.parse(locus) for locus in args.locus)
     if args.neighbor_offsets:
         loci_iterator = expand_with_neighbors(
             loci_iterator, args.neighbor_offsets)
@@ -73,8 +56,10 @@ def expand_with_neighbors(loci_iterator, neighbor_offsets):
                     locus.contig, locus.start + offset, locus.end + offset)
 
 class Loci(object):
-    def __init__(self, locus_iterator):
+    def __init__(self, locus_iterator=[], contig_map=None):
         self.contigs = collections.defaultdict(intervaltree.IntervalTree)
+        if contig_map:
+            self.contigs.update(contig_map)
         for locus in locus_iterator:
             self.contigs[locus.contig].addi(locus.start, locus.end)
 
@@ -86,4 +71,12 @@ class Loci(object):
     def __len__(self):
         return sum(len(tree) for tree in self.contigs.values())
 
+    def intersects(self, locus):
+        return self.contigs[locus.contig].overlaps(locus.start, locus.end)
 
+    def union(self, other):
+        contig_map = {}
+        for contig in set(self.contigs).union(other.contigs):
+            contig_map[contig] = self.contigs[contig].union(
+                other.contigs[contig])
+        return Loci(contig_map=contig_map)

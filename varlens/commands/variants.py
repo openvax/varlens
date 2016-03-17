@@ -15,42 +15,42 @@ from __future__ import absolute_import
 import argparse
 import sys
 import logging
-import collections
 
 from . import configure_logging
 from .. import variant_includes
 from .. import variants_util
-from ..evaluation import parse_labeled_expression
 
 parser = argparse.ArgumentParser(usage=__doc__)
-variants_util.add_args(parser)
-parser.add_argument("--field", nargs="+", default=[])
-parser.add_argument("--no-standard-columns",
+variants_util.add_args(parser, positional=True)
+
+group = parser.add_argument_group("variant output")
+
+group.add_argument("--no-standard-columns",
     action="store_true", default=False,
     help="Don't write standard columns (genome, contig, start, end, ref, alt)")
 
-parser.add_argument("--chunk-rows", metavar="N", type=int,
+group.add_argument("--chunk-rows", metavar="N", type=int,
     help="Write out current results after processing N rows.")
 
-parser.add_argument("--limit", metavar="N", type=int,
+group.add_argument("--limit", metavar="N", type=int,
     help="Process only the first N variants (useful for testing)")
 
-parser.add_argument("--columns",
+group.add_argument("--columns",
     help="Column separated list of columns to output")
 
-parser.add_argument("--rename-column", nargs=2, action="append", default=[],
+group.add_argument("--rename-column", nargs=2, action="append", default=[],
     metavar=("FROM", "TO"),
     help="Rename output column FROM to TO. Can be specified multiple times.")
 
-parser.add_argument("--out")
+group.add_argument("--out")
 
-parser.add_argument('--include-metadata', action="store_true", default=False,
+group.add_argument('--include-metadata', action="store_true", default=False,
     help="Output variant metadata when loading from VCF (info column, etc).")
 
 for includeable in variant_includes.INCLUDEABLES:
     includeable.add_args(parser)
 
-parser.add_argument("-v", "--verbose", action="store_true", default=False)
+group.add_argument("-v", "--verbose", action="store_true", default=False)
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
@@ -74,18 +74,6 @@ def run(raw_args=sys.argv[1:]):
             column_renames_inverse.get(col, col) for col in df.columns
         ]
 
-    extra_columns = collections.OrderedDict()
-    for labeled_expression in args.field:
-        (label, expression) = parse_labeled_expression(labeled_expression)
-        extra_columns[label] = expression
-
-    for (column, callable_or_expression) in extra_columns.items():
-        df[column] = [
-            variants_util.evaluate_variant_expression(
-                callable_or_expression, row.to_dict(), row.variant)
-            for (i, row) in df.iterrows()
-        ]
-
     def save(df):
         if column_renames:
             df = df.copy()
@@ -98,13 +86,12 @@ def run(raw_args=sys.argv[1:]):
             if not args.include_metadata:
                 columns = [
                     x for x in columns
-                    if x in extra_columns or not x.startswith("metadata")
+                    if not x.startswith("metadata")
                 ]
             if args.no_standard_columns:
                 columns = [
                     x for x in columns
-                    if x in extra_columns or (
-                        x not in variants_util.STANDARD_DATAFRAME_COLUMNS)
+                    if x not in variants_util.STANDARD_DATAFRAME_COLUMNS
                 ]
 
         df_save = df[columns].copy()

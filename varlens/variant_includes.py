@@ -64,6 +64,7 @@ class Effect(Includeable):
 
     @staticmethod
     def add_args(parser):
+        parser = parser.add_argument_group(Effect.name)
         parser.add_argument("--include-effect",
             action="store_true", default=False,
             help="Include varcode effect annotations")
@@ -85,6 +86,7 @@ class Gene(Includeable):
     
     @staticmethod
     def add_args(parser):
+        parser = parser.add_argument_group(Gene.name)
         parser.add_argument("--include-gene",
             action="store_true", default=False,
             help="Include gene names")
@@ -106,6 +108,7 @@ class Context(Includeable):
     
     @staticmethod
     def add_args(parser):
+        parser = parser.add_argument_group(Context.name)
         parser.add_argument("--include-context",
             action="store_true", default=False,
             help="Include variant sequence context")
@@ -168,6 +171,7 @@ class MHCBindingAffinity(Includeable):
     
     @staticmethod
     def add_args(parser):
+        parser = parser.add_argument_group(MHCBindingAffinity.name)
         parser.add_argument("--include-mhc-binding",
             action="store_true", default=False,
             help="Include MHC binding (tightest affinity and allele)")
@@ -254,35 +258,33 @@ class MHCBindingAffinity(Includeable):
 
 class ReadEvidence(Includeable):
     name = "read evidence"
-    default_column_format = "{source}_{count_group}_{allele_group}"
+    default_column_format = "{source}_count_{allele_group}"
     
     @classmethod
     def add_args(cls, parser):
-        parser.add_argument("--include-read-evidence",
+        group = parser.add_argument_group(cls.name)
+        group.add_argument("--include-read-evidence",
             action="store_true", default=False,
             help="Include counts of supporting / contradicting reads")
-        support.add_args(parser)
-        parser.add_argument("--read-sources-file",
+        group.add_argument("--read-sources-file",
             help="Load paths to BAMs from the given csv file.")
-        parser.add_argument("--read-sources-id-column",
+        group.add_argument("--read-sources-id-column",
             default="source_id",
             help="Column to use to join read sources with the variants "
             "dataframe.")
-        parser.add_argument("--read-sources-column", action="append",
+        group.add_argument("--read-sources-column", action="append",
             default=[],
             help="Column containing path to reads (e.g. path to a BAM). Can "
             "be specified any number of times. If not specified, all "
             "columns are used.")
-        parser.add_argument("--always-prefix-column", action="store_true",
+        group.add_argument("--always-prefix-column", action="store_true",
             default=False,
             help="Always prefix the column names with the source name and "
             "count group, even when there is only one of each.")
-        parser.add_argument("--survive-errors", action="store_true",
+        group.add_argument("--survive-errors", action="store_true",
             default=False,
             help="If an error is encountered log it and try to continue.")
         
-        # Note: We also use the --read-filter argument added here, even if
-        # --reads isn't specified.
         reads_util.add_args(parser)
 
     @classmethod
@@ -297,23 +299,19 @@ class ReadEvidence(Includeable):
                 read_sources_df = read_sources_df[args.read_sources_column]
 
         source_names = cls.read_source_names(read_sources, read_sources_df)
-        if (args.always_prefix_column or
-                len(source_names) > 1 or
-                args.count_group):
+        if (args.always_prefix_column or len(source_names) > 1):
             column_format = cls.default_column_format
         else:
             column_format = "{allele_group}"
         return cls(
             read_sources=read_sources,
             read_sources_df=read_sources_df,
-            count_groups=args.count_group,
             column_format=column_format,
             survive_errors=args.survive_errors)
 
     def __init__(self,
             read_sources=None,
             read_sources_df=None,
-            count_groups=[],
             read_filters=[],
             column_format=default_column_format,
             survive_errors=False):
@@ -326,7 +324,6 @@ class ReadEvidence(Includeable):
  
         self.read_sources = read_sources
         self.read_sources_df = read_sources_df
-        self.count_groups = ["count:all"] + count_groups
         self.read_filters = read_filters
         self.column_format = column_format
         self.survive_errors = survive_errors
@@ -339,32 +336,26 @@ class ReadEvidence(Includeable):
         return read_sources_df.columns.tolist()
    
     def set_columns(self):
-        assert self.count_groups
         source_names = self.read_source_names(
             read_sources=self.read_sources,
             read_sources_df=self.read_sources_df)
         assert source_names
         self.columns_dict = collections.OrderedDict()
         for source_name in source_names:
-            for expression in self.count_groups:
-                (count_group, _) = support.parse_labeled_expression(expression)
-                for allele_group in ["num_alt", "num_ref", "total_depth"]:
-                    column_name = self.column_name(
-                        source_name, count_group, allele_group)
-                    self.columns_dict[column_name] = (
-                        source_name, count_group, allele_group)
+            for allele_group in ["num_alt", "num_ref", "total_depth"]:
+                column_name = self.column_name(
+                    source_name, allele_group)
+                self.columns_dict[column_name] = (
+                    source_name, allele_group)
         self.columns = list(self.columns_dict)                
         assert self.columns
 
-    def column_name(self, source, count_group, allele_group):
+    def column_name(self, source, allele_group):
         """
         Parameters
         ----------
         source : string
             name of the ReadSource
-
-        count_group : string
-            filter group for reads (usually "count")
 
         allele_group : string
             one of: num_ref, num_alt, total_depth
@@ -375,7 +366,6 @@ class ReadEvidence(Includeable):
         """
         return self.column_format.format(
             source=source,
-            count_group=count_group,
             allele_group=allele_group)
 
     @staticmethod
@@ -398,8 +388,7 @@ class ReadEvidence(Includeable):
                         if pandas.isnull(filename):
                             continue
                         relevant_columns = [
-                            col for (col, (
-                                source_name, count_sgroup, allele_group))
+                            col for (col, (source_name, allele_group))
                             in self.columns_dict.items()
                             if source_name == name
                         ]
@@ -449,7 +438,7 @@ class ReadEvidence(Includeable):
                 for variant in variants))
 
             allele_support_df = support.allele_support_df(
-                    variant_loci, sources, count_groups=self.count_groups)
+                variant_loci, sources)
             assert set(s.name for s in sources) == set(
                 allele_support_df.source.unique())
             variant_support_df = support.variant_support(
@@ -457,20 +446,18 @@ class ReadEvidence(Includeable):
             assert set(s.name for s in sources) == set(
                 variant_support_df.minor_axis)
 
-            for count_group in variant_support_df.labels:
-                panel = variant_support_df[count_group]
-                for allele_group in ["num_alt", "num_ref", "total_depth"]:
-                    sub_panel = panel[allele_group, variants]
-                    for source_column in sub_panel.columns:
-                        dest_column = self.column_name(
-                            source_column, count_group, allele_group)
-                        assert dest_column in self.columns, (
-                                "Bad column: %s not in %s" % (
-                                    dest_column, " ".join(self.columns)))
-                        values = sub_panel[source_column].values
-                        assert len(values) == rows.sum(), "%d != %d" % (
-                            len(values), rows.sum())
-                        df.loc[rows, dest_column] = values
+            for allele_group in ["num_alt", "num_ref", "total_depth"]:
+                sub_panel = variant_support_df[allele_group, variants]
+                for source_column in sub_panel.columns:
+                    dest_column = self.column_name(
+                        source_column, allele_group)
+                    assert dest_column in self.columns, (
+                            "Bad column: %s not in %s" % (
+                                dest_column, " ".join(self.columns)))
+                    values = sub_panel[source_column].values
+                    assert len(values) == rows.sum(), "%d != %d" % (
+                        len(values), rows.sum())
+                    df.loc[rows, dest_column] = values
         return df
 
 INCLUDEABLES = Includeable.__subclasses__()
