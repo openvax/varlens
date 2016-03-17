@@ -39,7 +39,7 @@ To run the tests:
 
     nosetests .
 
-To build the documentation:
+To build the documentation (just this README plus the commandline tool help):
 
 ::
 
@@ -250,9 +250,9 @@ slash instead of a colon).
 See this `blog post <http://alternateallele.blogspot.com/2012/03/genome-coordinate-conventions.html>`_
 for more details on coordinate systems.
 
-Documentation
--------------
-The docs are just this readme and the commandline tool help.
-They are available here: http://hammerlab.github.io/varlens/docs/html
+.. Documentation
+    -------------
+    The docs are just this readme and the commandline tool help.
+    They are available here: http://hammerlab.github.io/varlens/docs/html
 
 
