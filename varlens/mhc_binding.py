@@ -15,13 +15,16 @@
 import collections
 
 import pandas
-import mhctools
-import topiary
 import varcode
 
 CACHED_BINDING_AFFINITIES = {}  # (variant, allele -> nm affinity)
 BINDING_PREDICTORS = {}
 def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
+    # We import these here so we don't depend on these libraries unless this
+    # function is called.
+    import mhctools
+    import topiary
+
     for allele in alleles:
         if allele not in BINDING_PREDICTORS:
             BINDING_PREDICTORS[allele] = mhctools.NetMHCpan(
