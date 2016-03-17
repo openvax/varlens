@@ -25,7 +25,7 @@ if __name__ == '__main__':
         packages=["varlens", "varlens.commands", "varlens.read_evidence"],
         version="0.0.1",
         description=(
-            "tools for working with at genomic variants and NGS reads"),
+            "commandline manipulation of genomic variants and NGS reads"),
         long_description=open('README.rst').read(),
         url="https://github.com/hammerlab/varlens",
         author="Tim O'Donnell",
