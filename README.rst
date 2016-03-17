@@ -27,7 +27,13 @@ varlens-allele-support
 Installation
 -------------
 
-From a git checkout:
+To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
+
+::
+    
+    pip install varlens
+
+Or from a git checkout:
 
 ::
 
