@@ -29,6 +29,7 @@ if __name__ == '__main__':
         long_description=open('README.rst').read(),
         url="https://github.com/hammerlab/varlens",
         author="Tim O'Donnell",
+        author_email="timodonnell@gmail.com",
         license="http://www.apache.org/licenses/LICENSE-2.0.html",
         entry_points={
             'console_scripts': [
