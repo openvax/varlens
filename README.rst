@@ -21,7 +21,7 @@ varlens-allele-support
 
 Documentation
 -------------
-Available at: http://timodonnell.github.io/varlens/docs/html
+Available at: http://hammerlab.github.io/varlens/docs/html
 
 Installation
 -------------
