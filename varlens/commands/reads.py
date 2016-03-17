@@ -1,10 +1,41 @@
 '''
-Extract reads from a BAM at specified loci.
+Filter reads from one or more BAMs and output a CSV or a new BAM.
 
-%(prog)s \
-    --reads /path/to/bam1.bam
-    --variants /path/to/variants.vcf
-    --out out.bam
+Loci and VCF files may be specified, in which case reads are filtered to
+overlap the specified loci or variants.
+
+Examples:
+
+Print basic fields for the reads in a BAM:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam
+
+Same as above but filter only to reads aligned on the (-) strand, write to a 
+file instead of stdout, and also include the mapping quality and sequenced
+bases in the output:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+        --is-reverse \\
+        --field mapping_quality query_alignment_sequence \\
+        --out /tmp/result.csv
+
+Write a bam file consisting of reads with mapping quality >=30 and
+overlapping a certain locus:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+        --min-mapping-quality 30 \\
+        --locus 22:46932040-46932050 \\
+        --out /tmp/result.bam
+
+Write a bam file consisting of reads overlapping variants from a VCF:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+        --variants test/data/CELSR1/vcfs/vcf_1.vcf \\
+        --out /tmp/result.bam
+
+Print just the header for a BAM in csv format:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam --header
 
 '''
 from __future__ import absolute_import
@@ -12,36 +43,55 @@ from __future__ import absolute_import
 import argparse
 import sys
 import csv
-import collections
 
 import pysam
 
 from . import configure_logging
 from .. import loci_util
 from .. import reads_util
-from ..evaluation import parse_labeled_expression
-from ..read_source_helpers import evaluate_read_expression
+from .. import variants_util
+from ..read_evidence.pileup_collection import PileupCollection, to_locus
+
+STANDARD_FIELDS = [
+    "query_name",
+    "reference_start",
+    "reference_end",
+    "cigarstring",
+]
 
 parser = argparse.ArgumentParser(usage=__doc__)
-loci_util.add_args(parser)
-reads_util.add_args(parser)
+group = parser.add_argument_group("output")
+group.add_argument("--out",
+    help="Output file. Format is guessed from file extension: must be csv or "
+    "bam. If not specified, csv is written to stdout.")
+group.add_argument("--field", nargs="+", default=[],
+    help="Additional read fields to output as columns in the csv. See pysam "
+    "documentation (http://pysam.readthedocs.org/en/latest/api.html) for the "
+    "meaning of these fields. Valid fields include: %s" % (
+        " ".join(PileupCollection._READ_ATTRIBUTE_NAMES)))
 
-parser.add_argument("--out")
-parser.add_argument("--field", nargs="+", default=[])
-parser.add_argument("--no-standard-fields", action="store_true", default=False)
-parser.add_argument("--no-sort", action="store_true", default=False)
-parser.add_argument(
+group.add_argument("--no-standard-fields", action="store_true", default=False,
+    help="Do not include the standard fields (%s) in csv output."
+    % ', '.join(STANDARD_FIELDS))
+group.add_argument("--no-sort", action="store_true", default=False,
+    help="When outputting a bam, do not call samtools sort.")
+group.add_argument(
     "--header",
     action="store_true",
     default=False,
     help="Output BAM/SAM header only.")
-parser.add_argument(
+group.add_argument(
     "--header-set",
     nargs=4,
     action="append",
-    help="Example --header-set RG . SM my_sample")
+    help="When outputting a bam, set a particular header field to the given "
+    "value. Example: --header-set RG . SM my_sample")
 
-parser.add_argument("-v", "--verbose", action="store_true", default=False)
+group.add_argument("-v", "--verbose", action="store_true", default=False)
+
+reads_util.add_args(parser, positional=True)
+loci_util.add_args(parser.add_argument_group("loci specification"))
+variants_util.add_args(parser)
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
@@ -52,6 +102,13 @@ def run(raw_args=sys.argv[1:]):
         parser.error("No read sources specified.")
 
     loci = loci_util.load_from_args(args)  # may be None
+    variants_df = variants_util.load_from_args_as_dataframe(args)
+    if variants_df is not None:
+        variant_loci = loci_util.Loci(
+            to_locus(variant)
+            for variant in variants_df["variant"])
+        loci = variant_loci if loci is None else loci.union(variant_loci)
+
     if args.header:
         if loci is not None:
             parser.error("If specifying --header don't specify loci.")
@@ -81,21 +138,10 @@ def run(raw_args=sys.argv[1:]):
                 "read_source", "group", "index", "key", "value",
             ])
         else:
-            columns = collections.OrderedDict()
-            if not args.no_standard_fields:
-                columns["query_name"] = lambda x: x.query_name
-                columns["query_alignment_start"] = (
-                    lambda x: x.query_alignment_start)
-                columns["query_alignment_end"] = (
-                    lambda x: x.query_alignment_end)
-                columns["cigar"] = lambda x: x.cigarstring
-
-            for labeled_expression in args.field:
-                (label, expression) = parse_labeled_expression(
-                    labeled_expression)
-                columns[label] = expression
-
-            out_csv_writer.writerow(list(columns.keys()))
+            columns = (
+                ([] if args.no_standard_fields else STANDARD_FIELDS) +
+                args.field)
+            out_csv_writer.writerow(columns)
     else:
         parser.error(
             "Don't know how to write to file with output extension: %s. "
@@ -115,12 +161,7 @@ def run(raw_args=sys.argv[1:]):
                 out_pysam_handle.write(read)
             if out_csv_writer is not None:
                 out_csv_writer.writerow([
-                    str(evaluate_read_expression(
-                        e, read, extra_bindings={
-                            'read_source': read_source,
-                            'filename': read_source.filename,
-                        }))
-                    for e in columns.values()
+                    str(read_field(read, field)) for field in columns
                 ])
 
     if out_pysam_handle is not None:
@@ -137,6 +178,17 @@ def run(raw_args=sys.argv[1:]):
         out_csv_fd.close()
         print("Wrote: %s" % args.out)
 
+
+def read_field(read, field_name):
+    if field_name.startswith("tag:"):
+        tag_name = field_name[len("tag:"):]
+        return read.get_tags().get(tag_name)
+
+    try:
+        return getattr(read, field_name)
+    except AttributeError:
+        raise ValueError("Invalid read field '%s'. Valid fields include: %s"
+            % (field_name, ' '.join(dir(read))))
 
 def update_header(args, header):
     if args.header_set:

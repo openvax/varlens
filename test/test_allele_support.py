@@ -14,7 +14,7 @@
 
 from __future__ import absolute_import
 
-import functools
+import logging
 
 from nose.tools import eq_
 
@@ -22,7 +22,9 @@ from varlens.commands import allele_support
 
 from . import data_path, run_and_parse_csv, cols_concat
 
-run = functools.partial(run_and_parse_csv, allele_support.run)
+def run(args):
+    logging.info("Running with args: " + ' '.join(args))
+    return run_and_parse_csv(allele_support.run, args)
 
 expected_cols = [
     "contig", "interbase_start", "interbase_end", "allele", "count",
@@ -31,44 +33,31 @@ expected_cols = [
 def test_basic():
     result = run([
         "--reads", data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22:46929963",
-        "--locus", "chr22:46929964",
+        "--locus", "chr22:46929963", "chr22:46929964",
     ])
-    print(result)
     eq_(cols_concat(result, expected_cols),
         {"22-46929962-46929963-C-60", "22-46929963-46929964-A-81"})
 
     result = run([
         "--reads", data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22:46929963",
-        "--locus", "chr22:46929964",
-        "--read-filter", "is_reverse"
+        "--locus", "chr22:46929963", "chr22:46929964",
+        "--is-reverse"
     ])
     eq_(cols_concat(result, expected_cols),
         {"22-46929962-46929963-C-37", "22-46929963-46929964-A-47"})
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22:46929963",
-        "--locus", "chr22:46929964",
-        "--count-group", "foo:is_reverse",
-    ])
-    eq_(cols_concat(result, expected_cols + ["foo"]),
-        {"22-46929962-46929963-C-60-37", "22-46929963-46929964-A-81-47"})
-
-    result = run([
         "--reads", data_path("gatk_mini_bundle_extract.bam"),
         "--locus", "chr20:10008951",
-        "--count-group", "is_reverse",
+        "--is-reverse",
     ])
-    eq_(cols_concat(result, expected_cols + ["is_reverse"]),
-        {"20-10008950-10008951-C-4-1", "20-10008950-10008951-A-1-0"})
-    
+    eq_(cols_concat(result, expected_cols),
+        {"20-10008950-10008951-C-1"})
 
 def test_simple():
     result = run([
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
-        "--variant-genome", "b37",
+        "--genome", "b37",
         "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
     ])
     eq_(cols_concat(
@@ -83,19 +72,17 @@ def test_simple():
     })
 
     pick_one_variant = [
-        "ref=='G'",
-        "alt=='A'",
-        "inclusive_start==46931062",
-        "interbase_start==46931061",
-        "interbase_end==46931062",
+        ["--ref", "G"],
+        ["--alt", "A"],
+        ["--variant-locus", "22/46931061"],
+        ["--variant-locus", "22/46931061-46931062"],
     ]
     for variant_filter in pick_one_variant:
         result = run([
             "--reads", data_path("CELSR1/bams/bam_0.bam"),
-            "--variant-genome", "b37",
+            "--genome", "b37",
             "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-            "--variant-filter", variant_filter,
-        ])
+        ] + variant_filter)
         yield (
             eq_,
             cols_concat(

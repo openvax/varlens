@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import argparse
 
 def expand(value, arg_name, input_name, length):
     if value is None or len(value) == 0:
@@ -56,3 +57,24 @@ def drop_prefix(strings):
         return [os.path.basename(strings[0])]
     prefix_len = len(os.path.commonprefix(strings))
     return [string[prefix_len:] for string in strings]
+
+class PrefixedArgumentParser(object):
+    def __init__(self, wrapped, prefix):
+        self.wrapped = wrapped
+        self.prefix = prefix
+
+    def add_argument(self, name, *args, **kwargs):
+        assert name.startswith("--")
+        new_name = "--" + self.prefix + "-" + name[2:]
+        self.wrapped.add_argument(new_name, *args, **kwargs)
+
+
+def remove_prefix_from_parsed_args(args, prefix):
+    result = argparse.Namespace()
+    for (arg, value) in args._get_kwargs():
+        if arg.startswith(prefix + "_"):
+            setattr(result, arg[len(prefix + "_"):], value)
+    return result
+
+
+

@@ -14,13 +14,10 @@
 
 from __future__ import absolute_import
 
-from .locus import Locus
-from .loci_util import Loci
-from . import read_evidence, util
+from . import read_evidence, util, loci_util
 
 __all__ = [
-    "Loci",
-    "Locus",
+    "loci_util",
     "read_evidence",
     "util",
 ]

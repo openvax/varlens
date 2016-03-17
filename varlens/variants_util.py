@@ -14,14 +14,14 @@
 
 import collections
 
-import typechecks
 import pandas
 import varcode
 import varcode.reference
 import logging
-from . import util
 
-from . import evaluation, Locus
+from . import util, loci_util
+from .locus import Locus
+from .read_evidence import pileup_collection
 
 STANDARD_DATAFRAME_COLUMNS = [
     "genome",
@@ -32,19 +32,42 @@ STANDARD_DATAFRAME_COLUMNS = [
     "alt",
 ]
 
-def add_args(parser):
-    parser.add_argument("--variants", nargs="+", default=[],
-        help="Path to VCF file. Any number of VCF files may be specified.")
-    parser.add_argument("--variant-filter",
-        nargs="+", action="append", default=[])
-    parser.add_argument("--variant-genome")
-    parser.add_argument("--include-failing-variants",
-        action="store_true", default=False)
-    parser.add_argument("--variant-source-name", nargs="+")
-    parser.add_argument("--max-variants-per-source", type=int)
-    parser.add_argument("--single-variant", nargs=3, action="append",
-        default=[], metavar=("LOCUS", "REF", "ALT"),
-        help="Literal variant. Can be specified any number of times.")
+def add_args(parser, positional=False):
+    group = parser.add_argument_group("variant loading")
+    group.add_argument("variants" if positional else "--variants",
+        nargs=("*" if positional else "+"), default=[],
+        help="Path to VCF file. Any number of VCF files may be specified. "
+        "CSV files in the format outputted by the varlens-variants tool are "
+        "also supported.")
+    group.add_argument("--genome",
+        help="Genome for the variants (e.g. b37). Required when the genome "
+        "cannot be guessed from the metadata in the VCF.")
+    group.add_argument("--include-failing-variants",
+        action="store_true",
+        default=False,
+        help="Include variants with a non-PASS filter field.")
+    group.add_argument("--variant-source-name", nargs="+",
+        help="Names for variant sources. Must specify one name per variant "
+        "source. If not specified, the filenames are used.")
+    group.add_argument("--max-variants-per-source", type=int,
+        metavar="N",
+        help="Load at most N variants from each source.")
+    group.add_argument("--single-variant", nargs=3, action="append",
+        default=[], metavar="X",
+        help="Literal variant specified as three arguments: LOCUS REF ALT. "
+        "Can be specified any number of times by repeating the "
+        "--single-variant option.")
+
+    # Filters
+    group = parser.add_argument_group("variant filtering",
+        "If multiple filters are specified, the variants must pass *all* "
+        "filters. For filtering by loci, any variants that overlap "
+        "the specified loci are included.")
+    group.add_argument("--ref", nargs="+",
+        help="Include only variants where ref is one of the given values.")
+    group.add_argument("--alt", nargs="+",
+        help="Include only variants where alt is one of the given values.")
+    loci_util.add_args(util.PrefixedArgumentParser(group, "variant"))
 
 def load_from_args_as_dataframe(args):
     '''
@@ -64,16 +87,6 @@ def load_from_args_as_dataframe(args):
     else:
         variant_source_names = util.drop_prefix(args.variants)
 
-    variant_filters = zip(*[
-        util.expand(
-            value, 'variant_filter', 'variant source', len(args.variants))
-        for value in args.variant_filter
-    ])
-    if not variant_filters:
-        variant_filters = [[]] * len(args.variants)
-
-    assert len(variant_filters) == len(args.variants)
-
     variant_to_sources = collections.defaultdict(list)
 
     dfs = []
@@ -83,9 +96,8 @@ def load_from_args_as_dataframe(args):
             'metadata:' if len(args.variants) == 1 else "metadata:%s:" % name)
         df = load_as_dataframe(
             args.variants[i],
-            filters=variant_filters[i],
             name=name,
-            genome=args.variant_genome,
+            genome=args.genome,
             max_variants=args.max_variants_per_source,
             only_passing=not args.include_failing_variants,
             metadata_column_prefix=prefix)
@@ -100,9 +112,9 @@ def load_from_args_as_dataframe(args):
     if args.single_variant:
         variants = []
         extra_args = {}
-        if args.variant_genome:
+        if args.genome:
             extra_args = {
-                'ensembl': varcode.reference.infer_genome(args.variant_genome)
+                'ensembl': varcode.reference.infer_genome(args.genome)
             }
         for (locus_str, ref, alt) in args.single_variant:
             locus = Locus.parse(locus_str)
@@ -131,12 +143,24 @@ def load_from_args_as_dataframe(args):
                 "Reference genomes: %s" % (", ".join(genomes)))
 
     df["sources"] = [" ".join(variant_to_sources[v]) for v in df.variant]
+
+    # Apply filters:
+    if args.ref:
+        df = df.ix[df.ref.isin(args.ref)]
+    if args.alt:
+        df = df.ix[df.alt.isin(args.alt)]
+    loci = loci_util.load_from_args(
+        util.remove_prefix_from_parsed_args(args, "variant"))
+    if loci is not None:
+        df = df.ix[[
+            loci.intersects(pileup_collection.to_locus(v))
+            for v in df.variant
+        ]]
     return df
 
 def load_as_dataframe(
         filename,
         loader=None,
-        filters=None,
         name=None,
         genome=None,
         max_variants=None,
@@ -184,42 +208,7 @@ def load_as_dataframe(
     df["variant"] = [
         dataframe_row_to_variant(row) for (i, row) in df.iterrows()
     ]
-
-    if filters:
-        df = df[[
-            bool(all(
-                evaluate_variant_expression(
-                    expression, row.to_dict(), row.variant)
-                for expression in filters))
-            for (i, row) in df.iterrows()
-        ]]
-
     return df
-
-def evaluate_variant_expression(
-        expression,
-        metadata,
-        variant,
-        error_value=evaluation.RAISE,
-        extra_bindings={}):
-
-    if typechecks.is_string(expression):
-        extra_bindings = {
-            'inclusive_start': variant.start,
-            'inclusive_end': variant.end,
-            'interbase_start': variant.start - 1,
-            'interbase_end': variant.end,
-            'variant': variant,
-            'metadata': metadata,
-        }
-        extra_bindings.update(metadata)
-        bindings = evaluation.EvaluationEnvironment([variant], extra_bindings)
-        return evaluation.evaluate_expression(
-            expression,
-            bindings,
-            error_value=error_value)
-    else:
-        return expression(variant)  
 
 def variants_to_dataframe(
         variants, metadata=None, metadata_column_prefix=""):

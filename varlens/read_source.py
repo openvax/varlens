@@ -13,14 +13,11 @@
 # limitations under the License.
 
 import logging
-import functools
 
 import pyensembl
 import pysam
 
 from . import read_evidence
-from .read_source_helpers import alignment_key, evaluate_read_expression
-
 
 class ReadSource(object):
     def __init__(self, name, filename, read_filters=[]):
@@ -42,7 +39,8 @@ class ReadSource(object):
                 "Attempting to create BAM index for file: %s" % self.filename)
             samtools_output = pysam.index(self.filename)
             logging.info(
-                "Done indexing" + ((": " + samtools_output) if samtools_output else ''))
+                "Done indexing" + (
+                    (": " + samtools_output) if samtools_output else ''))
 
             # Reopen
             self.handle.close()
@@ -97,21 +95,47 @@ class ReadSource(object):
                             yield read
                             seen.add(key)
 
-        for alignment in reads_iterator():
-            if all(evaluate_read_expression(expression, alignment)
-                    for expression in self.read_filters):
-                yield alignment
+        return (
+            read for read in reads_iterator()
+            if self.read_passes_filters(read))
+
+    def read_passes_filters(self, read):
+        return all(read_filter(read) for read_filter in self.read_filters)
 
     def pileups(self, loci):
         self.index_if_needed()
         collection = read_evidence.PileupCollection.from_bam(self.handle, loci)
         if self.read_filters:
             for (locus, pileup) in collection.pileups.items():
-                def evaluate(expression, element):
-                    return evaluate_read_expression(
-                        expression, element.alignment)
-                collection.pileups[locus] = pileup.filter([
-                    functools.partial(evaluate, expression)
-                    for expression in self.read_filters
-                ])
+                collection.pileups[locus] = pileup.filter(
+                    [lambda element:
+                        self.read_passes_filters(element.alignment)])
         return collection
+
+def alignment_key(pysam_alignment_record):
+    '''
+    Return the identifying attributes of a `pysam.AlignedSegment` instance.
+    This is necessary since these objects do not support a useful notion of
+    equality (they compare on identify by default).
+    '''
+    return (
+        read_key(pysam_alignment_record),
+        pysam_alignment_record.query_alignment_start,
+        pysam_alignment_record.query_alignment_end,
+    )
+
+
+def read_key(pysam_alignment_record):
+    '''
+    Given a `pysam.AlignedSegment` instance, return the attributes identifying
+    the *read* it comes from (not the alignment). There may be more than one
+    alignment for a read, e.g. chimeric and secondary alignments.
+    '''
+    return (
+        pysam_alignment_record.query_name,
+        pysam_alignment_record.is_duplicate,
+        pysam_alignment_record.is_read1,
+        pysam_alignment_record.is_read2,
+    )
+
+

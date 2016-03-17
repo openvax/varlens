@@ -25,106 +25,95 @@ from . import data_path, run_and_parse_csv, cols_concat, temp_file
 run = functools.partial(run_and_parse_csv, reads.run)
 
 expected_cols = (
-    "query_name,query_alignment_start,query_alignment_end,cigar").split(',')
+    "query_name,reference_start,reference_end,cigarstring").split(',')
 
 def test_basic():
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_0.bam"),
+        data_path("CELSR1/bams/bam_0.bam"),
     ])
     eq_(result.shape, (953, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_0.bam"),
-        "--read-filter", "is_duplicate"
+        data_path("CELSR1/bams/bam_0.bam"),
+        "--is-duplicate",
     ])
     eq_(result.shape, (173, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_0.bam"),
-        "--read-filter", "is_read1"
+        data_path("CELSR1/bams/bam_0.bam"),
+        "--is-read1",
     ])
     eq_(result.shape, (481, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_0.bam"),
-        "--read-filter", "is_read2"
+        data_path("CELSR1/bams/bam_0.bam"),
+        "--is-read2",
     ])
     eq_(result.shape, (472, len(expected_cols)))
 
 def test_loci_filtering():
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        data_path("CELSR1/bams/bam_5.bam"),
     ])
     eq_(result.shape, (37053, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        data_path("CELSR1/bams/bam_5.bam"),
         "--locus", "chr22:46930257-46930259"
     ])
     eq_(result.shape, (1795, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        data_path("CELSR1/bams/bam_5.bam"),
         "--locus", "chr22/46930256-46930259"
     ])
     eq_(result.shape, (1795, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        data_path("CELSR1/bams/bam_5.bam"),
         "--locus", "chr22:46930257-46930257"
     ])
     eq_(result.shape, (1753, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        data_path("CELSR1/bams/bam_5.bam"),
         "--locus", "chr22:46930257"
     ])
     eq_(result.shape, (1753, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
+        data_path("CELSR1/bams/bam_5.bam"),
         "--locus", "chr22/46930256"
     ])
     eq_(result.shape, (1753, len(expected_cols)))
 
 def test_read_filtering():
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
-        "--read-filter", 'reference_start == 46932059',
+        data_path("CELSR1/bams/bam_5.bam"),
+        "--reference-start", '46932059',
     ])
     eq_(result.shape, (26, len(expected_cols)))
 
     result = run([
-        "--reads", data_path("CELSR1/bams/bam_5.bam"),
-        "--read-filter", 'reference_start == 46932059',
-        "--read-filter", 'query_name.split(":")[-1] == "57841"',
+        data_path("CELSR1/bams/bam_5.bam"),
+        "--reference-start", '46932059',
+        "--query-name-contains", '57841',
     ])
     eq_(result.shape, (1, len(expected_cols)))
-
-    result = run([
-        "--reads",
-        data_path("CELSR1/bams/bam_5.bam"),
-        data_path("CELSR1/bams/bam_6.bam"),
-        "--read-filter",
-        'reference_start == 46932059',
-        'reference_start == 46931732',
-        "--read-filter", 'int(query_name.split(":")[-1]) % 3 == 0',
-    ])
-    eq_(result.shape, (14, len(expected_cols)))
 
 def test_round_trip():
     with temp_file(".bam") as out:
         reads.run([
-            "--reads", data_path("CELSR1/bams/bam_5.bam"),
+            data_path("CELSR1/bams/bam_5.bam"),
             "--locus", "chr22/46930276",
             "--locus", "chr22/46930256",
             "--out", out,
         ])
         result1 = run([
-            "--reads", out,
+            out,
         ])
         result2 = run([
-            "--reads", data_path("CELSR1/bams/bam_5.bam"),
+            data_path("CELSR1/bams/bam_5.bam"),
             "--locus", "chr22/46930276",
             "--locus", "chr22/46930256",
         ])

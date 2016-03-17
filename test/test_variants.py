@@ -14,9 +14,9 @@
 
 from __future__ import absolute_import
 
-import functools
 import subprocess
 import warnings
+import logging
 
 import pandas
 from nose.tools import eq_
@@ -25,7 +25,9 @@ from varlens.commands import variants
 
 from . import data_path, run_and_parse_csv, cols_concat, temp_file
 
-run = functools.partial(run_and_parse_csv, variants.run)
+def run(args):
+    logging.info("Running with args: " + ' '.join(args))
+    return run_and_parse_csv(variants.run, args)
 
 reference_fasta = data_path("chr22.no_line_wrap.fa")
 
@@ -35,8 +37,8 @@ expected_cols = [
 
 def test_basic():
     result = run([
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-        "--variant-genome", "b37",
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--genome", "b37",
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
         "GRCh37-22-46931059-46931060-A-C",
@@ -48,8 +50,8 @@ def test_basic():
 
 def test_genes_and_effects():
     result = run([
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-        "--variant-genome", "b37",
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--genome", "b37",
         "--include-effect",
         "--include-gene",
         "--rename-column", "gene", "genez",
@@ -65,8 +67,8 @@ def test_genes_and_effects():
 
 def test_context():
     result = run([
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-        "--variant-genome", "b37",
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--genome", "b37",
         "--include-context",
         "--context-num-bases", "5",
         "--reference", reference_fasta,
@@ -94,8 +96,8 @@ def test_mhc_binding_affinity():
 
     with temp_file(".csv") as out_csv:
         run([
-            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-            "--variant-genome", "b37",
+            data_path("CELSR1/vcfs/vcf_1.vcf"),
+            "--genome", "b37",
             "--include-mhc-binding",
             "--hla", "A:02:01 A:02:02",
             "--out", out_csv,
@@ -112,10 +114,10 @@ def test_mhc_binding_affinity():
 
 def test_read_evidence():
     result = run([
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
         "--include-read-evidence",
         "--reads", data_path("CELSR1/bams/bam_0.bam"),
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-        "--variant-genome", "b37",
+        "--genome", "b37",
     ])
     allele_groups = ["num_ref", "num_alt", "total_depth"]
     for allele_group in allele_groups:
@@ -134,10 +136,10 @@ def test_read_evidence():
     # Same thing but with chunk rows = 1
     with temp_file(".csv") as out_csv:
         run([
+            data_path("CELSR1/vcfs/vcf_1.vcf"),
             "--include-read-evidence",
             "--reads", data_path("CELSR1/bams/bam_0.bam"),
-            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-            "--variant-genome", "b37",
+            "--genome", "b37",
             "--chunk-rows", "1",
             "--out", out_csv,
         ])
@@ -162,24 +164,32 @@ def test_read_evidence():
         "--reads", data_path("gatk_mini_bundle_extract.bam"),
         "--read-source-name", "foo",
         "--single-variant", "chr20:10008951", "C", "A",
-        "--variant-genome", "b37",
-        "--count-group", "is_reverse",
+        "--genome", "b37",
     ])
-    allele_groups = (
-        ["foo_count_%s" % g for g in allele_groups] +
-        ["foo_is_reverse_%s" % g for g in allele_groups])
     for allele_group in allele_groups:
         result[allele_group] = result[allele_group].astype(int)
     eq_(cols_concat(result, expected_cols + allele_groups),
-        {"GRCh37-20-10008950-10008951-C-A-4-1-5-1-0-1"})
+        {"GRCh37-20-10008950-10008951-C-A-4-1-5"})
+
+    result = run([
+        "--include-read-evidence",
+        "--reads", data_path("gatk_mini_bundle_extract.bam"),
+        "--read-source-name", "foo",
+        "--single-variant", "chr20:10008951", "C", "A",
+        "--genome", "b37",
+        "--is-reverse",
+    ])
+    for allele_group in allele_groups:
+        result[allele_group] = result[allele_group].astype(int)
+    eq_(cols_concat(result, expected_cols + allele_groups),
+        {"GRCh37-20-10008950-10008951-C-A-1-0-1"})
 
 
 def test_filtering():
     result = run([
-        "--variants",
         data_path("CELSR1/vcfs/vcf_1.vcf"),
-        "--variant-genome", "b37",
-        "--variant-filter", "ref=='A'",
+        "--genome", "b37",
+        "--ref", "A",
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
         "GRCh37-22-46931059-46931060-A-C",
@@ -188,31 +198,30 @@ def test_filtering():
     }))
 
     result = run([
-        "--variants",
         data_path("CELSR1/vcfs/vcf_1.vcf"),
-        "--variant-genome", "b37",
-        "--variant-filter", "ref=='A'",
-        "--variant-filter", "inclusive_start==50636218"
+        "--genome", "b37",
+        "--ref", "A",
+        "--variant-locus", "22:50636218",
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
         "GRCh37-22-50636217-50636218-A-C",
     }))
 
     result = run([
-        "--variants",
         data_path("CELSR1/vcfs/vcf_1.vcf"),
         data_path("CELSR1/vcfs/vcf_2.vcf"),
-        "--variant-filter", "ref=='A'", '',
-        "--variant-genome", "b37"
+        "--alt", "C", "G",
+        "--genome", "b37"
     ])
     eq_(sorted(cols_concat(result, expected_cols)), sorted({
+        "GRCh37-22-21829554-21829555-T-G",
         "GRCh37-22-45309892-45309893-T-G",
         "GRCh37-22-46931059-46931060-A-C",
-        "GRCh37-22-46931061-46931062-G-A",
         "GRCh37-22-50636217-50636218-A-C",
         "GRCh37-22-50875932-50875933-A-C",
     }))
 
+'''
 def test_fields():
     result = run([
         "--field",
@@ -228,58 +237,51 @@ def test_fields():
             "GRCh37-22-50636217-50636218-A-C-a-TRABD",
             "GRCh37-22-50875932-50875933-A-C-a-PPP6R2",
         }))
-
+'''
 def test_round_trip():
     with temp_file(".csv") as out_csv:
         variants.run([
-            "--field", 
-            "foo:ref.lower()",
-            "gene_names[0]",
-            "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
+            data_path("CELSR1/vcfs/vcf_1.vcf"),
             "--out", out_csv,
-            "--variant-genome", "b37",
-            "--variant-filter", "ref=='A'",
+            "--genome", "b37",
+            "--ref", "A",
+            "--include-gene",
         ])
         result1 = pandas.read_csv(out_csv)
         eq_(sorted(cols_concat(
-                result1, expected_cols + ["foo", "gene_names[0]"])),
+                result1, expected_cols + ["gene"])),
             sorted({
-                "GRCh37-22-46931059-46931060-A-C-a-CELSR1",
-                "GRCh37-22-50636217-50636218-A-C-a-TRABD",
-                "GRCh37-22-50875932-50875933-A-C-a-PPP6R2",
+                "GRCh37-22-46931059-46931060-A-C-CELSR1",
+                "GRCh37-22-50636217-50636218-A-C-TRABD",
+                "GRCh37-22-50875932-50875933-A-C-PPP6R2",
             }))
 
         result2 = run([
-            "--field", 
-            "foo",
-            "metadata['gene_names[0]']",
-            "--variants", out_csv,
+            out_csv,
+            "--include-gene",
         ])
         eq_(sorted(cols_concat(
                 result2,
-                expected_cols + ["foo", "metadata['gene_names[0]']"])),
+                expected_cols + ["gene"])),
             sorted({
-                "GRCh37-22-46931059-46931060-A-C-a-CELSR1",
-                "GRCh37-22-50636217-50636218-A-C-a-TRABD",
-                "GRCh37-22-50875932-50875933-A-C-a-PPP6R2",
+                "GRCh37-22-46931059-46931060-A-C-CELSR1",
+                "GRCh37-22-50636217-50636218-A-C-TRABD",
+                "GRCh37-22-50875932-50875933-A-C-PPP6R2",
             }))
 
 def test_distinct_variants():
     result = run([
-        "--field",
-        "sources:'_'.join(sorted(sources.split()))",
-        "--variant-genome", "b37",
-        "--variant-filter", "ref=='A'", "ref in ('T', 'A')",
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        data_path("CELSR1/vcfs/vcf_1.vcf"),
+        "--genome", "b37",
+        "--ref", "A", "T",
         "--variant-source-name", "first", "second",
-        "--variants",
-        data_path("CELSR1/vcfs/vcf_1.vcf"),
-        data_path("CELSR1/vcfs/vcf_1.vcf"),
     ])
     eq_(sorted(cols_concat(result, expected_cols + ["sources"])),
         sorted({
-            "GRCh37-22-21829554-21829555-T-G-second",
-            "GRCh37-22-46931059-46931060-A-C-first_second",
-            "GRCh37-22-50636217-50636218-A-C-first_second",
-            "GRCh37-22-50875932-50875933-A-C-first_second",
+            "GRCh37-22-21829554-21829555-T-G-first second",
+            "GRCh37-22-46931059-46931060-A-C-first second",
+            "GRCh37-22-50636217-50636218-A-C-first second",
+            "GRCh37-22-50875932-50875933-A-C-first second",
         }))
 
