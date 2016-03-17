@@ -62,8 +62,9 @@ group.add_argument("--columns",
     help="Column separated list of columns to output")
 
 group.add_argument("--rename-column", nargs=2, action="append", default=[],
-    metavar=("FROM", "TO"),
-    help="Rename output column FROM to TO. Can be specified multiple times.")
+    metavar="COL",
+    help="Rename output column first argument to second. Can be specified "
+    "multiple times by repeating the --rename-column option.")
 
 group.add_argument("--out",
     help="Output file. If not specified the CSV is written to stdout.")

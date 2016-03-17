@@ -53,8 +53,10 @@ def add_args(parser, positional=False):
         metavar="N",
         help="Load at most N variants from each source.")
     group.add_argument("--single-variant", nargs=3, action="append",
-        default=[], metavar=("LOCUS", "REF", "ALT"),
-        help="Literal variant. Can be specified any number of times.")
+        default=[], metavar="X",
+        help="Literal variant specified as three arguments: LOCUS REF ALT. "
+        "Can be specified any number of times by repeating the "
+        "--single-variant option.")
 
     # Filters
     group = parser.add_argument_group("variant filtering",
