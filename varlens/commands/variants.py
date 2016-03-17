@@ -1,13 +1,36 @@
 '''
-Variant manipulation.
+Given variants from one or more VCF or CSV files, apply filters, add additional
+columns, and output to CSV.
 
-Collect variants specified on the commandline or in VCF or CSV files, apply
-filters, and write out a CSV file.
+Currently we can only output to CSV, not VCF.
 
-%(prog)s 
-    --variants /path/to/first.vcf /path/to/second.vcf \
-    --variant-filter "ref=='A'" \
-    --out-variants result.csv
+A number of useful annotations can be added for each variant by specifying
+options of the form '--include-XXX', e.g. '--include-gene'. See detailed help
+below.
+
+Examples:
+
+Print basic info for the variants found in two VCF files. Note that variants
+found in both files are listed in one row, and the 'sources' column lists
+the files each variant was found in:
+
+    %(prog)s test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf
+
+Same as the above but include additional columns giving varcode variant effect
+annotations and the genes the variants overlap, and write to a file:
+
+    %(prog)s test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf \\
+        --include-effect \\
+        --include-gene \\
+        --out /tmp/result.csv
+
+Print counts for number of reads supporting reference/variant/other alleles
+from the specified BAMs, counting only reads with mapping quality >= 10:
+
+    %(prog)s test/data/CELSR1/vcfs/vcf_1.vcf \\
+        --include-read-evidence \\
+        --reads test/data/CELSR1/bams/*.bam \\
+        --min-mapping-quality 10
 
 '''
 from __future__ import absolute_import
@@ -42,7 +65,8 @@ group.add_argument("--rename-column", nargs=2, action="append", default=[],
     metavar=("FROM", "TO"),
     help="Rename output column FROM to TO. Can be specified multiple times.")
 
-group.add_argument("--out")
+group.add_argument("--out",
+    help="Output file. If not specified the CSV is written to stdout.")
 
 group.add_argument('--include-metadata', action="store_true", default=False,
     help="Output variant metadata when loading from VCF (info column, etc).")

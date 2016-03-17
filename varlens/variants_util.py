@@ -36,18 +36,31 @@ def add_args(parser, positional=False):
     group = parser.add_argument_group("variant loading")
     group.add_argument("variants" if positional else "--variants",
         nargs=("*" if positional else "+"), default=[],
-        help="Path to VCF file. Any number of VCF files may be specified.")
-    group.add_argument("--genome")
+        help="Path to VCF file. Any number of VCF files may be specified. "
+        "CSV files in the format outputted by the varlens-variants tool are "
+        "also supported.")
+    group.add_argument("--genome",
+        help="Genome for the variants (e.g. b37). Required when the genome "
+        "cannot be guessed from the metadata in the VCF.")
     group.add_argument("--include-failing-variants",
-        action="store_true", default=False)
-    group.add_argument("--variant-source-name", nargs="+")
-    group.add_argument("--max-variants-per-source", type=int)
+        action="store_true",
+        default=False,
+        help="Include variants with a non-PASS filter field.")
+    group.add_argument("--variant-source-name", nargs="+",
+        help="Names for variant sources. Must specify one name per variant "
+        "source. If not specified, the filenames are used.")
+    group.add_argument("--max-variants-per-source", type=int,
+        metavar="N",
+        help="Load at most N variants from each source.")
     group.add_argument("--single-variant", nargs=3, action="append",
         default=[], metavar=("LOCUS", "REF", "ALT"),
         help="Literal variant. Can be specified any number of times.")
 
     # Filters
-    group = parser.add_argument_group("variant filtering")
+    group = parser.add_argument_group("variant filtering",
+        "If multiple filters are specified, the variants must pass *all* "
+        "filters. For filtering by loci, any variants that overlap "
+        "the specified loci are included.")
     group.add_argument("--ref", nargs="+",
         help="Include only variants where ref is one of the given values.")
     group.add_argument("--alt", nargs="+",

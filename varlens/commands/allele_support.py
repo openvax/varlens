@@ -1,17 +1,19 @@
 '''
-Count reads supporting 
+Given one or more BAMs and some genomic sites to consider, write a csv file
+giving counts of reads supporting each allele at each site for each BAM.
 
-Given genomic loci (e.g. from a VCF file) and one or more BAM files, write a
-csv file giving read counts for each allele at each locus.
+The genomic sites to consider may be specified by locus (--loci option), or via
+one or more VCF files.
 
-Note that the output of this command is given in *interbase coordinates*, i.e.
-starting at 0, inclusive on first index, exclusive on second.
+The positions outputted by this command are in *interbase coordinates*, i.e.
+starting at 0, inclusive on first index, exclusive on second (as opposed to
+the one-based inclusive coordinates used in VCF files).
 
-%(prog)s \
-    --reads /path/to/bam1
-    --reads /path/to/bam2
-    --variants /path/to/first.vcf
-    --variants /path/to/second.vcf
+Example:
+
+%(prog)s \\
+    --reads test/data/CELSR1/bams/bam_1.bam \\
+    --locus 22:46931061 22:46931063
 
 '''
 from __future__ import absolute_import
@@ -30,12 +32,12 @@ from .. import support
 from ..read_evidence.pileup_collection import to_locus
 
 parser = argparse.ArgumentParser(usage=__doc__)
-loci_util.add_args(parser)
-reads_util.add_args(parser)
+group = parser.add_argument_group("output arguments")
+group.add_argument("--out")
+group.add_argument("-v", "--verbose", action="store_true", default=False)
+loci_util.add_args(parser.add_argument_group("loci specification"))
 variants_util.add_args(parser)
-
-parser.add_argument("--out")
-parser.add_argument("-v", "--verbose", action="store_true", default=False)
+reads_util.add_args(parser)
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)

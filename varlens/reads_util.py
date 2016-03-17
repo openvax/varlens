@@ -104,21 +104,27 @@ for prop in INT_PROPERTIES:
 def add_args(parser, positional=False):
     """
     Extends a commandline argument parser with arguments for specifying
-    a read source:
-        --reads : One or more paths to SAM or BAM files
-        --read-source-name : corresponding names for read inputs
+    read sources.
     """
     group = parser.add_argument_group("read loading")
     group.add_argument("reads" if positional else "--reads",
-        nargs="+", default=[])
+        nargs="+", default=[],
+        help="Paths to bam files. Any number of paths may be specified.")
 
     group.add_argument(
         "--read-source-name",
         nargs="+",
-        help="Read source name")
+        help="Names for each read source. The number of names specified "
+        "must match the number of bam files. If not specified, filenames are "
+        "used for names.")
 
     # Add filters
-    group = parser.add_argument_group("read filtering")
+    group = parser.add_argument_group(
+        "read filtering",
+        "A number of read filters are available. See the pysam "
+        "documentation (http://pysam.readthedocs.org/en/latest/api.html) "
+        "for details on what these fields mean. When multiple filter "
+        "options are specified, reads must match *all* filters.")
 
     for (name, (kind, message, function)) in READ_FILTERS.items():
         extra = {}

@@ -1,10 +1,41 @@
 '''
-Extract reads from a BAM at specified loci.
+Filter reads from one or more BAMs and output a CSV or a new BAM.
 
-%(prog)s \
-    --reads /path/to/bam1.bam
-    --variants /path/to/variants.vcf
-    --out out.bam
+Loci and VCF files may be specified, in which case reads are filtered to
+overlap the specified loci or variants.
+
+Examples:
+
+Print basic fields for the reads in a BAM:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam
+
+Same as above but filter only to reads aligned on the (-) strand, write to a 
+file instead of stdout, and also include the mapping quality and sequenced
+bases in the output:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+        --is-reverse \\
+        --field mapping_quality query_alignment_sequence \\
+        --out /tmp/result.csv
+
+Write a bam file consisting of reads with mapping quality >=30 and
+overlapping a certain locus:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+        --min-mapping-quality 30 \\
+        --locus 22:46932040-46932050 \\
+        --out /tmp/result.bam
+
+Write a bam file consisting of reads overlapping variants from a VCF:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+        --variants test/data/CELSR1/vcfs/vcf_1.vcf \\
+        --out /tmp/result.bam
+
+Print just the header for a BAM in csv format:
+
+    %(prog)s test/data/CELSR1/bams/bam_0.bam --header
 
 '''
 from __future__ import absolute_import
@@ -21,37 +52,46 @@ from .. import reads_util
 from .. import variants_util
 from ..read_evidence.pileup_collection import PileupCollection, to_locus
 
-parser = argparse.ArgumentParser(usage=__doc__)
-reads_util.add_args(parser, positional=True)
-loci_util.add_args(parser)
-variants_util.add_args(parser)
-
-parser.add_argument("--out")
-parser.add_argument("--field", nargs="+", default=[],
-    help="Possible fields include: %s" % (
-        " ".join(PileupCollection._READ_ATTRIBUTE_NAMES)))
-
-parser.add_argument("--no-standard-fields", action="store_true", default=False)
-parser.add_argument("--no-sort", action="store_true", default=False)
-parser.add_argument(
-    "--header",
-    action="store_true",
-    default=False,
-    help="Output BAM/SAM header only.")
-parser.add_argument(
-    "--header-set",
-    nargs=4,
-    action="append",
-    help="Example --header-set RG . SM my_sample")
-
-parser.add_argument("-v", "--verbose", action="store_true", default=False)
-
 STANDARD_FIELDS = [
     "query_name",
     "reference_start",
     "reference_end",
     "cigarstring",
 ]
+
+parser = argparse.ArgumentParser(usage=__doc__)
+group = parser.add_argument_group("output")
+group.add_argument("--out",
+    help="Output file. Format is guessed from file extension: must be csv or "
+    "bam. If not specified, csv is written to stdout.")
+group.add_argument("--field", nargs="+", default=[],
+    help="Additional read fields to output as columns in the csv. See pysam "
+    "documentation (http://pysam.readthedocs.org/en/latest/api.html) for the "
+    "meaning of these fields. Valid fields include: %s" % (
+        " ".join(PileupCollection._READ_ATTRIBUTE_NAMES)))
+
+group.add_argument("--no-standard-fields", action="store_true", default=False,
+    help="Do not include the standard fields (%s) in csv output."
+    % ', '.join(STANDARD_FIELDS))
+group.add_argument("--no-sort", action="store_true", default=False,
+    help="When outputting a bam, do not call samtools sort.")
+group.add_argument(
+    "--header",
+    action="store_true",
+    default=False,
+    help="Output BAM/SAM header only.")
+group.add_argument(
+    "--header-set",
+    nargs=4,
+    action="append",
+    help="When outputting a bam, set a particular header field to the given "
+    "value. Example: --header-set RG . SM my_sample")
+
+group.add_argument("-v", "--verbose", action="store_true", default=False)
+
+reads_util.add_args(parser, positional=True)
+loci_util.add_args(parser.add_argument_group("loci specification"))
+variants_util.add_args(parser)
 
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
