@@ -4,19 +4,25 @@
 varlens
 ======================
 
-A collection of Python tools for working with genomic variants and next-generation sequencing reads.
+A collection of Python tools for working with genomic variants and
+next-generation sequencing reads. Not particularly fast for large datasets. The
+emphasis is on exracting what you need from BAMs and VCFs into a CSV file for
+further analysis.
+
+Built on `varcode <https://github.com/hammerlab/varcode>`_ and `pysam <https://github.com/pysam-developers/pysam>`_.
 
 varlens-variants
-    Combine, annotate, and filter variants from VCF or CSV files
+    Combine, annotate, and filter variants from VCF or CSV files. Available
+    annotations include genes, variant effects, surrounding sequence context,
+    counts of supporting reads from specified BAM files, and MHC I binding
+    affinity prediction of mutant peptides.
 
 varlens-reads
-    Display, filter, and copy reads from a SAM/BAM file (partial replacement for ``samtools view``)
+    Display, filter, and copy reads from a SAM/BAM file. Partial replacement for ``samtools view``.
 
 varlens-allele-support
-    Count reads supporting each allele at specified sites in BAM files
+    Count reads supporting each allele at specified sites in BAM files.
 
-
-``varlens`` is built on `varcode <https://github.com/hammerlab/varcode>`_ and `pysam <https://github.com/pysam-developers/pysam>`_.
 
 Installation
 -------------
