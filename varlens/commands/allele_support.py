@@ -2,7 +2,7 @@
 Given one or more BAMs and some genomic sites to consider, write a csv file
 giving counts of reads supporting each allele at each site for each BAM.
 
-The genomic sites to consider may be specified by locus (--loci option), or via
+The genomic sites to consider may be specified by locus (--locus option), or via
 one or more VCF files.
 
 The positions outputted by this command are in *interbase coordinates*, i.e.
