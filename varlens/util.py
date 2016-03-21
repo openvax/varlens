@@ -53,10 +53,19 @@ def drop_prefix(strings):
     """
     Removes common prefix from a collection of strings
     """
-    if len(strings) == 1:
-        return [os.path.basename(strings[0])]
-    prefix_len = len(os.path.commonprefix(strings))
-    return [string[prefix_len:] for string in strings]
+    strings_without_extensions = [
+        s.split(".", 2)[0] for s in strings
+    ]
+
+    if len(strings_without_extensions) == 1:
+        return [os.path.basename(strings_without_extensions[0])]
+    prefix_len = len(os.path.commonprefix(strings_without_extensions))
+    result = [string[prefix_len:] for string in strings_without_extensions]
+    if len(set(result)) != len(strings):
+        # If these operations resulted in a collision, just return the original
+        # strings.
+        return strings
+    return result
 
 class PrefixedArgumentParser(object):
     def __init__(self, wrapped, prefix):

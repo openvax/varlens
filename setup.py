@@ -23,7 +23,7 @@ if __name__ == '__main__':
     setup(
         name='varlens',
         packages=["varlens", "varlens.commands", "varlens.read_evidence"],
-        version="0.0.1",
+        version="0.0.2",
         description=(
             "commandline manipulation of genomic variants and NGS reads"),
         long_description=open('README.rst').read(),
