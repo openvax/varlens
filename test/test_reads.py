@@ -25,7 +25,7 @@ from . import data_path, run_and_parse_csv, cols_concat, temp_file
 run = functools.partial(run_and_parse_csv, reads.run)
 
 expected_cols = (
-    "query_name,reference_start,reference_end,cigarstring").split(',')
+    "source,query_name,reference_start,reference_end,cigarstring").split(',')
 
 def test_basic():
     result = run([
@@ -117,5 +117,5 @@ def test_round_trip():
             "--locus", "chr22/46930276",
             "--locus", "chr22/46930256",
         ])
-        eq_(sorted(cols_concat(result1, expected_cols)),
-            sorted(cols_concat(result2, expected_cols)))
+        eq_(sorted(cols_concat(result1, expected_cols[1:])),
+            sorted(cols_concat(result2, expected_cols[1:])))

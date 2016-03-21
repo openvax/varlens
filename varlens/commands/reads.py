@@ -53,6 +53,7 @@ from .. import variants_util
 from ..read_evidence.pileup_collection import PileupCollection, to_locus
 
 STANDARD_FIELDS = [
+    "source",
     "query_name",
     "reference_start",
     "reference_end",
@@ -161,7 +162,8 @@ def run(raw_args=sys.argv[1:]):
                 out_pysam_handle.write(read)
             if out_csv_writer is not None:
                 out_csv_writer.writerow([
-                    str(read_field(read, field)) for field in columns
+                    str(read_field(read_source, read, field))
+                    for field in columns
                 ])
 
     if out_pysam_handle is not None:
@@ -179,7 +181,10 @@ def run(raw_args=sys.argv[1:]):
         print("Wrote: %s" % args.out)
 
 
-def read_field(read, field_name):
+def read_field(read_source, read, field_name):
+    if field_name == 'source':
+        return read_source.name
+
     if field_name.startswith("tag:"):
         tag_name = field_name[len("tag:"):]
         return read.get_tags().get(tag_name)

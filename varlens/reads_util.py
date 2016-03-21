@@ -54,6 +54,10 @@ for prop in BOOLEAN_PROPERTIES:
             prop)
     )
 
+def field_contains(field_name, parsed_value, read):
+    field_value = getattr(read, field_name)
+    return field_value is not None and parsed_value in field_value
+
 for prop in STRING_PROPERTIES:
     READ_FILTERS["%s" % prop] = (
         str,
@@ -67,11 +71,7 @@ for prop in STRING_PROPERTIES:
     READ_FILTERS["%s_contains" % prop] = (
         str,
         "Only reads where %s contains the given string" % prop,
-        functools.partial(
-            (lambda field_name, parsed_value, read:
-                parsed_value in getattr(read, field_name)),
-            prop)
-    )
+        functools.partial(field_contains, prop))
 
 for prop in INT_PROPERTIES:
     READ_FILTERS["%s" % prop] = (
