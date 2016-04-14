@@ -125,7 +125,7 @@ def run(raw_args=sys.argv[1:]):
         header = update_header(args, read_sources[0].handle.header)
         out_pysam_handle = pysam.AlignmentFile(
             args.out,
-            "wb" if args.out.endswith(".bam") else "w",
+            "wb",
             header=header)
 
     elif not args.out or args.out.endswith(".csv"):

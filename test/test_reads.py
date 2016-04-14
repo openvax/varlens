@@ -119,3 +119,23 @@ def test_round_trip():
         ])
         eq_(sorted(cols_concat(result1, expected_cols[1:])),
             sorted(cols_concat(result2, expected_cols[1:])))
+
+def test_round_trip_sam():
+    with temp_file(".sam") as out:
+        print(out)
+        reads.run([
+            data_path("CELSR1/bams/bam_5.bam"),
+            "--locus", "chr22/46930276",
+            "--locus", "chr22/46930256",
+            "--out", out,
+        ])
+        result1 = run([
+            out,
+        ])
+        result2 = run([
+            data_path("CELSR1/bams/bam_5.bam"),
+            "--locus", "chr22/46930276",
+            "--locus", "chr22/46930256",
+        ])
+        eq_(sorted(cols_concat(result1, expected_cols[1:])),
+            sorted(cols_concat(result2, expected_cols[1:])))
