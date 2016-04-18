@@ -1,16 +1,8 @@
 sudo: false  # Use container-based infrastructure
-
 language: python
-
 python:
   - "2.7"
   - "3.4"
-
-env:
-  global:
-  - GH_REF: github.com/hammerlab/varlens.git
-  - secure: "LKOTsxZMfN/NVXW6q/4sWEF4a6w9I1Lw6yJGPPPRYXtTymUfp1jIgaPnADxel1pbvXuFD/9RFTunoVBS/++JIrHPKHHB4TS2Z287aB8RObk/bvUPKFbJzEDL+dO3y0lsjn8g1ySFmF6M3QS9Q3mLWtop4dF01ySmY8YCLeTG74k="
- 
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
@@ -18,15 +10,9 @@ before_install:
   - export PATH=$HOME/miniconda/bin:$PATH
   - hash -r
   - conda update --yes conda
-
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas
   - pip install -e .
-  
 script:
   - pyensembl install --release 75 --species human
   - nosetests .
-
- after_success:
-    - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && bash deploy-gh-pages.sh
-
