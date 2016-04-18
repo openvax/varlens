@@ -48,6 +48,7 @@ if __name__ == '__main__':
             'Topic :: Scientific/Engineering :: Bio-Informatics',
         ],
         install_requires=[
+            'cython>=0.21',
             'numpy',
             'intervaltree',
             'pysam>=0.8.4',
