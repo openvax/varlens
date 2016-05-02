@@ -312,7 +312,6 @@ class ReadEvidence(Includeable):
     def __init__(self,
             read_sources=None,
             read_sources_df=None,
-            read_filters=[],
             column_format=default_column_format,
             survive_errors=False):
         """
@@ -324,7 +323,6 @@ class ReadEvidence(Includeable):
  
         self.read_sources = read_sources
         self.read_sources_df = read_sources_df
-        self.read_filters = read_filters
         self.column_format = column_format
         self.survive_errors = survive_errors
         self.set_columns()
@@ -400,8 +398,7 @@ class ReadEvidence(Includeable):
                         try:
                             read_sources.append(reads_util.load_bam(
                                 filename,
-                                name=name,
-                                read_filters=self.read_filters))
+                                name=name))
                         except Exception as e:
                             logging.error("Error loading bam: %s in %s" %
                                 (str(e), filename))
