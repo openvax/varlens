@@ -158,7 +158,7 @@ class Context(Includeable):
     
 class MHCBindingAffinity(Includeable):
     name = "MHC binding affinity"
-    columns = ["binding_affinity", "binding_allele"]
+    columns = ["binding_peptides"]
 
     noncoding_effects = set([
         "intergenic",
@@ -248,10 +248,8 @@ class MHCBindingAffinity(Includeable):
             if alleles and sub_df.shape[0] > 0:
                 result = mhc_binding.binding_affinities(
                     sub_df.variant, alleles)
-                df.loc[rows, "binding_affinity"] = (
-                    result["binding_affinity"].values)
-                df.loc[rows, "binding_allele"] = (
-                    result["binding_allele"].values)
+                df.loc[rows, "binding_peptides"] = (
+                    result["binding_peptides"].values)
         if drop_donor:
             del df["donor"]
         return df
