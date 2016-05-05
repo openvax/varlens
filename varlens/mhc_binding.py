@@ -37,6 +37,7 @@ def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
                 if (v, allele) not in CACHED_AFFINITIES
             ]),
             predictor,
+            only_novel_epitopes=True,
             ic50_cutoff=float('inf'),
             percentile_cutoff=100)
         if len(predictions) > 0:
