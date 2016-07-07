@@ -6,7 +6,7 @@ varlens
 
 A collection of Python tools for working with genomic variants and
 next-generation sequencing reads. Not particularly fast for large datasets. The
-emphasis is on exracting what you need from BAMs and VCFs into a CSV file for
+emphasis is on extracting what you need from BAMs and VCFs into a CSV file for
 further analysis.
 
 Built on `varcode <https://github.com/hammerlab/varcode>`_ and `pysam <https://github.com/pysam-developers/pysam>`_.
