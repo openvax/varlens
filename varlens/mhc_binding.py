@@ -17,7 +17,8 @@ import collections
 import pandas
 import varcode
 
-CACHED_BINDING_AFFINITIES = {}  # (variant, allele -> nm affinity)
+# (variant, allele) -> (peptide -> nm affinity)
+CACHED_AFFINITIES = collections.defaultdict(dict)
 BINDING_PREDICTORS = {}
 def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
     # We import these here so we don't depend on these libraries unless this
@@ -33,29 +34,30 @@ def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
         predictions = topiary.predict_epitopes_from_variants(
             varcode.VariantCollection([
                 v for v in variants
-                if (v, allele) not in CACHED_BINDING_AFFINITIES
+                if (v, allele) not in CACHED_AFFINITIES
             ]),
             predictor,
+            only_novel_epitopes=True,
             ic50_cutoff=float('inf'),
             percentile_cutoff=100)
         if len(predictions) > 0:
             predictions_df = pandas.DataFrame(
                 predictions.elements, columns=predictions[0]._fields)
-            values = predictions_df.groupby("variant")["value"].min()
-            for (variant, value) in zip(values.index, values):
-                CACHED_BINDING_AFFINITIES[(variant, allele)] = value
+            for (_, row) in predictions_df.iterrows():
+                CACHED_AFFINITIES[(row.variant, allele)][row.peptide] = (
+                    row.value)
         
     result_df = collections.defaultdict(list)
     for variant in variants:
-        (binding_affinity, binding_allele) = min(
-            (CACHED_BINDING_AFFINITIES.get((variant, allele), float('nan')),
-                allele)
-            for allele in alleles)
-        if pandas.isnull(binding_affinity):
-            binding_allele = None
+        binding_peptides = {}
+        for allele in alleles:
+            allele_peptides = CACHED_AFFINITIES[(variant, allele)]
+            for (peptide, affinity) in allele_peptides.items():
+                if affinity < binding_peptides.get(peptide, float('inf')):
+                    binding_peptides[peptide] = affinity
+
         result_df["variant"].append(variant)
-        result_df["binding_affinity"].append(binding_affinity)
-        result_df["binding_allele"].append(binding_allele)
+        result_df["binding_peptides"].append(binding_peptides)
 
     return pandas.DataFrame(result_df)
     

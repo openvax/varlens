@@ -102,15 +102,25 @@ def test_mhc_binding_affinity():
             "--hla", "A:02:01 A:02:02",
             "--out", out_csv,
         ])
-        eq_(sorted(cols_concat(pandas.read_csv(out_csv),
-                expected_cols + ["binding_affinity", "binding_allele"])),
-            sorted({
-               'GRCh37-22-21829554-21829555-T-G-nan-nan',
-               'GRCh37-22-46931059-46931060-A-C-142.13-A:02:02',
-               'GRCh37-22-46931061-46931062-G-A-115.77-A:02:02',
-               'GRCh37-22-50636217-50636218-A-C-nan-nan',
-               'GRCh37-22-50875932-50875933-A-C-nan-nan',
-            }))
+        result = pandas.read_csv(
+            out_csv, converters={'binding_peptides': eval, 'contig': str})
+        del result["sources"]
+
+        eq_(tuple(result.ix[0]),
+            ("GRCh37", "22", 21829554, 21829555, "T", "G", {}))
+        eq_(tuple(result.ix[1])[:-1],
+            ("GRCh37", "22", 46931059, 46931060, "A", "C"))
+        assert 142.13 in result.ix[1].binding_peptides.values()
+        eq_(tuple(result.ix[2])[:-1],
+            ("GRCh37", "22", 46931061, 46931062, "G", "A"))
+        assert 115.77 in result.ix[2].binding_peptides.values()
+        eq_(tuple(result.ix[3]),
+            ("GRCh37", "22", 50636217, 50636218, "A", "C", {}))
+        eq_(tuple(result.ix[4]),
+            ("GRCh37", "22", 50875932, 50875933, "A", "C", {}))
+
+
+
 
 def test_read_evidence():
     result = run([
