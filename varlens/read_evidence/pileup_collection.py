@@ -20,7 +20,7 @@ import itertools
 import re
 
 import pandas
-from pysam.csamfile import Samfile
+from pysam import Samfile
 import typechecks
 import pyensembl
 
@@ -521,7 +521,7 @@ class PileupCollection(object):
 
         Parameters
         ----------
-        pysam_samfile : `pysam.csamfile.Samfile` instance, or filename string
+        pysam_samfile : `pysam.Samfile` instance, or filename string
             to a BAM file. The BAM file must be indexed.
 
         loci : list of Locus instances

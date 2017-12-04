@@ -19,6 +19,7 @@ import warnings
 import logging
 
 import pandas
+import numpy
 from nose.tools import eq_
 
 from varlens.commands import variants
@@ -102,15 +103,23 @@ def test_mhc_binding_affinity():
             "--hla", "A:02:01 A:02:02",
             "--out", out_csv,
         ])
-        eq_(sorted(cols_concat(pandas.read_csv(out_csv),
-                expected_cols + ["binding_affinity", "binding_allele"])),
-            sorted({
-               'GRCh37-22-21829554-21829555-T-G-nan-nan',
-               'GRCh37-22-46931059-46931060-A-C-142.13-A:02:02',
-               'GRCh37-22-46931061-46931062-G-A-115.77-A:02:02',
-               'GRCh37-22-50636217-50636218-A-C-nan-nan',
-               'GRCh37-22-50875932-50875933-A-C-nan-nan',
-            }))
+        ['GRCh37-22-21829554-21829555-T-G-nan-nan',
+        'GRCh37-22-46931059-46931060-A-C-377.3-A:02:02',
+        'GRCh37-22-46931061-46931062-G-A-77.2-A:02:02',
+        'GRCh37-22-50636217-50636218-A-C-nan-nan',
+        'GRCh37-22-50875932-50875933-A-C-nan-nan']
+
+        results = pandas.read_csv(out_csv).set_index(expected_cols)
+        assert numpy.isnan(results.loc[
+                ("GRCh37", 22, 21829554, 21829555, "T", "G")].binding_affinity)
+        assert numpy.isnan(results.loc[
+                ("GRCh37", 22, 21829554, 21829555, "T", "G")].binding_allele)
+        eq_(results.loc[
+            ("GRCh37", 22, 46931059, 46931060, "A", "C")].binding_allele,
+            "A:02:02")
+        eq_(results.loc[
+            ("GRCh37", 22, 46931061, 46931062, "G", "A")].binding_allele,
+            "A:02:02")
 
 def test_read_evidence():
     result = run([

@@ -51,7 +51,7 @@ if __name__ == '__main__':
             'cython>=0.21',
             'numpy',
             'intervaltree',
-            'pysam>=0.8.4',
+            'pysam>=0.13',
             'typechecks',
             'varcode',
             'pyfaidx',

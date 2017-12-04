@@ -16,7 +16,7 @@ from __future__ import absolute_import
 import collections
 from nose.tools import eq_, assert_raises
 
-from pysam.csamfile import Samfile
+from pysam import Samfile
 
 from varcode import Variant as VarcodeVariant
 
