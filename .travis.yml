@@ -32,7 +32,6 @@ install:
       numpy nose pandas cython
   - source activate test-environment
   - pip install pypandoc
-  - pip install -r requirements.txt
   - pip install .
   - pip install coveralls
   - pyensembl install --release 75 --species human
