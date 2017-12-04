@@ -10,10 +10,6 @@ addons:
       - tcsh
       # add pandoc to properly generate README as reStructuredText
       - pandoc
-env:
-  global:
-    # MHC_BUNDLE_PASS
-    - secure: "bWJ1eCA19Qt8dHarlUC/5SfgkOk08VdASljeC7NVy7jAzNnhZna6My39BkBWHUxDGGN6PxeaNzb8COMo94dcfk5OoIQ8ZB8CXwtg/o5Unpi8S2uNC1+H6SvR06xYXPCNozqPwBO151HAK+8IhEpJidQ0Mj1qjrYC3BiWePrXwgs="
 before_install:
   # Commands below copied from: http://conda.pydata.org/docs/travis.html
   # We do this conditionally because it saves us some downloading if the
@@ -30,13 +26,6 @@ before_install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-
-  # install MHC predictors
-  - git clone https://mhcbundle:$MHC_BUNDLE_PASS@github.com/hammerlab/netmhc-bundle.git
-  - export NETMHC_BUNDLE_HOME=$PWD/netmhc-bundle
-  - mkdir tmp
-  - export NETMHC_BUNDLE_TMPDIR=$PWD/tmp
-  - export PATH=$PATH:$NETMHC_BUNDLE_HOME/bin
 install:
   - >
       conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
