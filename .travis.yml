@@ -2,24 +2,49 @@ sudo: false  # Use container-based infrastructure
 language: python
 python:
   - "2.7"
-  - "3.4"
+  - "3.5"
+addons:
+  apt:
+    packages:
+      # Needed for NetMHC
+      - tcsh
+      # add pandoc to properly generate README as reStructuredText
+      - pandoc
 before_install:
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p $HOME/miniconda
-  - export PATH=$HOME/miniconda/bin:$PATH
+  # Commands below copied from: http://conda.pydata.org/docs/travis.html
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
-  - conda update --yes conda
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas cython
-  - pip install -e .
-script:
+  - >
+      conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+      numpy nose pandas cython
+  - source activate test-environment
+  - pip install pypandoc
+  - pip install .
+  - pip install coveralls
   - pyensembl install --release 75 --species human
-  - nosetests .
+script:
+  - nosetests test --with-coverage --cover-package=varlens
+after_success:
+  coveralls
 deploy:
   provider: pypi
   user: hammerlab
+  distributions: sdist
   password:
     secure: "HfHirRkB4d8pG74Y1yZFBkOv8nUmZ/putRiSoebPibFd+oWluVzCzjvMdOYRfOFF/TS/Ye/4OafoQ14uyS6uZrM8DbFdMSDQZlbhNV5OYfcFUHR17dd7NmKSTC0xRSCVLhHvBmzMjKgRPfy7eR2O9aQjWdsRoB9rOBTUpUc4sU7NOef11KaM5fudKExK7O35rJi+eBB/ywkuUUdmn+w16AvgZ0/RmG3mF5EZJqwIkNiXrUH7+o0zuaGkrBe2pFQSoVLy3n1rbW1EqMl50vh2+KY4AMxGK6L1X22Rg30S3/KfxBljjyp61kzy7Obvn6A7dRxvdCU6Gwg88Q0KiAeorpRMn9s8/1ZavNNZNL5Tv0VMWL03sLFUrKrUsX9lDoJfOPcHh1fTzE1EoGIfoeFFoNcoLxWEMpBMRkyXtly+w540yI11US300/zm3TCTX7rX9ZEZF+5I6LBl/D0ripWY0cj1GrHu2ZYHUVwu/H9Cp+5vxVIBFAyWWuJrxqqIVPHGeRuozJo6T4vnyDexjeN1z4t6VKxcjzAAnTzWvhWV90Co7tZ6EX1jzYI9v6Z2nDMhw3HNN2Uob+kcYJ9XhInmj+7RkqqshLaZUa24dzQK4p2ZDyRFmBMwpkL+qFXdG/ViXZvZO0VI75DK7FO/UQSYSzmdVzZP2NzSICnWwFKJBjU="
   on:
     branch: master
+

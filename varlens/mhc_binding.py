@@ -28,7 +28,7 @@ def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
     for allele in alleles:
         if allele not in BINDING_PREDICTORS:
             BINDING_PREDICTORS[allele] = mhctools.NetMHCpan(
-                [allele], epitope_lengths=epitope_lengths)
+                [allele], default_peptide_lengths=epitope_lengths)
         predictor = BINDING_PREDICTORS[allele]
         predictions = topiary.predict_epitopes_from_variants(
             varcode.VariantCollection([
@@ -40,7 +40,7 @@ def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
             percentile_cutoff=100)
         if len(predictions) > 0:
             predictions_df = pandas.DataFrame(
-                predictions.elements, columns=predictions[0]._fields)
+                predictions, columns=predictions[0]._fields)
             values = predictions_df.groupby("variant")["value"].min()
             for (variant, value) in zip(values.index, values):
                 CACHED_BINDING_AFFINITIES[(variant, allele)] = value
