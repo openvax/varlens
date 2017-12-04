@@ -50,6 +50,7 @@ from . import configure_logging
 from .. import loci_util
 from .. import reads_util
 from .. import variants_util
+from ..locus import Locus
 from ..read_evidence.pileup_collection import PileupCollection, to_locus
 
 STANDARD_FIELDS = [
@@ -94,6 +95,22 @@ reads_util.add_args(parser, positional=True)
 loci_util.add_args(parser.add_argument_group("loci specification"))
 variants_util.add_args(parser)
 
+parser.add_argument("--variant-locus-window",
+                    type=int,
+                    default=None,
+                    help="Number of bases before and after the variant to include")
+
+
+def to_padded_locus(variant, window=None):
+    """Build a locus from variant and optionally create a window around it"""
+    if window:
+        return Locus.from_inclusive_coordinates(
+            variant.contig,
+            variant.start - window,
+            variant.end + window)
+    else:
+        return to_locus(variant)
+
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
     configure_logging(args)
@@ -106,7 +123,7 @@ def run(raw_args=sys.argv[1:]):
     variants_df = variants_util.load_from_args_as_dataframe(args)
     if variants_df is not None:
         variant_loci = loci_util.Loci(
-            to_locus(variant)
+            to_padded_locus(variant, args.variant_locus_window)
             for variant in variants_df["variant"])
         loci = variant_loci if loci is None else loci.union(variant_loci)
 
