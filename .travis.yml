@@ -11,7 +11,8 @@ before_install:
   - hash -r
   - conda update --yes conda
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas cython
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas
+  - pip install cython
   - pip install -e .
 script:
   - pyensembl install --release 75 --species human
