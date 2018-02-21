@@ -14,16 +14,23 @@
 
 from __future__ import print_function
 import os
+import re
 
 from setuptools import setup
 
 current_directory = os.path.dirname(__file__)
 
+with open('varlens/__init__.py', 'r') as f:
+    version = re.search(
+        r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+        f.read(),
+        re.MULTILINE).group(1)
+
 if __name__ == '__main__':
     setup(
         name='varlens',
         packages=["varlens", "varlens.commands", "varlens.read_evidence"],
-        version="0.1.0",
+        version=version,
         description=(
             "commandline manipulation of genomic variants and NGS reads"),
         long_description=open('README.rst').read(),
