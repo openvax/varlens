@@ -1,4 +1,4 @@
-# Copyright (c) 2014. Mount Sinai School of Medicine
+# Copyright (c) 2014-2018. Mount Sinai School of Medicine
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ if __name__ == '__main__':
     setup(
         name='varlens',
         packages=["varlens", "varlens.commands", "varlens.read_evidence"],
-        version="0.0.4",
+        version="0.1.0",
         description=(
             "commandline manipulation of genomic variants and NGS reads"),
         long_description=open('README.rst').read(),
-        url="https://github.com/hammerlab/varlens",
+        url="https://github.com/openvax/varlens",
         author="Tim O'Donnell",
         author_email="timodonnell@gmail.com",
         license="http://www.apache.org/licenses/LICENSE-2.0.html",

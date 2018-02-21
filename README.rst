@@ -1,5 +1,5 @@
-.. image:: https://travis-ci.org/hammerlab/varlens.svg?branch=master
-    :target: https://travis-ci.org/hammerlab/varlens
+.. image:: https://travis-ci.org/openvax/varlens.svg?branch=master
+    :target: https://travis-ci.org/openvax/varlens
 
 varlens
 ======================
@@ -9,7 +9,7 @@ next-generation sequencing reads. Not particularly fast for large datasets. The
 emphasis is on extracting what you need from BAMs and VCFs into a CSV file for
 further analysis.
 
-Built on `varcode <https://github.com/hammerlab/varcode>`_ and `pysam <https://github.com/pysam-developers/pysam>`_.
+Built on `varcode <https://github.com/openvax/varcode>`_ and `pysam <https://github.com/pysam-developers/pysam>`_.
 
 varlens-variants
     Combine, annotate, and filter variants from VCF or CSV files. Available
@@ -30,7 +30,7 @@ Installation
 To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
 
 ::
-    
+
     pip install varlens
 
 Or from a git checkout:
@@ -224,7 +224,7 @@ the one-based inclusive coordinates used in VCF files).
 Examples
 `````````````
 
-:: 
+::
 
     varlens-allele-support \
         --reads test/data/CELSR1/bams/bam_1.bam \
@@ -259,6 +259,6 @@ for more details on coordinate systems.
 .. Documentation
     -------------
     The docs are just this readme and the commandline tool help.
-    They are available here: http://hammerlab.github.io/varlens/docs/html
+    They are available here: http://openvax.github.io/varlens/docs/html
 
 

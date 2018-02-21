@@ -2,14 +2,12 @@ sudo: false  # Use container-based infrastructure
 language: python
 python:
   - "2.7"
-  - "3.5"
+  - "3.6"
 addons:
   apt:
     packages:
       # Needed for NetMHC
       - tcsh
-      # add pandoc to properly generate README as reStructuredText
-      - pandoc
 before_install:
   # Commands below copied from: http://conda.pydata.org/docs/travis.html
   # We do this conditionally because it saves us some downloading if the
@@ -41,10 +39,10 @@ after_success:
   coveralls
 deploy:
   provider: pypi
-  user: hammerlab
+  user: openvax
   distributions: sdist
   password:
-    secure: "HfHirRkB4d8pG74Y1yZFBkOv8nUmZ/putRiSoebPibFd+oWluVzCzjvMdOYRfOFF/TS/Ye/4OafoQ14uyS6uZrM8DbFdMSDQZlbhNV5OYfcFUHR17dd7NmKSTC0xRSCVLhHvBmzMjKgRPfy7eR2O9aQjWdsRoB9rOBTUpUc4sU7NOef11KaM5fudKExK7O35rJi+eBB/ywkuUUdmn+w16AvgZ0/RmG3mF5EZJqwIkNiXrUH7+o0zuaGkrBe2pFQSoVLy3n1rbW1EqMl50vh2+KY4AMxGK6L1X22Rg30S3/KfxBljjyp61kzy7Obvn6A7dRxvdCU6Gwg88Q0KiAeorpRMn9s8/1ZavNNZNL5Tv0VMWL03sLFUrKrUsX9lDoJfOPcHh1fTzE1EoGIfoeFFoNcoLxWEMpBMRkyXtly+w540yI11US300/zm3TCTX7rX9ZEZF+5I6LBl/D0ripWY0cj1GrHu2ZYHUVwu/H9Cp+5vxVIBFAyWWuJrxqqIVPHGeRuozJo6T4vnyDexjeN1z4t6VKxcjzAAnTzWvhWV90Co7tZ6EX1jzYI9v6Z2nDMhw3HNN2Uob+kcYJ9XhInmj+7RkqqshLaZUa24dzQK4p2ZDyRFmBMwpkL+qFXdG/ViXZvZO0VI75DK7FO/UQSYSzmdVzZP2NzSICnWwFKJBjU="
+    secure: "jzb1g5AroLPBzPxWWwcVTfUE6/T1d6q2EP7ePhWIKOnVJxHZNkmTztMKcX0MtfpJ2m/tYolNU/UBeDrwX2QuHMyIJmZIU66NpKNtRU8XSKaquKGTofV4Y82RcFzkCKFtBnh280uU2prqfzp75XWb10CMoiK+wPyn948BxpCVi1Mhm1+MA+qolE7lFVI4QLehyT4UZWA/LzdpinML8MsQ65xFFH+st9RHX4Gm3dQeRcnM/QiCGqYsJzU6MK6czsIAuRuqN57JzNdbynhqv//iVK2ixKomVvaJSYMt+f+gh327zbBRCGyHgHlEzE1ZrqnqJmGB+0LiqpE9Vvg0r2lAqXgxhHjPoO59Yo+2bRxcPF7hB6F6hG4mNJBrQXo2Ny88RpviWT5JrO6pUCePHdTrddJdFcURlVPBEXVzgmp8Az8CKa3YyZFB43XLwqwAkCD7HjPlyDHS9xEaxfp+B0PgwnYq63QDA5WKCSgCanmW7bLx0B4UZkkG1SIv/FtP40nAnG7i3XMHqlV0kq1yPJXMZJUH5t48YxGKFqjC1VeU9Qm2zaKlVXazK6OQxW0I0S1LNKosHwcq+uS5442/hgaeL5v13YKjExzCM8YmQwuBGtahjh4TcDdNG9isTx/atl/pDRR/EE8jXTxc4m8Ewj2rkfWN+YDu1jWiidUOcIn2qZA="
   on:
     branch: master
-
+    condition: $TRAVIS_PYTHON_VERSION = "2.7"
