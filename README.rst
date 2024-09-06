@@ -1,5 +1,6 @@
-.. image:: https://travis-ci.org/openvax/varlens.svg?branch=master
-    :target: https://travis-ci.org/openvax/varlens
+.. image:: https://github.com/openvax/varlens/actions/workflows/tests.yml/badge.svg
+    :target: https://github.com/openvax/varlens/actions/workflows/tests.yml
+    :alt: Tests
 
 varlens
 ======================
