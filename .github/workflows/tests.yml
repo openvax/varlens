@@ -1,0 +1,52 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+name: Tests
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - name: Create virtual environment and install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install uv
+          uv venv
+          source .venv/bin/activate
+          uv pip install pytest pytest-cov coveralls pylint ruff
+          uv pip install -r requirements.txt
+          uv pip install .
+      - name: Install Ensembl data
+        run: |
+          echo "Before installing Ensembl releases" && df -h
+          pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+          pyensembl install --release 77 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh38.77/
+          pyensembl install --release 93 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh38.93/
+          pyensembl install --release 93 --species mouse --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCm38.93/
+      - name: Run linting script and unit tests
+        run: |
+          source .venv/bin/activate
+          ./lint.sh
+          ./test.sh
+      - name: Publish coverage to Coveralls
+        uses: coverallsapp/github-action@v2.2.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          flag-name: coverage
+          fail-on-error: false
+          parallel: true
+      - name: Upload docs to GitHub Pages
+        run: |
+          ./deploy-gh-pages.sh
