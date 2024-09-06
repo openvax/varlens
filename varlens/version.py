@@ -10,17 +10,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
+__version__ = "0.2.0"
 
-def load_variant_collections_parser():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--variants", nargs="+", required=True)
-    parser.add_argument("--ensembl-version")
-    parser.add_argument("--variant-filter")
-    return parser
+version_string = f"v{__version__}"
 
-def load_read_sets_parser():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--reads", nargs="+", default=[])
-    return parser
+def print_version():
+    print(version_string)
+
+def print_name_and_version():
+    print(f"Varlens {version_string}")
+
+if __name__ == "__main__":
+    print_version()
+
 

@@ -1,5 +1,3 @@
-# Copyright (c) 2014-2018. Mount Sinai School of Medicine
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -20,7 +18,7 @@ from setuptools import setup
 
 current_directory = os.path.dirname(__file__)
 
-with open('varlens/__init__.py', 'r') as f:
+with open('varlens/version.py', 'r') as f:
     version = re.search(
         r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
         f.read(),
