@@ -11,6 +11,7 @@
 # limitations under the License.
 
 import math
+from collections import defaultdict
 
 import pandas
 import varcode
@@ -40,20 +41,26 @@ def binding_affinities(variants, alleles, epitope_lengths=(8, 9, 10, 11)):
         if predictor_key not in BINDING_PREDICTORS:
             BINDING_PREDICTORS[predictor_key] = mhctools.NetMHCpan(
                 [allele], default_peptide_lengths=list(lengths))
-        predictions = topiary.TopiaryPredictor(
+        predictor = topiary.TopiaryPredictor(
             models=BINDING_PREDICTORS[predictor_key],
             only_novel_epitopes=True,
-        ).predict_from_variants(varcode.VariantCollection(pending))
-        # Topiary returns long-form prediction rows, or an empty DataFrame
-        # when no effects yield peptides.
-        values = {}
-        if len(predictions):
-            frame = predictions
-            affinity_rows = frame.loc[frame["kind"] == "pMHC_affinity"]
-            values = affinity_rows.groupby("variant")["value"].min().to_dict()
+        )
+        # Topiary's variant labels omit the genome. Keep assemblies separate
+        # so equal coordinates on different references cannot share scores.
+        by_genome = defaultdict(list)
         for variant in pending:
-            CACHED_BINDING_AFFINITIES[(variant, allele, lengths)] = values.get(
-                variant.short_description, float("nan"))
+            by_genome[variant.genome].append(variant)
+        for genome_variants in by_genome.values():
+            predictions = predictor.predict_from_variants(
+                varcode.VariantCollection(genome_variants))
+            values = {}
+            if len(predictions):
+                affinity_rows = predictions.loc[
+                    predictions["kind"] == "pMHC_affinity"]
+                values = affinity_rows.groupby("variant")["value"].min().to_dict()
+            for variant in genome_variants:
+                CACHED_BINDING_AFFINITIES[(variant, allele, lengths)] = values.get(
+                    variant.short_description, float("nan"))
 
     rows = []
     for variant in variants:

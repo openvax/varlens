@@ -75,3 +75,22 @@ def test_binding_affinity_lengths_and_missing_values(binding_predictor):
         "variant", "binding_affinity", "binding_allele"]
     with pytest.raises(ValueError, match="At least one"):
         binding_affinities([variant], [])
+
+
+def test_binding_affinities_do_not_mix_genomes(binding_predictor, monkeypatch):
+    import topiary
+
+    variants = [Variant("22", 46931060, "A", "C", genome=genome)
+                for genome in ("b37", "GRCh38")]
+    assert variants[0].short_description == variants[1].short_description
+
+    def predict(self, collection):
+        return pd.DataFrame([
+            {"variant": variant.short_description, "kind": "pMHC_affinity",
+             "value": 100 if variant.genome.reference_name == "GRCh37" else 200}
+            for variant in collection
+        ])
+
+    monkeypatch.setattr(topiary.TopiaryPredictor, "predict_from_variants", predict)
+    result = binding_affinities(variants, ["A:02:01"])
+    assert result.binding_affinity.tolist() == [100, 200]
