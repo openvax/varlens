@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pandas
 import pytest
 import mhctools
@@ -112,6 +114,40 @@ def test_chunked_mhc_annotation(monkeypatch, variants):
     assert frame.loc[4, "binding_allele"] == "HLA-A*02:01"
     assert frame.loc[4, "binding_affinity"] == 50
     assert pandas.isna(frame.loc[9, "binding_allele"])
+
+
+@pytest.mark.parametrize("chunk_rows", [None, 1])
+@pytest.mark.parametrize(
+    "affinity", [50.25, float("nan")], ids=["fractional", "missing"]
+)
+def test_reannotate_integer_affinity_from_csv(
+    monkeypatch, variants, chunk_rows, affinity
+):
+    frame = pandas.read_csv(
+        StringIO("binding_affinity,binding_allele\n50,\n100,HLA-A*02:01\n")
+    )
+    assert frame["binding_affinity"].dtype == "int64"
+    frame.index = [4, 9]
+    frame["variant"] = variants
+    predictions = pandas.DataFrame(
+        [
+            [variants[0].short_description, "HLA-A*02:01", "pMHC_affinity", affinity],
+        ],
+        columns=["variant", "allele", "kind", "affinity"],
+    )
+    install_predictions(monkeypatch, predictions)
+
+    annotation = MHCBindingAffinity(hla=["HLA-A*02:01"])
+    assert list(annotation.compute(frame, chunk_rows=chunk_rows)) == [1]
+    if pandas.isna(affinity):
+        assert pandas.isna(frame.loc[4, "binding_affinity"])
+        assert pandas.isna(frame.loc[4, "binding_allele"])
+    else:
+        assert frame.loc[4, "binding_affinity"] == affinity
+        assert frame.loc[4, "binding_allele"] == "HLA-A*02:01"
+    # Fully annotated rows must retain their existing values.
+    assert frame.loc[9, "binding_affinity"] == 100
+    assert frame.loc[9, "binding_allele"] == "HLA-A*02:01"
 
 
 @pytest.mark.ensembl

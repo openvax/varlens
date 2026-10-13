@@ -36,8 +36,12 @@ class PileupCollection(object):
     parent (optional) : PileupCollection
         For PileupCollection instances that are derived (e.g. by filtering)
         from another instance, this attribute tracks the parent instance.
+
+    normalized_contig_names (optional) : bool
+        Allow normalized aliases when looking up loci. Derived collections
+        inherit this setting from their parent.
     '''
-    def __init__(self, pileups=None, parent=None):
+    def __init__(self, pileups=None, parent=None, normalized_contig_names=True):
         '''
         Construct a new PileupCollection.
         '''
@@ -45,6 +49,9 @@ class PileupCollection(object):
             pileups = {}
         self.pileups = pileups
         self.parent = parent
+        self.normalized_contig_names = (
+            parent.normalized_contig_names if parent is not None
+            else normalized_contig_names)
 
     def pileup(self, locus):
         '''
@@ -58,6 +65,15 @@ class PileupCollection(object):
             raise ValueError("Not a single-base locus: %s" % locus)
         return self.pileups[locus]
 
+    def _single_base_locus(self, locus, position):
+        # Prefer an exact stored contig so raw names such as 'chr1' and '1'
+        # remain distinct. Retain alias lookup for normalized collections.
+        base_locus = Locus(locus.contig, position, position + 1)
+        if self.normalized_contig_names and base_locus not in self.pileups:
+            base_locus = base_locus._replace(
+                contig=normalize_contig(base_locus.contig))
+        return base_locus
+
     def at(self, *loci):
         '''
         Return a new PileupCollection instance including only pileups for 
@@ -68,7 +84,7 @@ class PileupCollection(object):
         for locus in loci:
             for position in locus.positions:
                 single_position_loci.append(
-                    Locus.from_interbase_coordinates(locus.contig, position))
+                    self._single_base_locus(locus, position))
         pileups = dict(
             (locus, self.pileups[locus]) for locus in single_position_loci)
         return PileupCollection(pileups, self)
@@ -287,8 +303,7 @@ class PileupCollection(object):
         if locus.positions:
             # Our locus includes at least one reference base.
             for position in locus.positions:
-                base_position = Locus.from_interbase_coordinates(
-                    locus.contig, position)
+                base_position = self._single_base_locus(locus, position)
                 loci.append(base_position)
                 new_read_to_allele = {}
                 for element in self.pileups[base_position]:
@@ -304,8 +319,7 @@ class PileupCollection(object):
                 read_to_allele = new_read_to_allele
         else:
             # Our locus is between reference bases.
-            position_before = Locus.from_interbase_coordinates(
-                locus.contig, locus.start)
+            position_before = self._single_base_locus(locus, locus.start)
             loci.append(position_before)
             read_to_allele = {}
             for element in self.pileups[position_before]:
@@ -381,7 +395,7 @@ class PileupCollection(object):
 
         alleles_dict = self.group_by_allele(locus)
         single_base_loci = [
-            Locus.from_interbase_coordinates(locus.contig, position)
+            self._single_base_locus(locus, position)
             for position in locus.positions
         ]
         empty_pileups = dict(
@@ -522,9 +536,9 @@ class PileupCollection(object):
         loci : list of Locus instances
             Loci to collect pileups for.
 
-        normalized_contig_names : whether the contig names have been normalized
-            (e.g. pyensembl removes the 'chr' prefix). Set to true to
-            de-normalize the names when querying the BAM file.
+        normalized_contig_names : bool
+            If true, normalize contig names and map aliases to BAM references.
+            If false, preserve the supplied Locus contig names exactly.
 
         Returns
         ----------
@@ -553,11 +567,14 @@ class PileupCollection(object):
             else:
                 chromosome_name_map = None
 
-            result = PileupCollection({})
+            result = PileupCollection(
+                {}, normalized_contig_names=normalized_contig_names)
 
             # Optimization: we sort variants so our BAM reads are localized.
             locus_iterator = itertools.chain.from_iterable(
                 (Locus.from_interbase_coordinates(locus_interval.contig, pos)
+                    if normalized_contig_names else
+                    Locus(locus_interval.contig, pos, pos + 1)
                     for pos
                     in locus_interval.positions)
                 for locus_interval in sorted(loci))

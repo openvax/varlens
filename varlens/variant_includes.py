@@ -29,6 +29,7 @@ from . import read_evidence
 class Includeable(object):
     columns = None
     string_columns = ()
+    float_columns = ()
 
     @classmethod
     def from_args(cls, args):
@@ -47,6 +48,10 @@ class Includeable(object):
                 df[column] = pandas.Series(index=df.index, dtype=dtype)
             elif column in self.string_columns:
                 df[column] = df[column].astype(object)
+            elif column in self.float_columns:
+                # CSV inference may give a partially annotated affinity column
+                # integer dtype; pandas 3 requires room for fractional results.
+                df[column] = df[column].astype("float64")
         rows_to_annotate = pandas.isnull(df[self.columns[0]])
         for column in self.columns[1:]:
             rows_to_annotate = rows_to_annotate | pandas.isnull(df[column])
@@ -181,6 +186,7 @@ class MHCBindingAffinity(Includeable):
     name = "MHC binding affinity"
     columns = ["binding_affinity", "binding_allele"]
     string_columns = ["binding_allele"]
+    float_columns = ["binding_affinity"]
 
     noncoding_effects = set([
         "intergenic",

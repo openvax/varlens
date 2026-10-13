@@ -13,6 +13,7 @@
 # limitations under the License.
 import collections
 import pytest
+import pysam
 
 from pysam import Samfile
 
@@ -32,6 +33,64 @@ def filtered_read_names(filtered_evidence):
     filtered = set(filtered_evidence.read_attribute("query_name"))
     assert filtered - full == set()
     return full - filtered
+
+
+def test_raw_contig_names_remain_distinct(tmp_path):
+    path = tmp_path / "raw-contigs.bam"
+    sequences = {"chr1": "AC", "1": "TG"}
+    header = {
+        "HD": {"VN": "1.0"},
+        "SQ": [{"SN": contig, "LN": 10} for contig in sequences],
+    }
+    with Samfile(str(path), "wb", header=header) as bam:
+        for reference_id, (contig, sequence) in enumerate(sequences.items()):
+            read = pysam.AlignedSegment()
+            read.query_name = contig
+            read.query_sequence = sequence
+            read.reference_id = reference_id
+            read.reference_start = 0
+            read.mapping_quality = 60
+            read.cigar = [(0, len(sequence))]
+            read.query_qualities = [30] * len(sequence)
+            bam.write(read)
+    pysam.index(str(path))
+
+    loci = [Locus(contig, 0, 2) for contig in sequences]
+    evidence = PileupCollection.from_bam(str(path), loci, normalized_contig_names=False)
+    assert set(evidence.loci()) == {
+        Locus(contig, position, position + 1)
+        for contig in sequences
+        for position in range(2)
+    }
+    for locus in loci:
+        sequence = sequences[locus.contig]
+        first_base = Locus(locus.contig, 0, 1)
+        assert evidence.allele_summary(locus) == [(sequence, 1)]
+        assert evidence.at(first_base).allele_summary(first_base) == [(sequence[0], 1)]
+        assert evidence.pileup(first_base).locus == first_base
+        assert evidence.allele_summary(Locus(locus.contig, 0, 0)) == [("", 1)]
+        assert evidence.match_summary(Variant(locus, sequence, "GG")) == [
+            (sequence, 1),
+            ("GG", 0),
+        ]
+
+    # Subsets must retain raw-name lookup even when only the alias is present.
+    subset = evidence.at(Locus("1", 0, 1))
+    with pytest.raises(KeyError):
+        subset.allele_summary(Locus("chr1", 0, 1))
+
+
+def test_normalized_contig_alias_queries():
+    raw_locus = Locus("chr17", 41244935, 41244936)
+    normalized_locus = Locus("17", 41244935, 41244936)
+    evidence = PileupCollection.from_bam(
+        data_path("rna_chr17_41244936.bam"), [raw_locus]
+    )
+    assert evidence.loci() == [normalized_locus]
+    assert evidence.allele_summary(raw_locus) == evidence.allele_summary(
+        normalized_locus
+    )
+    assert evidence.at(raw_locus).loci() == [normalized_locus]
 
 
 def test_read_evidence_rna1_single_base_loci():
