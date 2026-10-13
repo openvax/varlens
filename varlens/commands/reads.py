@@ -20,13 +20,13 @@ Examples:
 
 Print basic fields for the reads in a BAM:
 
-    %(prog)s test/data/CELSR1/bams/bam_0.bam
+    %(prog)s tests/data/CELSR1/bams/bam_0.bam
 
 Same as above but filter only to reads aligned on the (-) strand, write to a 
 file instead of stdout, and also include the mapping quality and sequenced
 bases in the output:
 
-    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+    %(prog)s tests/data/CELSR1/bams/bam_0.bam \\
         --is-reverse \\
         --field mapping_quality query_alignment_sequence \\
         --out /tmp/result.csv
@@ -34,20 +34,20 @@ bases in the output:
 Write a bam file consisting of reads with mapping quality >=30 and
 overlapping a certain locus:
 
-    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
+    %(prog)s tests/data/CELSR1/bams/bam_0.bam \\
         --min-mapping-quality 30 \\
         --locus 22:46932040-46932050 \\
         --out /tmp/result.bam
 
 Write a bam file consisting of reads overlapping variants from a VCF:
 
-    %(prog)s test/data/CELSR1/bams/bam_0.bam \\
-        --variants test/data/CELSR1/vcfs/vcf_1.vcf \\
+    %(prog)s tests/data/CELSR1/bams/bam_0.bam \\
+        --variants tests/data/CELSR1/vcfs/vcf_1.vcf \\
         --out /tmp/result.bam
 
 Print just the header for a BAM in csv format:
 
-    %(prog)s test/data/CELSR1/bams/bam_0.bam --header
+    %(prog)s tests/data/CELSR1/bams/bam_0.bam --header
 
 '''
 
@@ -136,7 +136,7 @@ def run(raw_args=sys.argv[1:]):
         header = update_header(args, read_sources[0].handle.header)
         out_pysam_handle = pysam.AlignmentFile(
             args.out,
-            "wb",
+            "w" if args.out.endswith(".sam") else "wb",
             header=header)
 
     elif not args.out or args.out.endswith(".csv"):
@@ -183,6 +183,7 @@ def run(raw_args=sys.argv[1:]):
             print("Sorting read file %s" % args.out)
             pysam.sort(
                 "-o", args.out,
+                "-O", "SAM" if args.out.endswith(".sam") else "BAM",
                 "-T", "varlens_reads", args.out,
                 catch_stdout=False)
         print("Wrote %d reads: %s" % (num_reads, args.out))
@@ -198,7 +199,7 @@ def read_field(read_source, read, field_name):
 
     if field_name.startswith("tag:"):
         tag_name = field_name[len("tag:"):]
-        return read.get_tags().get(tag_name)
+        return dict(read.get_tags()).get(tag_name)
 
     try:
         return getattr(read, field_name)

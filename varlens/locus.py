@@ -54,6 +54,15 @@ class Locus(namedtuple("Locus", "contig start end")):
         return range(self.start, self.end)
 
     @property
+    def pileup_positions(self):
+        """Reference bases needed to query this interval (left anchor for insertions)."""
+        if self.start == self.end:
+            if self.start < 1:
+                raise ValueError("An insertion needs a reference base to its left")
+            return range(self.start - 1, self.start)
+        return self.positions
+
+    @property
     def position(self):
         '''
         If this locus spans a single base, this property gives that position.

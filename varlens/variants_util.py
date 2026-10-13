@@ -213,12 +213,13 @@ def load_as_dataframe(
 def variants_to_dataframe(
         variants, metadata=None, metadata_column_prefix=""):
     def record(variant):
+        locus = pileup_collection.to_locus(variant)
         d = {
             'variant': variant,
             'genome': str(variant.reference_name),
             'contig': variant.contig,
-            'interbase_start': variant.start - 1,
-            'interbase_end': variant.end,
+            'interbase_start': locus.start,
+            'interbase_end': locus.end,
             'ref': variant.ref,
             'alt': variant.alt,
         }
@@ -243,7 +244,8 @@ def dataframe_row_to_variant(row):
     return varcode.Variant(
             genome=row.genome,
             contig=row.contig,
-            start=row.interbase_start + 1,
+            start=(row.interbase_start if row.ref == '' and
+                   row.interbase_start == row.interbase_end else row.interbase_start + 1),
             ref=row.ref,
             alt=row.alt,
             allow_extended_nucleotides=True)

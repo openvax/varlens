@@ -164,7 +164,7 @@ def test_read_evidence_gatk_mini_bundle_extract():
         [('C', 2), ('CA', 1), ('CAA', 1)])
     eq_(evidence.filter(drop_duplicates=True).allele_summary(
             Locus.from_interbase_coordinates(
-                loci[10].contig, loci[10].start, loci[10].start)),
+                loci[10].contig, loci[10].end, loci[10].end)),
         [('', 2), ('A', 1), ('AA', 1)])
 
 

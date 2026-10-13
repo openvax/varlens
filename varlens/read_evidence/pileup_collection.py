@@ -66,7 +66,7 @@ class PileupCollection(object):
         loci = [to_locus(obj) for obj in loci]
         single_position_loci = []
         for locus in loci:
-            for position in locus.positions:
+            for position in locus.pileup_positions:
                 single_position_loci.append(
                     Locus.from_interbase_coordinates(locus.contig, position))
         pileups = dict(
@@ -263,8 +263,9 @@ class PileupCollection(object):
 
         If the locus is an empty interval (e.g. [5,5) ), then the alleles
         consist only of inserted bases. In this example, only bases inserted
-        immediately after locus 5 would be included (but *not* the base
-        actually at locus 5). In the previous insertion example, the allele
+        between reference positions 4 and 5 (zero-based) would be included.
+        An insertion after position 5 uses the empty interval [6,6).
+        In the previous insertion example, the allele
         would be "GA", indicating a 2-base insertion. Reads that have no
         insertion at that position (matches or deletions) would have the empty
         string as their allele.
@@ -305,11 +306,19 @@ class PileupCollection(object):
         else:
             # Our locus is between reference bases.
             position_before = Locus.from_interbase_coordinates(
-                locus.contig, locus.start)
+                locus.contig, locus.start - 1)
             loci.append(position_before)
             read_to_allele = {}
             for element in self.pileups[position_before]:
+                if not element.bases:
+                    continue
                 allele = element.bases[1:]
+                # Absence of an insertion is observed only when the read
+                # spans both sides; a read end or splice is not reference support.
+                if not allele and not any(
+                        start <= locus.start < end
+                        for start, end in element.alignment.get_blocks()):
+                    continue
                 read_to_allele[alignment_key(element.alignment)] = allele
 
         split = defaultdict(lambda: PileupCollection(pileups={}, parent=self))
@@ -555,7 +564,7 @@ class PileupCollection(object):
             locus_iterator = itertools.chain.from_iterable(
                 (Locus.from_interbase_coordinates(locus_interval.contig, pos)
                     for pos
-                    in locus_interval.positions)
+                    in locus_interval.pileup_positions)
                 for locus_interval in sorted(loci))
             for locus in locus_iterator:
                 result.pileups[locus] = Pileup(locus, [])
@@ -598,29 +607,23 @@ class PileupCollection(object):
                 pysam_samfile.close()
 
 def to_locus(variant_or_locus):
-    """
-    Return a Locus object for a Variant instance.
+    """Return the half-open reference interval for a Variant or Locus.
 
-    This is necessary since the read evidence module expects Variant instances
-    to have a locus attribute st to a varcode.Locus instance of interbase
-    genomic coordinates.  The rest of varcode uses a different Variant class,
-    but will eventually be transitioned to interbase coordinates.
-
-    See test/test_read_evidence.py for a definition of the Variant class that
-    the read_evidence module is meant to work with.
-
-    This function can be passed a regular varcode.Variant instance (with fields
-    start, end, contig, etc.), a different kind of variant object that has a
-    'locus' field, or a varcode.Locus. It will return a varcode.Locus instance.
-
-    This should all get cleaned up once varcode switches to interbase
-    coordinates and we standardize on a Variant class.
+    Varcode substitutions and deletions use inclusive one-based coordinates.
+    Its insertions have an empty reference allele and are anchored at the
+    preceding one-based base; their interbase interval is [start, start).
     """
     if isinstance(variant_or_locus, Locus):
         return variant_or_locus
     try:
         return variant_or_locus.locus
     except AttributeError:
+        if variant_or_locus.ref == "":
+            # Varcode anchors insertions at the preceding one-based base.
+            return Locus.from_interbase_coordinates(
+                variant_or_locus.contig,
+                variant_or_locus.start,
+                variant_or_locus.start)
         # IMPORTANT: if varcode someday changes from inclusive to interbase
         # coordinates, this will need to be updated.
         return Locus.from_inclusive_coordinates(

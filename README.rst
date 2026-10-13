@@ -210,6 +210,12 @@ The positions outputted by this command are in *interbase coordinates*, i.e.
 starting at 0, inclusive on first index, exclusive on second (as opposed to
 the one-based inclusive coordinates used in VCF files).
 
+Insertions use an empty interval at the insertion boundary. For example,
+VCF ``1:100 A>AT`` becomes ``interbase_start=100, interbase_end=100`` with
+``ref=""`` and ``alt="T"``. The pileup reads the base immediately to the left
+and counts only the inserted sequence. Version 0.3 corrects the older
+single-base insertion intervals; CSV input still accepts that older encoding.
+
 Examples
 `````````````
 

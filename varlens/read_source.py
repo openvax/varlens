@@ -11,6 +11,7 @@
 # limitations under the License.
 
 import logging
+import intervaltree
 
 import pysam
 
@@ -47,14 +48,16 @@ class ReadSource(object):
         elif self.filename.endswith(".sam"):
             # Inefficient.
             chromosome_intervals = {}
-            for (contig, intervals) in loci.contigs.items():
+            for locus in loci:
                 try:
-                    chromosome = self.chromosome_name_map[contig]
+                    chromosome = self.chromosome_name_map[locus.contig]
                 except KeyError:
                     logging.warn(
-                        "No such contig in bam: %s" % contig)
+                        "No such contig in bam: %s" % locus.contig)
                     continue
-                chromosome_intervals[chromosome] = intervals
+                positions = locus.pileup_positions
+                chromosome_intervals.setdefault(chromosome, intervaltree.IntervalTree()).addi(
+                    positions.start, positions.stop)
 
             def reads_iterator():
                 seen = set()
@@ -82,8 +85,8 @@ class ReadSource(object):
                         continue
                     for read in self.handle.fetch(
                             chromosome,
-                            locus.start,
-                            locus.end):
+                            locus.pileup_positions.start,
+                            locus.pileup_positions.stop):
                         key = alignment_key(read)
                         if key not in seen:
                             yield read

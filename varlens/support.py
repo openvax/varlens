@@ -16,6 +16,7 @@ import logging
 import pandas
 
 from .locus import normalize_contig
+from .read_evidence.pileup_collection import to_locus
 
 EXPECTED_COLUMNS = [
     "source",
@@ -113,7 +114,8 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
 
     for variant in variants:
         for source in sources:
-            key = (source, normalize_contig(variant.contig), variant.start - 1, variant.end)
+            locus = to_locus(variant)
+            key = (source, locus.contig, locus.start, locus.end)
             try:
                 alleles = allele_support_dict[key]
             except KeyError:

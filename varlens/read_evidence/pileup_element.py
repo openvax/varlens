@@ -135,68 +135,14 @@ class PileupElement(object):
             "Can't create a PileupElement in a refskip (typically an intronic "
             "gap in an RNA alignment)")
 
-        # Pysam has an `aligned_pairs` method that gives a list of
-        # (offset, locus) pairs indicating the correspondence between bases in
-        # the alignment and reference loci. Here we use that to compute
-        # offset_start and offset_end.
-        #
-        # This is slightly tricky in the case of insertions and deletions.
-        # Here are examples of the desired logic.
-        #
-        # Target locus = 1000
-        #
-        # (1) Simple case: matching bases.
-        #
-        # OFFSET           LOCUS
-        # 0                999
-        # 1                1000
-        # 2                1001
-        #
-        # DESIRED RESULT: offset_start=1, offset_end=2.
-        #
-        #
-        # (2) A 1 base insertion at offset 2.
-        #
-        # OFFSET           LOCUS
-        # 0                999
-        # 1                1000
-        # 2                None
-        # 3                1001
-        #
-        # DESIRED RESULT: offset_start = 1, offset_end=3.
-        #
-        #
-        # (3) A 2 base deletion at loci 1000 and 1001.
-        #
-        # OFFSET           LOCUS
-        # 0                999
-        # None             1000
-        # None             1001
-        # 1                1002
-        #
-        # DESIRED RESULT: offset_start = 1, offset_end=1.
-        #
-        offset_start = None
-        offset_end = len(pileup_read.alignment.query_sequence)
-        # TODO: doing this with get_blocks() may be faster.
-        for (offset, position) in pileup_read.alignment.aligned_pairs:
-            if offset is not None and position is not None:
-                if position == locus.position:
-                    offset_start = offset
-                elif position > locus.position:
-                    offset_end = offset
-                    break
-        if offset_start is None:
-            offset_start = offset_end
-        
-        assert pileup_read.is_del == (offset_end - offset_start == 0), \
-            "Deletion=%s but | [%d,%d) |=%d for locus %d in: \n%s" % (
-                pileup_read.is_del,
-                offset_start,
-                offset_end,
-                offset_end - offset_start,
-                locus.position,
-                pileup_read.alignment.aligned_pairs)
+        # PileupRead already resolves the CIGAR at this reference base. Walking
+        # aligned_pairs again expands long introns and can incorrectly append
+        # a terminal soft clip to the allele.
+        if pileup_read.is_del:
+            offset_start = offset_end = pileup_read.query_position_or_next
+        else:
+            offset_start = pileup_read.query_position
+            offset_end = offset_start + 1 + max(0, pileup_read.indel)
 
         assert offset_end >= offset_start
         result = PileupElement(

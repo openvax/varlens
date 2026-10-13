@@ -56,27 +56,37 @@ def load_from_args(args):
 #                    locus.contig, locus.start + offset, locus.end + offset)
 
 class Loci(object):
-    def __init__(self, locus_iterator=[], contig_map=None):
+    def __init__(self, locus_iterator=(), contig_map=None, insertions=()):
         self.contigs = collections.defaultdict(intervaltree.IntervalTree)
+        self.insertions = set(insertions)
         if contig_map:
             self.contigs.update(contig_map)
         for locus in locus_iterator:
-            self.contigs[locus.contig].addi(locus.start, locus.end)
+            if locus.start == locus.end:
+                self.insertions.add(locus)
+            else:
+                self.contigs[locus.contig].addi(locus.start, locus.end)
 
     def __iter__(self):
         for contig in sorted(self.contigs):
-            for interval in self.contigs[contig]:
+            for interval in sorted(self.contigs[contig]):
                 yield Locus(contig, interval.begin, interval.end)
+        yield from sorted(self.insertions)
 
     def __len__(self):
-        return sum(len(tree) for tree in self.contigs.values())
+        return sum(len(tree) for tree in self.contigs.values()) + len(self.insertions)
 
     def intersects(self, locus):
-        return self.contigs[locus.contig].overlaps(locus.start, locus.end)
+        if locus in self.insertions:
+            return True
+        positions = locus.pileup_positions
+        return (self.contigs[locus.contig].overlaps(positions.start, positions.stop)
+                or any(p.contig == locus.contig and locus.start < p.start <= locus.end
+                       for p in self.insertions))
 
     def union(self, other):
         contig_map = {}
         for contig in set(self.contigs).union(other.contigs):
             contig_map[contig] = self.contigs[contig].union(
                 other.contigs[contig])
-        return Loci(contig_map=contig_map)
+        return Loci(contig_map=contig_map, insertions=self.insertions | other.insertions)
