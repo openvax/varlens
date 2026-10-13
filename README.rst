@@ -28,8 +28,8 @@ varlens-allele-support
 Installation
 -------------
 
-Requires Python 3.10 or newer. Python 3.10 uses pandas 2.3; Python 3.11+
-uses pandas 3. The package uses the current Topiary 5 prediction API.
+Varlens 1.0 requires Python 3.11 or newer and pandas 3. The package uses
+the current Topiary 5 prediction API.
 
 To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
 
@@ -65,7 +65,7 @@ the external predictor, install NetMHCpan and its model data, put ``netMHCpan``
 on ``PATH``, then run ``./test.sh --run-netmhcpan``. MHC affinity results use
 Topiary's normalized allele names, such as ``HLA-A*02:01``.
 
-CI tests Python 3.10 through 3.14 and runs reference-dependent annotation
+CI tests Python 3.11 through 3.14 and runs reference-dependent annotation
 tests in a separate job.
 
 To build the documentation (just this README plus the commandline tool help):

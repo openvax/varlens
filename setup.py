@@ -29,7 +29,7 @@ if __name__ == '__main__':
         name='varlens',
         packages=["varlens", "varlens.commands", "varlens.read_evidence"],
         version=version,
-        python_requires='>=3.10',
+        python_requires='>=3.11',
         description=(
             "commandline manipulation of genomic variants and NGS reads"),
         long_description=open('README.rst').read(),
@@ -55,8 +55,7 @@ if __name__ == '__main__':
         ],
         install_requires=[
             'numpy>=2,<3',
-            'pandas>=2.3,<3; python_version < "3.11"',
-            'pandas>=3,<4; python_version >= "3.11"',
+            'pandas>=3,<4',
             'intervaltree>=3.1,<4',
             'pysam>=0.24.1,<0.25',
             'typechecks>=0.1.0',

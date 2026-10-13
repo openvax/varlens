@@ -42,8 +42,8 @@ class Includeable(object):
         for column in self.columns:
             if column not in df.columns:
                 dtype = "object" if column in self.string_columns else "float64"
-                # Explicit object dtype works on pandas 2 and 3, including
-                # partially populated text columns loaded from CSV.
+                # Explicit object dtype supports partially populated text
+                # columns loaded from CSV.
                 df[column] = pandas.Series(index=df.index, dtype=dtype)
             elif column in self.string_columns:
                 df[column] = df[column].astype(object)
