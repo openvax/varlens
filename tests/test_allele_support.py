@@ -14,7 +14,7 @@
 
 import logging
 
-
+import pytest
 from varlens.commands import allele_support
 
 from . import data_path, run_and_parse_csv, cols_concat
@@ -99,24 +99,29 @@ def test_simple():
         }
     )
 
-    pick_one_variant = [
+
+@pytest.mark.parametrize(
+    "variant_filter",
+    [
         ["--ref", "G"],
         ["--alt", "A"],
         ["--variant-locus", "22/46931061"],
         ["--variant-locus", "22/46931061-46931062"],
-    ]
-    for variant_filter in pick_one_variant:
-        result = run(
-            [
-                "--reads",
-                data_path("CELSR1/bams/bam_0.bam"),
-                "--genome",
-                "b37",
-                "--variants",
-                data_path("CELSR1/vcfs/vcf_1.vcf"),
-            ]
-            + variant_filter
-        )
-        assert (
-            cols_concat(result, ["contig", "interbase_start", "interbase_end"])
-        ) == ({"22-46931061-46931062"})
+    ],
+    ids=["reference", "alternate", "position", "interval"],
+)
+def test_variant_filter(variant_filter):
+    result = run(
+        [
+            "--reads",
+            data_path("CELSR1/bams/bam_0.bam"),
+            "--genome",
+            "b37",
+            "--variants",
+            data_path("CELSR1/vcfs/vcf_1.vcf"),
+        ]
+        + variant_filter
+    )
+    assert cols_concat(result, ["contig", "interbase_start", "interbase_end"]) == {
+        "22-46931061-46931062"
+    }

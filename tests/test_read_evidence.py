@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import collections
-from pytest import raises as assert_raises
+import pytest
 
 from pysam import Samfile
 
@@ -173,11 +173,10 @@ def test_read_evidence_gatk_mini_bundle_extract():
     )
     assert (evidence.allele_summary(loci[8])) == ([])
     assert (evidence.filter(drop_duplicates=True).allele_summary(loci[8])) == ([])
-    assert_raises(
-        KeyError,
-        evidence.allele_summary,
-        Locus.from_inclusive_coordinates("20", 10009174, 10009176),
-    )
+    with pytest.raises(KeyError):
+        evidence.allele_summary(
+            Locus.from_inclusive_coordinates("20", 10009174, 10009176)
+        )
     assert (
         filtered_read_names(evidence.at(loci[9]).filter(drop_improper_mate_pairs=True))
     ) == ({"20FUKAAXX100202:8:68:1530:49310"})

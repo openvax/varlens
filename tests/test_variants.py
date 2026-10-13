@@ -324,25 +324,6 @@ def test_filtering():
     )
 
 
-"""
-def test_fields():
-    result = run([
-        "--field",
-        "foo:ref.lower()",
-        "gene_names[0]",
-        "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
-        "--variant-filter", "ref=='A'",
-        "--variant-genome", "b37"
-    ])
-    eq_(sorted(cols_concat(result, expected_cols + ["foo", "gene_names[0]"])),
-        sorted({
-            "GRCh37-22-46931059-46931060-A-C-a-CELSR1",
-            "GRCh37-22-50636217-50636218-A-C-a-TRABD",
-            "GRCh37-22-50875932-50875933-A-C-a-PPP6R2",
-        }))
-"""
-
-
 @pytest.mark.ensembl
 def test_round_trip():
     with temp_file(".csv") as out_csv:
