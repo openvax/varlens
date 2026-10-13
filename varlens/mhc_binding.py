@@ -10,50 +10,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
-
 import pandas
 import varcode
 
-CACHED_BINDING_AFFINITIES = {}  # (variant, allele -> nm affinity)
-BINDING_PREDICTORS = {}
-def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
-    # We import these here so we don't depend on these libraries unless this
-    # function is called.
+
+def binding_affinities(variants, alleles, epitope_lengths=(8, 9, 10, 11)):
+    """Return each variant's lowest mutant-peptide affinity (nM) and allele.
+
+    Variants without an affinity prediction have a missing affinity and allele.
+    Topiary's presentation scores are deliberately excluded from this summary.
+    """
     import mhctools
     import topiary
 
-    for allele in alleles:
-        if allele not in BINDING_PREDICTORS:
-            BINDING_PREDICTORS[allele] = mhctools.NetMHCpan(
-                [allele], default_peptide_lengths=epitope_lengths)
-        predictor = BINDING_PREDICTORS[allele]
-        predictions = topiary.predict_epitopes_from_variants(
-            varcode.VariantCollection([
-                v for v in variants
-                if (v, allele) not in CACHED_BINDING_AFFINITIES
-            ]),
-            predictor,
-            ic50_cutoff=float('inf'),
-            percentile_cutoff=100)
-        if len(predictions) > 0:
-            predictions_df = pandas.DataFrame(
-                predictions, columns=predictions[0]._fields)
-            values = predictions_df.groupby("variant")["value"].min()
-            for (variant, value) in zip(values.index, values):
-                CACHED_BINDING_AFFINITIES[(variant, allele)] = value
-        
-    result_df = collections.defaultdict(list)
-    for variant in variants:
-        (binding_affinity, binding_allele) = min(
-            (CACHED_BINDING_AFFINITIES.get((variant, allele), float('nan')),
-                allele)
-            for allele in alleles)
-        if pandas.isnull(binding_affinity):
-            binding_allele = None
-        result_df["variant"].append(variant)
-        result_df["binding_affinity"].append(binding_affinity)
-        result_df["binding_allele"].append(binding_allele)
+    variants = list(variants)
+    alleles = list(dict.fromkeys(alleles))
+    lengths = tuple(epitope_lengths)
+    if not alleles:
+        raise ValueError("Specify at least one MHC allele")
+    if not lengths or any(length <= 0 for length in lengths):
+        raise ValueError("Epitope lengths must be positive")
 
-    return pandas.DataFrame(result_df)
-    
+    result = pandas.DataFrame(
+        {
+            "variant": variants,
+            "binding_affinity": float("nan"),
+            "binding_allele": pandas.Series([None] * len(variants), dtype=object),
+        }
+    )
+    if not variants:
+        return result
+    if len({variant.reference_name for variant in variants}) > 1:
+        raise ValueError("Cannot combine reference genomes in MHC predictions")
+
+    model = mhctools.NetMHCpan(alleles=alleles, default_peptide_lengths=lengths)
+    predictor = topiary.TopiaryPredictor(models=model, only_novel_epitopes=True)
+    predictions = predictor.predict_from_variants(varcode.VariantCollection(variants))
+    if predictions.empty:
+        return result
+
+    affinities = predictions.loc[
+        predictions["kind"].eq("pMHC_affinity") & predictions["affinity"].notna()
+    ]
+    # Stable sorting makes ties deterministic without comparing Variant objects.
+    best = affinities.sort_values(
+        ["affinity", "allele"], kind="stable"
+    ).drop_duplicates("variant")
+    best = best.set_index("variant")
+    # Current Topiary serializes the variant as its short description, while
+    # Varlens' public result retains the caller's Variant objects and order.
+    keys = result["variant"].map(lambda variant: variant.short_description)
+    result["binding_affinity"] = keys.map(best["affinity"])
+    result["binding_allele"] = keys.map(best["allele"])
+
+    return result

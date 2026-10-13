@@ -31,9 +31,7 @@ def expand(value, arg_name, input_name, length):
             "multiple times."
             .format(
                 arg_name=arg_name,
-                input_name=input_name,
-                length=length,
-                actual=len(value)))
+                input_name=input_name))
 
     else:
         raise ValueError(

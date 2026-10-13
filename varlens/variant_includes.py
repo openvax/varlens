@@ -28,6 +28,7 @@ from . import read_evidence
 
 class Includeable(object):
     columns = None
+    string_columns = ()
 
     @classmethod
     def from_args(cls, args):
@@ -40,7 +41,12 @@ class Includeable(object):
         assert self.columns
         for column in self.columns:
             if column not in df.columns:
-                df[column] = numpy.nan
+                dtype = "object" if column in self.string_columns else "float64"
+                # Explicit object dtype works on pandas 2 and 3, including
+                # partially populated text columns loaded from CSV.
+                df[column] = pandas.Series(index=df.index, dtype=dtype)
+            elif column in self.string_columns:
+                df[column] = df[column].astype(object)
         rows_to_annotate = pandas.isnull(df[self.columns[0]])
         for column in self.columns[1:]:
             rows_to_annotate = rows_to_annotate | pandas.isnull(df[column])
@@ -65,14 +71,15 @@ class Includeable(object):
             
             if this_chunk_rows.sum() > 0:
                 start = time.time()
-                df.ix[this_chunk_rows, self.columns] = self.process_chunk(
-                    df.ix[this_chunk_rows].copy())[self.columns]
+                df.loc[this_chunk_rows, self.columns] = self.process_chunk(
+                    df.loc[this_chunk_rows].copy())[self.columns]
                 logging.info("Processed in %f0.2 sec" % (time.time() - start))
             yield this_chunk_rows.sum()
 
 class Effect(Includeable):
     name = "variant effect annotations"
     columns = ["effect"]
+    string_columns = columns
 
     @staticmethod
     def add_args(parser):
@@ -95,6 +102,7 @@ class Effect(Includeable):
 class Gene(Includeable):
     name = "gene annotations"
     columns = ["gene"]
+    string_columns = columns
     
     @staticmethod
     def add_args(parser):
@@ -117,6 +125,7 @@ class Gene(Includeable):
 class Context(Includeable):
     name = "variant sequence context"
     columns = ["context_5_prime", "context_3_prime", "context_mutation"]
+    string_columns = columns
     
     @staticmethod
     def add_args(parser):
@@ -171,6 +180,7 @@ class Context(Includeable):
 class MHCBindingAffinity(Includeable):
     name = "MHC binding affinity"
     columns = ["binding_affinity", "binding_allele"]
+    string_columns = ["binding_allele"]
 
     noncoding_effects = set([
         "intergenic",
@@ -392,9 +402,9 @@ class ReadEvidence(Includeable):
                 join_col = self.read_sources_df.index.name
                 for join_value in df[join_col].unique():
                     rows = df[join_col] == join_value
-                    read_paths = self.read_sources_df.ix[join_value]
+                    read_paths = self.read_sources_df.loc[join_value]
                     read_sources = []
-                    for (name, filename) in read_paths.iteritems():
+                    for (name, filename) in read_paths.items():
                         if pandas.isnull(filename):
                             continue
                         relevant_columns = [
@@ -453,10 +463,10 @@ class ReadEvidence(Includeable):
             variant_support_df = support.variant_support(
                 variants, allele_support_df)
             assert set(s.name for s in sources) == set(
-                variant_support_df.minor_axis)
+                variant_support_df.columns.get_level_values("source"))
 
             for allele_group in ["num_alt", "num_ref", "total_depth"]:
-                sub_panel = variant_support_df[allele_group, variants]
+                sub_panel = variant_support_df[allele_group].loc[list(variants)]
                 for source_column in sub_panel.columns:
                     dest_column = self.column_name(
                         source_column, allele_group)

@@ -28,6 +28,9 @@ varlens-allele-support
 Installation
 -------------
 
+Requires Python 3.10 or newer. Python 3.10 uses pandas 2.3; Python 3.11+
+uses pandas 3. The package uses the current Topiary 5 prediction API.
+
 To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
 
 ::
@@ -44,7 +47,26 @@ To run the tests:
 
 ::
 
-    nosetests .
+    pip install -e '.[test]'
+    ./lint.sh
+    ./test.sh
+
+Tests that need Ensembl annotation data are skipped unless human release 75
+is installed. To run these tests as well:
+
+::
+
+    pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+    ./test.sh
+
+The Topiary integration test uses the real annotation and prediction pipeline
+with an in-process test predictor, so it does not need NetMHCpan. To also test
+the external predictor, install NetMHCpan and its model data, put ``netMHCpan``
+on ``PATH``, then run ``./test.sh --run-netmhcpan``. MHC affinity results use
+Topiary's normalized allele names, such as ``HLA-A*02:01``.
+
+CI tests Python 3.10 through 3.14 and runs reference-dependent annotation
+tests in a separate job.
 
 To build the documentation (just this README plus the commandline tool help):
 
@@ -56,6 +78,32 @@ To build the documentation (just this README plus the commandline tool help):
     make clean setup rst html
 
 The docs will be written to the ``_build/html`` directory.
+
+
+Python API
+------------
+
+The same read-evidence tools are available directly from Python:
+
+.. code-block:: python
+
+    from varlens.locus import Locus
+    from varlens.read_evidence import PileupCollection
+
+    locus = Locus.from_inclusive_coordinates("chr17", 41244936)
+    evidence = PileupCollection.from_bam("sample.bam", [locus])
+    counts = evidence.allele_summary(locus)
+    filtered = evidence.filter(min_base_quality=20, min_mapping_quality=30)
+
+The BAM must be indexed. ``Locus`` stores zero-based, half-open coordinates;
+``from_inclusive_coordinates`` accepts one-based inclusive coordinates.
+
+``varlens.support.allele_support_df(loci, sources)`` returns an allele-count
+DataFrame from ``ReadSource`` objects. ``variant_support(variants, counts)``
+now returns a DataFrame indexed by variant, with two column levels named
+``measurement`` and ``source``. This replaces the removed ``pandas.Panel``
+return type. For example, ``result["num_alt"]["tumor"]`` selects alternate
+read counts for the source named ``tumor``.
 
 
 varlens-variants

@@ -16,6 +16,15 @@ from collections import namedtuple
 import pyensembl
 import typechecks
 
+
+def normalize_contig(contig):
+    """Keep Varlens' historical chr-prefix aliases with current PyEnsembl."""
+    contig = pyensembl.locus.normalize_chromosome(contig)
+    if contig.startswith("chr") and "_" not in contig:
+        contig = contig[3:]
+    return contig
+
+
 class Locus(namedtuple("Locus", "contig start end")):
     '''
     A genomic interval in 0-indexed interbase coordinates.
@@ -62,7 +71,7 @@ class Locus(namedtuple("Locus", "contig start end")):
         if end is None:
             end = start
         typechecks.require_integer(end)
-        contig = pyensembl.locus.normalize_chromosome(contig)
+        contig = normalize_contig(contig)
         return Locus(contig, start - 1, end)
 
     @staticmethod
@@ -76,7 +85,7 @@ class Locus(namedtuple("Locus", "contig start end")):
         if end is None:
             end = start + 1
         typechecks.require_integer(end)
-        contig = pyensembl.locus.normalize_chromosome(contig)
+        contig = normalize_contig(contig)
         return Locus(contig, start, end)
 
     @staticmethod

@@ -18,9 +18,8 @@ import re
 import pandas
 from pysam import Samfile
 import typechecks
-import pyensembl
 
-from ..locus import Locus
+from ..locus import Locus, normalize_contig
 from . import Pileup, PileupElement, alignment_key, read_key
 
 MatchingEvidence = namedtuple("MatchingEvidence", "ref alt other")
@@ -238,7 +237,7 @@ class PileupCollection(object):
     # Parse the bulleted list of attributes in the previous method's docstring.
     _READ_ATTRIBUTE_NAMES = []
     for line in read_attributes.__doc__.split("\n"):
-        match = re.match("\s+\*\s*(\w+)\s*", line)
+        match = re.match(r"\s+\*\s*(\w+)\s*", line)
         if match:
             _READ_ATTRIBUTE_NAMES.append(match.groups()[0])
 
@@ -548,7 +547,7 @@ class PileupCollection(object):
             if normalized_contig_names:
                 chromosome_name_map = {}
                 for name in pysam_samfile.references:
-                    normalized = pyensembl.locus.normalize_chromosome(name)
+                    normalized = normalize_contig(name)
                     chromosome_name_map[normalized] = name
                     chromosome_name_map[name] = name
             else:
@@ -568,16 +567,20 @@ class PileupCollection(object):
                     try:
                         chromosome = chromosome_name_map[locus.contig]
                     except KeyError:
-                        logging.warn("No such contig in bam: %s" % locus.contig)
+                        logging.warning("No such contig in bam: %s" % locus.contig)
                         continue
                 else:
                     chromosome = locus.contig
+                # Keep quality and mate filtering in PileupCollection.filter;
+                # current pysam otherwise drops low-quality/overlapping bases.
                 columns = pysam_samfile.pileup(
                     chromosome,
                     locus.position,
                     locus.position + 1,  # exclusive, 0-indexed
                     truncate=True,
-                    stepper="nofilter")
+                    stepper="nofilter",
+                    min_base_quality=0,
+                    ignore_overlaps=False)
                 try:
                     column = next(columns)
                 except StopIteration:

@@ -12,10 +12,10 @@
 
 import logging
 
-import pyensembl
 import pysam
 
 from . import read_evidence
+from .locus import normalize_contig
 
 class ReadSource(object):
     def __init__(self, name, filename, read_filters=[]):
@@ -26,7 +26,7 @@ class ReadSource(object):
 
         self.chromosome_name_map = {}
         for name in self.handle.references:
-            normalized = pyensembl.locus.normalize_chromosome(name)
+            normalized = normalize_contig(name)
             self.chromosome_name_map[normalized] = name
             self.chromosome_name_map[name] = name
 
@@ -55,7 +55,7 @@ class ReadSource(object):
                 try:
                     chromosome = self.chromosome_name_map[contig]
                 except KeyError:
-                    logging.warn(
+                    logging.warning(
                         "No such contig in bam: %s" % contig)
                     continue
                 chromosome_intervals[chromosome] = intervals
@@ -81,7 +81,7 @@ class ReadSource(object):
                     try:
                         chromosome = self.chromosome_name_map[locus.contig]
                     except KeyError:
-                        logging.warn(
+                        logging.warning(
                             "No such contig in bam: %s" % locus.contig)
                         continue
                     for read in self.handle.fetch(
