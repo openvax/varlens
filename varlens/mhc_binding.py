@@ -10,50 +10,59 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
+import math
 
 import pandas
 import varcode
 
-CACHED_BINDING_AFFINITIES = {}  # (variant, allele -> nm affinity)
+# Peptide lengths affect predictions and must be part of both cache keys.
+CACHED_BINDING_AFFINITIES = {}
 BINDING_PREDICTORS = {}
-def binding_affinities(variants, alleles, epitope_lengths=[8, 9, 10, 11]):
-    # We import these here so we don't depend on these libraries unless this
-    # function is called.
+
+
+def binding_affinities(variants, alleles, epitope_lengths=(8, 9, 10, 11)):
+    """Return the best mutant-peptide affinity (nM) and input allele per variant."""
     import mhctools
     import topiary
 
-    for allele in alleles:
-        if allele not in BINDING_PREDICTORS:
-            BINDING_PREDICTORS[allele] = mhctools.NetMHCpan(
-                [allele], default_peptide_lengths=epitope_lengths)
-        predictor = BINDING_PREDICTORS[allele]
-        predictions = topiary.predict_epitopes_from_variants(
-            varcode.VariantCollection([
-                v for v in variants
-                if (v, allele) not in CACHED_BINDING_AFFINITIES
-            ]),
-            predictor,
-            ic50_cutoff=float('inf'),
-            percentile_cutoff=100)
-        if len(predictions) > 0:
-            predictions_df = pandas.DataFrame(
-                predictions, columns=predictions[0]._fields)
-            values = predictions_df.groupby("variant")["value"].min()
-            for (variant, value) in zip(values.index, values):
-                CACHED_BINDING_AFFINITIES[(variant, allele)] = value
-        
-    result_df = collections.defaultdict(list)
-    for variant in variants:
-        (binding_affinity, binding_allele) = min(
-            (CACHED_BINDING_AFFINITIES.get((variant, allele), float('nan')),
-                allele)
-            for allele in alleles)
-        if pandas.isnull(binding_affinity):
-            binding_allele = None
-        result_df["variant"].append(variant)
-        result_df["binding_affinity"].append(binding_affinity)
-        result_df["binding_allele"].append(binding_allele)
+    variants = list(variants)
+    alleles = list(alleles)
+    lengths = tuple(sorted(set(epitope_lengths)))
+    if not alleles or not lengths:
+        raise ValueError("At least one allele and peptide length are required")
 
-    return pandas.DataFrame(result_df)
-    
+    for allele in alleles:
+        pending = [v for v in variants
+                   if (v, allele, lengths) not in CACHED_BINDING_AFFINITIES]
+        if not pending:
+            continue
+        predictor_key = (allele, lengths)
+        if predictor_key not in BINDING_PREDICTORS:
+            BINDING_PREDICTORS[predictor_key] = mhctools.NetMHCpan(
+                [allele], default_peptide_lengths=list(lengths))
+        predictions = topiary.TopiaryPredictor(
+            models=BINDING_PREDICTORS[predictor_key],
+            only_novel_epitopes=True,
+        ).predict_from_variants(varcode.VariantCollection(pending))
+        # Topiary returns long-form prediction rows, or an empty DataFrame
+        # when no effects yield peptides.
+        values = {}
+        if len(predictions):
+            frame = predictions
+            affinity_rows = frame.loc[frame["kind"] == "pMHC_affinity"]
+            values = affinity_rows.groupby("variant")["value"].min().to_dict()
+        for variant in pending:
+            CACHED_BINDING_AFFINITIES[(variant, allele, lengths)] = values.get(
+                variant.short_description, float("nan"))
+
+    rows = []
+    for variant in variants:
+        available = [
+            (CACHED_BINDING_AFFINITIES[(variant, allele, lengths)], allele)
+            for allele in alleles
+            if math.isfinite(CACHED_BINDING_AFFINITIES[(variant, allele, lengths)])
+        ]
+        affinity, allele = min(available) if available else (float("nan"), None)
+        rows.append((variant, affinity, allele))
+    return pandas.DataFrame(
+        rows, columns=["variant", "binding_affinity", "binding_allele"])

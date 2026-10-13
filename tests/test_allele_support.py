@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 import logging
 
-from nose.tools import eq_
+from . import eq_
 
 from varlens.commands import allele_support
 
@@ -83,8 +83,7 @@ def test_simple():
             "--genome", "b37",
             "--variants", data_path("CELSR1/vcfs/vcf_1.vcf"),
         ] + variant_filter)
-        yield (
-            eq_,
+        eq_(
             cols_concat(
                 result, ["contig", "interbase_start", "interbase_end"]),
             {"22-46931061-46931062"})

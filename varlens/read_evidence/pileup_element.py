@@ -86,7 +86,7 @@ class PileupElement(object):
     @property
     def base_qualities(self):
         '''
-        The phred-scaled base quality scores corresponding to `self.bases`, as
+        The phred-scaled base quality scores corresponding to ``self.bases``, as
         a list.
         '''
         return self.alignment.query_qualities[
@@ -115,7 +115,7 @@ class PileupElement(object):
     def from_pysam_alignment(locus, pileup_read):
         '''
         Factory function to create a new PileupElement from a pysam
-        `PileupRead`.
+        ``PileupRead``.
 
         Parameters
         ----------

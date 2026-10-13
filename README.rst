@@ -28,6 +28,8 @@ varlens-allele-support
 Installation
 -------------
 
+Varlens 0.3 requires Python 3.10 or newer.
+
 To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
 
 ::
@@ -94,7 +96,7 @@ annotations and the genes the variants overlap, and write to a file:
     GRCh37,22,46931059,46931060,A,C,1.vcf,p.S670A,CELSR1
     GRCh37,22,46931061,46931062,G,A,1.vcf 2.vcf,p.S669F,CELSR1
     GRCh37,22,50636217,50636218,A,C,1.vcf,intronic,TRABD
-    GRCh37,22,50875932,50875933,A,C,1.vcf,splice-acceptor,PPP6R2
+    GRCh37,22,50875932,50875933,A,C,1.vcf,splice-set:exon-skip ENSE00002203506 (p.A562fs),PPP6R2
     GRCh37,22,45309892,45309893,T,G,2.vcf,p.T214P,PHF21B
 
 Print counts for number of reads supporting reference/variant/other alleles
@@ -243,6 +245,29 @@ slash instead of a colon).
 See this `blog post <http://alternateallele.blogspot.com/2012/03/genome-coordinate-conventions.html>`_
 for more details on coordinate systems.
 
+Python read-support API
+-----------------------
+
+``varlens.support.variant_support(variants, counts)`` returns a pandas DataFrame
+with variants as its row index and two column levels named ``metric`` and
+``source``. This replaces the removed pandas Panel API in Varlens 0.3::
+
+    evidence = variant_support(variants, counts)
+    alt_counts = evidence["num_alt"]  # one column per read source
+    tumor_depth = evidence[("total_depth", "tumor")]
+
+The metrics are ``num_alt``, ``num_ref``, ``num_other``, ``total_depth``,
+``alt_fraction``, and ``any_alt_fraction``. Commandline CSV columns retain their
+existing names. Counts include low-quality bases and overlapping mates unless
+read filters are requested. Common ``chr`` aliases resolve to BAM references;
+alternate and unplaced contig names are preserved.
+
+MHC binding uses the current Topiary API with a local NetMHCpan installation.
+It reports the lowest affinity in nM among peptides overlapping the mutation,
+and the corresponding input allele. Variants without predictions have missing
+values. Prediction caches distinguish peptide-length requests. Effect labels
+come from the installed Varcode version and may change as its annotations improve.
+
 Development
 -----------
 
@@ -250,7 +275,12 @@ To run the tests from a git checkout:
 
 ::
 
+    pip install -e . pytest pytest-cov pylint ruff
+    pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+    ./lint.sh
     ./test.sh
+
+The tests use deterministic MHC scores and do not require NetMHCpan.
 
 To build the documentation (just this README plus the commandline tool help):
 

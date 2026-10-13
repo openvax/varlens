@@ -16,11 +16,10 @@ import itertools
 import re
 
 import pandas
-from pysam import Samfile
+import pysam
 import typechecks
-import pyensembl
 
-from ..locus import Locus
+from ..locus import Locus, chromosome_name_map
 from . import Pileup, PileupElement, alignment_key, read_key
 
 MatchingEvidence = namedtuple("MatchingEvidence", "ref alt other")
@@ -142,9 +141,9 @@ class PileupCollection(object):
         pandas.DataFrame.
 
         Valid attributes are the following properties of a pysam.AlignedSegment
-        instance. See:
-            http://pysam.readthedocs.org/en/latest/api.html#pysam.AlignedSegment
-        for the meaning of these attributes.
+        instance. See the `pysam API documentation
+        <https://pysam.readthedocs.io/en/latest/api.html#pysam.AlignedSegment>`_
+        for their meanings.
 
              * cigarstring
              * flag
@@ -184,7 +183,7 @@ class PileupCollection(object):
         included.
 
         Finally, the column "pysam_alignment_record" gives the underlying
-        `pysam.AlignedSegment` instances.
+        ``pysam.AlignedSegment`` instances.
 
         Parameters
         ----------
@@ -238,7 +237,7 @@ class PileupCollection(object):
     # Parse the bulleted list of attributes in the previous method's docstring.
     _READ_ATTRIBUTE_NAMES = []
     for line in read_attributes.__doc__.split("\n"):
-        match = re.match("\s+\*\s*(\w+)\s*", line)
+        match = re.match(r"\s+\*\s*(\w+)\s*", line)
         if match:
             _READ_ATTRIBUTE_NAMES.append(match.groups()[0])
 
@@ -517,14 +516,14 @@ class PileupCollection(object):
 
         Parameters
         ----------
-        pysam_samfile : `pysam.Samfile` instance, or filename string
+        pysam_samfile : ``pysam.Samfile`` instance, or filename string
             to a BAM file. The BAM file must be indexed.
 
         loci : list of Locus instances
             Loci to collect pileups for.
 
         normalized_contig_names : whether the contig names have been normalized
-            (e.g. pyensembl removes the 'chr' prefix). Set to true to
+            (e.g. Varlens removes the 'chr' prefix). Set to true to
             de-normalize the names when querying the BAM file.
 
         Returns
@@ -539,20 +538,16 @@ class PileupCollection(object):
 
         close_on_completion = False
         if typechecks.is_string(pysam_samfile):
-            pysam_samfile = Samfile(pysam_samfile)
+            pysam_samfile = pysam.AlignmentFile(pysam_samfile)
             close_on_completion = True        
 
         try:
             # Map from pyensembl normalized chromosome names used in Variant to
             # the names used in the BAM file.
             if normalized_contig_names:
-                chromosome_name_map = {}
-                for name in pysam_samfile.references:
-                    normalized = pyensembl.locus.normalize_chromosome(name)
-                    chromosome_name_map[normalized] = name
-                    chromosome_name_map[name] = name
+                name_map = chromosome_name_map(pysam_samfile.references)
             else:
-                chromosome_name_map = None
+                name_map = None
 
             result = PileupCollection({})
 
@@ -566,7 +561,7 @@ class PileupCollection(object):
                 result.pileups[locus] = Pileup(locus, [])
                 if normalized_contig_names:
                     try:
-                        chromosome = chromosome_name_map[locus.contig]
+                        chromosome = name_map[locus.contig]
                     except KeyError:
                         logging.warn("No such contig in bam: %s" % locus.contig)
                         continue
@@ -577,7 +572,11 @@ class PileupCollection(object):
                     locus.position,
                     locus.position + 1,  # exclusive, 0-indexed
                     truncate=True,
-                    stepper="nofilter")
+                    stepper="nofilter",
+                    min_base_quality=0,
+                    ignore_overlaps=False,
+                    ignore_orphans=False,
+                    max_depth=2**31 - 1)
                 try:
                     column = next(columns)
                 except StopIteration:

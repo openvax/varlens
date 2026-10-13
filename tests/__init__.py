@@ -6,6 +6,10 @@ import sys
 import os
 import tempfile
 from contextlib import contextmanager
+from unittest import TestCase
+
+eq_ = TestCase().assertEqual
+assert_raises = TestCase().assertRaises
 
 import pandas
 

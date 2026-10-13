@@ -14,7 +14,7 @@ from __future__ import absolute_import
 
 def alignment_key(pysam_alignment_record):
     '''
-    Return the identifying attributes of a `pysam.AlignedSegment` instance.
+    Return the identifying attributes of a ``pysam.AlignedSegment`` instance.
     This is necessary since these objects do not support a useful notion of
     equality (they compare on identify by default).
     '''
@@ -26,7 +26,7 @@ def alignment_key(pysam_alignment_record):
 
 def read_key(pysam_alignment_record):
     '''
-    Given a `pysam.AlignedSegment` instance, return the attributes identifying
+    Given a ``pysam.AlignedSegment`` instance, return the attributes identifying
     the *read* it comes from (not the alignment). There may be more than one
     alignment for a read, e.g. chimeric and secondary alignments.
     '''

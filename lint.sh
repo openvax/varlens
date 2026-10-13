@@ -14,6 +14,6 @@ find varlens/ -name '*.py' \
 && \
 echo 'Passes pylint check' \
 && \
-ruff check variform/ \
+ruff check varlens/ \
 && \
 echo "Passes ruff check" 

@@ -112,7 +112,7 @@ def load_from_args_as_dataframe(args):
         extra_args = {}
         if args.genome:
             extra_args = {
-                'ensembl': varcode.reference.infer_genome(args.genome)
+                'genome': args.genome
             }
         for (locus_str, ref, alt) in args.single_variant:
             locus = Locus.parse(locus_str)
@@ -144,13 +144,13 @@ def load_from_args_as_dataframe(args):
 
     # Apply filters:
     if args.ref:
-        df = df.ix[df.ref.isin(args.ref)]
+        df = df.loc[df.ref.isin(args.ref)]
     if args.alt:
-        df = df.ix[df.alt.isin(args.alt)]
+        df = df.loc[df.alt.isin(args.alt)]
     loci = loci_util.load_from_args(
         util.remove_prefix_from_parsed_args(args, "variant"))
     if loci is not None:
-        df = df.ix[[
+        df = df.loc[[
             loci.intersects(pileup_collection.to_locus(v))
             for v in df.variant
         ]]
@@ -171,8 +171,8 @@ def load_as_dataframe(
     if loader is None:
         if (filename.endswith(".vcf") or filename.endswith(".vcf.gz")):
             # Load from VCF
-            def loader(filename):
-                collection = varcode.load_vcf_fast(
+            def load_vcf(filename):
+                collection = varcode.load_vcf(
                     filename,
                     genome=genome,
                     max_variants=max_variants,
@@ -182,10 +182,11 @@ def load_as_dataframe(
                     collection,
                     collection.metadata,
                     metadata_column_prefix=metadata_column_prefix)
+            loader = load_vcf
 
         elif (filename.endswith(".csv") or filename.endswith(".csv.gz")):
             # Load from csv
-            def loader(filename):
+            def load_csv_frame(filename):
                 # Ignores only_passing
                 df = pandas.read_csv(filename, nrows=max_variants)
                 for column in ['ref', 'alt']:
@@ -194,6 +195,7 @@ def load_as_dataframe(
                     dataframe_row_to_variant(row) for (i, row) in df.iterrows()
                 ]
                 return df
+            loader = load_csv_frame
         else:
             raise ValueError(
                 "Unsupported input file extension for variants: %s" % filename)
@@ -239,7 +241,7 @@ def variants_to_dataframe(
 
 def dataframe_row_to_variant(row):
     return varcode.Variant(
-            ensembl=row.genome,
+            genome=row.genome,
             contig=row.contig,
             start=row.interbase_start + 1,
             ref=row.ref,
@@ -260,7 +262,8 @@ def dataframe_to_variants(df):
         # We ignore the interbase_end field.
         metadata[variant] = dict((c, row[c]) for c in extra_columns)
 
-    return varcode.VariantCollection(metadata.keys(), metadata=metadata)
+    return varcode.VariantCollection(
+        metadata.keys(), source_to_metadata_dict={"csv": metadata})
 
 def load_csv(filename, genome=None):
     # Genome is ignored for now.

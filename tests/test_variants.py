@@ -14,13 +14,11 @@
 
 from __future__ import absolute_import
 
-import subprocess
-import warnings
 import logging
 
 import pandas
 import numpy
-from nose.tools import eq_
+from . import eq_
 
 from varlens.commands import variants
 
@@ -63,7 +61,7 @@ def test_genes_and_effects():
            'GRCh37-22-46931059-46931060-A-C-p.S670A-CELSR1',
            'GRCh37-22-46931061-46931062-G-A-p.S669F-CELSR1',
            'GRCh37-22-50636217-50636218-A-C-intronic-TRABD',
-           'GRCh37-22-50875932-50875933-A-C-splice-acceptor-PPP6R2',
+           'GRCh37-22-50875932-50875933-A-C-splice-set:exon-skip ENSE00002203506 (p.A562fs)-PPP6R2',
         }))
 
 def test_context():
@@ -85,16 +83,7 @@ def test_context():
             "GRCh37-22-50875932-50875933-A-C-AGGCC-GGGAG-T>G",
         }))
 
-def test_mhc_binding_affinity():
-    # If netMHC is not installed, we skip this test
-    try:
-        # If this succeeds (no exception), we do nothing.
-        subprocess.call(
-            "netMHC", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError:
-        warnings.warn("netMHC not installed, skipping mhc binding test")
-        return
-
+def test_mhc_binding_affinity(binding_predictor):
     with temp_file(".csv") as out_csv:
         run([
             data_path("CELSR1/vcfs/vcf_1.vcf"),
@@ -103,12 +92,6 @@ def test_mhc_binding_affinity():
             "--hla", "A:02:01 A:02:02",
             "--out", out_csv,
         ])
-        ['GRCh37-22-21829554-21829555-T-G-nan-nan',
-        'GRCh37-22-46931059-46931060-A-C-377.3-A:02:02',
-        'GRCh37-22-46931061-46931062-G-A-77.2-A:02:02',
-        'GRCh37-22-50636217-50636218-A-C-nan-nan',
-        'GRCh37-22-50875932-50875933-A-C-nan-nan']
-
         results = pandas.read_csv(out_csv).set_index(expected_cols)
         assert numpy.isnan(results.loc[
                 ("GRCh37", 22, 21829554, 21829555, "T", "G")].binding_affinity)

@@ -12,10 +12,10 @@
 
 import logging
 
-import pyensembl
 import pysam
 
 from . import read_evidence
+from .locus import chromosome_name_map
 
 class ReadSource(object):
     def __init__(self, name, filename, read_filters=[]):
@@ -24,11 +24,7 @@ class ReadSource(object):
         self.handle = pysam.Samfile(filename)
         self.read_filters = read_filters
 
-        self.chromosome_name_map = {}
-        for name in self.handle.references:
-            normalized = pyensembl.locus.normalize_chromosome(name)
-            self.chromosome_name_map[normalized] = name
-            self.chromosome_name_map[name] = name
+        self.chromosome_name_map = chromosome_name_map(self.handle.references)
 
     def index_if_needed(self):
         if self.filename.endswith(".bam") and not self.handle.has_index():
@@ -112,7 +108,7 @@ class ReadSource(object):
 
 def alignment_key(pysam_alignment_record):
     '''
-    Return the identifying attributes of a `pysam.AlignedSegment` instance.
+    Return the identifying attributes of a ``pysam.AlignedSegment`` instance.
     This is necessary since these objects do not support a useful notion of
     equality (they compare on identify by default).
     '''
@@ -125,7 +121,7 @@ def alignment_key(pysam_alignment_record):
 
 def read_key(pysam_alignment_record):
     '''
-    Given a `pysam.AlignedSegment` instance, return the attributes identifying
+    Given a ``pysam.AlignedSegment`` instance, return the attributes identifying
     the *read* it comes from (not the alignment). There may be more than one
     alignment for a read, e.g. chimeric and secondary alignments.
     '''

@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 import functools
 
-from nose.tools import eq_
+from . import eq_
 
 from varlens.commands import reads
 
