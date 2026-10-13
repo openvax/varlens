@@ -63,7 +63,7 @@ class PileupCollection(object):
         locus = to_locus(locus)
         if len(locus.positions) != 1:
             raise ValueError("Not a single-base locus: %s" % locus)
-        return self.pileups[locus]
+        return self.pileups[self._single_base_locus(locus, locus.start)]
 
     def _single_base_locus(self, locus, position):
         # Prefer an exact stored contig so raw names such as 'chr1' and '1'

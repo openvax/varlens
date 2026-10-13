@@ -78,6 +78,8 @@ def test_raw_contig_names_remain_distinct(tmp_path):
     subset = evidence.at(Locus("1", 0, 1))
     with pytest.raises(KeyError):
         subset.allele_summary(Locus("chr1", 0, 1))
+    with pytest.raises(KeyError):
+        subset.pileup(Locus("chr1", 0, 1))
 
 
 def test_normalized_contig_alias_queries():
@@ -87,10 +89,12 @@ def test_normalized_contig_alias_queries():
         data_path("rna_chr17_41244936.bam"), [raw_locus]
     )
     assert evidence.loci() == [normalized_locus]
+    assert evidence.pileup(raw_locus) is evidence.pileup(normalized_locus)
     assert evidence.allele_summary(raw_locus) == evidence.allele_summary(
         normalized_locus
     )
     assert evidence.at(raw_locus).loci() == [normalized_locus]
+    assert evidence.at(raw_locus).pileup(raw_locus) is evidence.pileup(normalized_locus)
 
 
 def test_read_evidence_rna1_single_base_loci():
