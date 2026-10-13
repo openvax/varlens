@@ -32,6 +32,7 @@ if __name__ == '__main__':
         description=(
             "commandline manipulation of genomic variants and NGS reads"),
         long_description=open('README.rst').read(),
+        long_description_content_type='text/x-rst',
         url="https://github.com/openvax/varlens",
         author="Tim O'Donnell",
         author_email="timodonnell@gmail.com",
