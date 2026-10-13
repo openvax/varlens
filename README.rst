@@ -40,22 +40,8 @@ Or from a git checkout:
 
     pip install .
 
-To run the tests:
-
-::
-
-    nosetests .
-
-To build the documentation (just this README plus the commandline tool help):
-
-::
-
-    pip install -e .
-    pip install Sphinx
-    cd docs
-    make clean setup rst html
-
-The docs will be written to the ``_build/html`` directory.
+The examples below use test data from the ``tests/data`` directory of a git
+checkout.
 
 
 varlens-variants
@@ -79,7 +65,7 @@ the files each variant was found in:
 
 ::
 
-    $ varlens-variants test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf
+    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf
 
     genome,contig,interbase_start,interbase_end,ref,alt,sources
     GRCh37,22,21829554,21829555,T,G,1.vcf
@@ -94,7 +80,7 @@ annotations and the genes the variants overlap, and write to a file:
 
 ::
 
-    $ varlens-variants test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf \
+    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf \
         --include-effect \
         --include-gene \
         --out /tmp/result.csv
@@ -116,9 +102,9 @@ from the specified BAM, counting only reads with mapping quality >= 10:
 
 ::
 
-    $ varlens-variants test/data/CELSR1/vcfs/vcf_1.vcf \
+    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf \
         --include-read-evidence \
-        --reads test/data/CELSR1/bams/bam_1.bam \
+        --reads tests/data/CELSR1/bams/bam_1.bam \
         --min-mapping-quality 10
 
     genome,contig,interbase_start,interbase_end,ref,alt,sources,num_alt,num_ref,total_depth
@@ -144,7 +130,7 @@ Print basic fields for the reads in a BAM:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam
 
     query_name,reference_start,reference_end,cigarstring
     HISEQ:142:C5822ANXX:3:2116:16538:101199,46929962,46930062,100M
@@ -164,7 +150,7 @@ bases in the output:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam \
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam \
         --is-reverse \
         --field mapping_quality query_alignment_sequence \
         --out /tmp/result.csv
@@ -190,7 +176,7 @@ overlapping a certain locus:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam \
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam \
         --min-mapping-quality 30 \
         --locus 22:46932040-46932050 \
         --out /tmp/result.bam
@@ -199,15 +185,15 @@ Write a bam file consisting of reads overlapping variants from a VCF:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam \
-        --variants test/data/CELSR1/vcfs/vcf_1.vcf \
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam \
+        --variants tests/data/CELSR1/vcfs/vcf_1.vcf \
         --out /tmp/result.bam
 
 Print just the header for a BAM in csv format:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam --header
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam --header
 
 varlens-allele-support
 ----------------------
@@ -228,7 +214,7 @@ Examples
 ::
 
     varlens-allele-support \
-        --reads test/data/CELSR1/bams/bam_1.bam \
+        --reads tests/data/CELSR1/bams/bam_1.bam \
         --locus 22:46931061 22:46931063
 
     source,contig,interbase_start,interbase_end,allele,count
@@ -256,6 +242,28 @@ slash instead of a colon).
 
 See this `blog post <http://alternateallele.blogspot.com/2012/03/genome-coordinate-conventions.html>`_
 for more details on coordinate systems.
+
+Development
+-----------
+
+To run the tests from a git checkout:
+
+::
+
+    ./test.sh
+
+To build the documentation (just this README plus the commandline tool help):
+
+::
+
+    pip install -e .
+    pip install Sphinx
+    cd docs
+    make clean setup rst html
+
+The Makefile needs Sphinx installed before it runs; ``make setup`` then installs
+the Sphinx extensions the docs use. The docs will be written to the
+``_build/html`` directory.
 
 .. Documentation
     -------------
