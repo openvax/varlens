@@ -5,6 +5,8 @@ set -euo pipefail
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 python_bin=${PYTHON:-python}
+python_bin=$(command -v "$python_bin")
+export PATH="$(dirname "$python_bin"):$PATH"
 build_dir=$(mktemp -d)
 site_dir=$(mktemp -d)
 cleanup() {

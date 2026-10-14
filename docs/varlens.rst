@@ -13,7 +13,7 @@ Submodules
 ----------
 
 varlens.fusions module
----------------------
+------------------------------------------------------------
 
 .. automodule:: varlens.fusions
    :members:

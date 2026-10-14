@@ -233,7 +233,7 @@ Examples
     bam_1.bam,22,46931062,46931063,AG,2
 
 Structural variants and empty inputs
------------------------------------
+------------------------------------------------------------
 
 ``varlens-variants`` loads symbolic SV alleles and paired/single breakends from
 VCF using Varcode. A mixed SNV/SV file retains both kinds of event. A malformed
