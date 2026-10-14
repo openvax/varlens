@@ -11,8 +11,12 @@
 # limitations under the License.
 
 import collections
+import gzip
+import io
 import json
 import warnings
+from urllib.parse import urlparse, unquote
+from urllib.request import urlopen
 
 import pandas
 import varcode
@@ -34,6 +38,77 @@ STANDARD_DATAFRAME_COLUMNS = [
 
 STRUCTURAL_COLUMN = "structural_variant"
 STRUCTURAL_SCHEMA = "varlens.structural_variant.v1"
+
+
+def _structural_vcf_records(filename, variants, only_passing, max_variants):
+    """Retain each source record before Varcode's per-event metadata deduplicates.
+
+    Use Varcode's header/allele parsers so confidence intervals and alternate
+    assemblies distinguish events even at an identical VCF locus/ALT.
+    """
+    from varcode.vcf_parsing import VCFHeader
+    from varcode.sv_allele_parser import parse_symbolic_alt
+
+    structural = {v for v in variants if isinstance(v, varcode.StructuralVariant)}
+    if not structural:
+        return {}
+    keys = {(v.original_contig, v.original_start, v.original_ref, v.original_alt): v
+            for v in structural}
+    records = collections.defaultdict(list)
+    parsed_url = urlparse(filename)
+    raw = (urlopen(filename) if parsed_url.scheme in ("http", "https") else
+           open(unquote(parsed_url.path) if parsed_url.scheme == "file" else filename, "rb"))
+    with raw:
+        content = gzip.GzipFile(fileobj=raw) if filename.endswith(".gz") else raw
+        with io.TextIOWrapper(content) as stream:
+            header_lines = []
+            for line in stream:
+                header_lines.append(line)
+                if line.startswith("#CHROM"):
+                    break
+            header = VCFHeader.from_lines(header_lines)
+            loaded = 0
+            for line in stream:
+                if not line.strip() or line.startswith("#"):
+                    continue
+                fields = line.rstrip("\r\n").split("\t")
+                chrom, pos, record_id, ref, alts, qual, filters = fields[:7]
+                if only_passing and filters not in ("PASS", "."):
+                    continue
+                for index, alt in enumerate(alts.split(",")):
+                    if alt in (".", "*"):
+                        continue
+                    if max_variants is not None and loaded >= max_variants:
+                        return records
+                    loaded += 1
+                    example = keys.get((chrom, int(pos), ref, alt))
+                    if example is None:
+                        continue
+                    info = header.parse_info(fields[7])
+                    variant = parse_symbolic_alt(
+                        chrom, int(pos), ref, alt, info=info,
+                        genome=example.original_genome,
+                        normalize_contig_names=example.normalize_contig_names,
+                        convert_ucsc_contig_names=example.convert_ucsc_contig_names)
+                    if variant in structural:
+                        records[variant].append({
+                            "source": filename,
+                            "vcf_line": line.rstrip("\r\n"),
+                            "metadata": {
+                                "id": None if record_id == "." else record_id,
+                                "qual": None if qual == "." else float(qual),
+                                "filter": (None if filters == "." else
+                                           [] if filters == "PASS" else filters.split(";")),
+                                "info": info,
+                                "sample_info": header.parse_samples(fields[9:], fields[8])
+                                if header.samples else None,
+                                "alt_allele_index": index,
+                                "vcf_alt_alleles": alts.split(","),
+                            },
+                        })
+    if set(records) != structural:
+        raise InputError("Could not retain all structural VCF source records")
+    return records
 
 
 def require_small_variants(variants, operation):
@@ -244,7 +319,9 @@ def load_as_dataframe(
                     collection,
                     collection.metadata,
                     metadata_column_prefix=metadata_column_prefix,
-                    source=filename)
+                    source=filename,
+                    structural_records=_structural_vcf_records(
+                        filename, collection, only_passing, max_variants))
 
         elif (filename.endswith(".csv") or filename.endswith(".csv.gz")):
             # Load from csv
@@ -289,7 +366,8 @@ def load_as_dataframe(
     return df
 
 def variants_to_dataframe(
-        variants, metadata=None, metadata_column_prefix="", source=None):
+        variants, metadata=None, metadata_column_prefix="", source=None,
+        structural_records=None):
     def record(variant):
         d = {
             'variant': variant,
@@ -308,10 +386,11 @@ def variants_to_dataframe(
             d[STRUCTURAL_COLUMN] = json.dumps(
                 {"schema": STRUCTURAL_SCHEMA, "variant": values}, sort_keys=True)
             if source is not None:
-                d["vcf_records"] = json.dumps([{
+                records = (structural_records[variant] if structural_records is not None else [{
                     "source": str(source),
                     "metadata": metadata.get(variant, {}) if metadata else {},
-                }], sort_keys=True)
+                }])
+                d["vcf_records"] = json.dumps(records, sort_keys=True)
         if metadata:
             for (name, value) in metadata.get(variant, {}).items():
                 if name == 'info':

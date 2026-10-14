@@ -305,8 +305,9 @@ Structural rows add two JSON-valued CSV columns:
   partner breakpoint, orientation, uncertainty, assembly and INFO data. Genome
   objects are represented by their canonical assembly name.
 * ``vcf_records``: source paths and retained Varcode VCF metadata, including
-  record ID, filter, INFO and sample fields. Records from different sources are
-  retained when identical events are merged.
+  record ID, filter, INFO and sample fields, plus the original VCF line. Every
+  retained record is kept when identical events are merged, within or across
+  sources.
 
 These columns are retained without ``--include-metadata`` and are required for
 a structural CSV round trip. Do not edit the displayed locus/alleles independently

@@ -87,6 +87,25 @@ def test_same_sv_in_two_sources_preserves_provenance(tmp_path):
     assert [r["metadata"]["id"] for r in records] == ["del", "other_id"]
 
 
+@pytest.mark.parametrize("limit,ids", [(None, ["del", "second"]), (1, ["del"])])
+def test_duplicate_sv_records_in_one_vcf_keep_each_id(tmp_path, limit, ids):
+    filename = vcf(tmp_path, DEL + DEL.replace("\tdel\t", "\tsecond\t"))
+    df = variants_util.load_as_dataframe(filename, max_variants=limit)
+    assert len(df) == 1
+    assert [r["metadata"]["id"] for r in json.loads(df.vcf_records.iloc[0])] == ids
+    csv = tmp_path / "records.csv"
+    df.drop(columns="variant").to_csv(csv, index=False)
+    assert variants_util.load_as_dataframe(csv).vcf_records.tolist() == df.vcf_records.tolist()
+
+
+def test_sv_records_with_different_uncertainty_stay_separate(tmp_path):
+    filename = vcf(tmp_path, DEL + DEL.replace("CIPOS=-2,3", "CIPOS=-5,6").replace("\tdel\t", "\tsecond\t"))
+    df = variants_util.load_as_dataframe(filename)
+    assert len(df) == 2
+    assert sorted((row.variant.ci_start, json.loads(row.vcf_records)[0]["metadata"]["id"])
+                  for _, row in df.iterrows()) == [((-5, 6), "second"), ((-2, 3), "del")]
+
+
 def test_breakpoint_filter_includes_remote_mate_not_deletion_interior(tmp_path):
     filename = vcf(tmp_path, SNV + DEL + BND)
     mate = run_and_parse_csv(variants.run, [filename, "--variant-locus", "chr8:500"])
