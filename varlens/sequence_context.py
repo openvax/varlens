@@ -48,7 +48,7 @@ def variant_context(
         number of bases on either side of the variant to return
 
     Returns
-    ---------
+    -------
     A tuple of (5', mutation, 3') where
         5' - bases immediately 5 prime to the mutation
         

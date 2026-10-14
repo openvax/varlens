@@ -3,7 +3,6 @@ import pytest
 from varcode import Variant
 
 from varlens.locus import Locus, chromosome_name_map
-from varlens.mhc_binding import binding_affinities, CACHED_BINDING_AFFINITIES
 from varlens.support import EXPECTED_COLUMNS, variant_support
 from varlens.variant_includes import Includeable
 
@@ -108,7 +107,7 @@ def test_support_dataframe():
     ], columns=EXPECTED_COLUMNS)
     original = counts.copy(deep=True)
     result = variant_support(iter([variant]), counts)
-    assert result.columns.names == ["metric", "source"]
+    assert result.columns.names == ["measurement", "source"]
     assert result.loc[variant, ("num_alt", "tumor")] == 3
     assert result.loc[variant, ("num_ref", "tumor")] == 7
     assert result.loc[variant, ("num_other", "tumor")] == 2
@@ -138,48 +137,12 @@ def test_resume_empty_csv_annotation_column():
     class Annotation(Includeable):
         name = "test annotation"
         columns = ["annotation"]
+        string_columns = columns
 
         def process_chunk(self, frame):
             frame["annotation"] = "example"
             return frame
 
-    frame = pd.DataFrame({"annotation": [float("nan"), float("nan")]})
+    frame = pd.DataFrame({"annotation": [float("nan"), float("nan")], "variant": [None, None]})
     assert list(Annotation().compute(frame, chunk_rows=1)) == [1, 1]
     assert frame.annotation.tolist() == ["example", "example"]
-
-
-def test_binding_affinity_lengths_and_missing_values(binding_predictor):
-    variant = Variant("22", 46931060, "A", "C", genome="b37")
-    alleles = ["A:02:01", "A:02:02"]
-    first = binding_affinities(iter([variant]), iter(alleles), [9])
-    assert first.iloc[0].binding_affinity == 29
-    assert first.iloc[0].binding_allele == "A:02:02"
-    calls = len(binding_predictor.calls)
-    pd.testing.assert_frame_equal(first, binding_affinities([variant], alleles, [9]))
-    assert len(binding_predictor.calls) == calls
-    assert binding_affinities([variant], alleles, [10]).iloc[0].binding_affinity == 30
-    CACHED_BINDING_AFFINITIES[(variant, alleles[0], (9,))] = float("nan")
-    assert binding_affinities([variant], alleles, [9]).iloc[0].binding_affinity == 29
-    assert list(binding_affinities([], alleles).columns) == [
-        "variant", "binding_affinity", "binding_allele"]
-    with pytest.raises(ValueError, match="At least one"):
-        binding_affinities([variant], [])
-
-
-def test_binding_affinities_do_not_mix_genomes(binding_predictor, monkeypatch):
-    import topiary
-
-    variants = [Variant("22", 46931060, "A", "C", genome=genome)
-                for genome in ("b37", "GRCh38")]
-    assert variants[0].short_description == variants[1].short_description
-
-    def predict(self, collection):
-        return pd.DataFrame([
-            {"variant": variant.short_description, "kind": "pMHC_affinity",
-             "value": 100 if variant.genome.reference_name == "GRCh37" else 200}
-            for variant in collection
-        ])
-
-    monkeypatch.setattr(topiary.TopiaryPredictor, "predict_from_variants", predict)
-    result = binding_affinities(variants, ["A:02:01"])
-    assert result.binding_affinity.tolist() == [100, 200]

@@ -10,66 +10,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-from collections import defaultdict
-
 import pandas
 import varcode
 
-# Peptide lengths affect predictions and must be part of both cache keys.
-CACHED_BINDING_AFFINITIES = {}
-BINDING_PREDICTORS = {}
-
 
 def binding_affinities(variants, alleles, epitope_lengths=(8, 9, 10, 11)):
-    """Return the best mutant-peptide affinity (nM) and input allele per variant."""
+    """Return each variant's lowest mutant-peptide affinity (nM) and allele.
+
+    Variants without an affinity prediction have a missing affinity and allele.
+    Topiary's presentation scores are deliberately excluded from this summary.
+    """
     import mhctools
     import topiary
 
     variants = list(variants)
-    alleles = list(alleles)
-    lengths = tuple(sorted(set(epitope_lengths)))
-    if not alleles or not lengths:
-        raise ValueError("At least one allele and peptide length are required")
+    alleles = list(dict.fromkeys(alleles))
+    lengths = tuple(epitope_lengths)
+    if not alleles:
+        raise ValueError("Specify at least one MHC allele")
+    if not lengths or any(length <= 0 for length in lengths):
+        raise ValueError("Epitope lengths must be positive")
 
-    for allele in alleles:
-        pending = [v for v in variants
-                   if (v, allele, lengths) not in CACHED_BINDING_AFFINITIES]
-        if not pending:
-            continue
-        predictor_key = (allele, lengths)
-        if predictor_key not in BINDING_PREDICTORS:
-            BINDING_PREDICTORS[predictor_key] = mhctools.NetMHCpan(
-                [allele], default_peptide_lengths=list(lengths))
-        predictor = topiary.TopiaryPredictor(
-            models=BINDING_PREDICTORS[predictor_key],
-            only_novel_epitopes=True,
-        )
-        # Topiary's variant labels omit the genome. Keep assemblies separate
-        # so equal coordinates on different references cannot share scores.
-        by_genome = defaultdict(list)
-        for variant in pending:
-            by_genome[variant.genome].append(variant)
-        for genome_variants in by_genome.values():
-            predictions = predictor.predict_from_variants(
-                varcode.VariantCollection(genome_variants))
-            values = {}
-            if len(predictions):
-                affinity_rows = predictions.loc[
-                    predictions["kind"] == "pMHC_affinity"]
-                values = affinity_rows.groupby("variant")["value"].min().to_dict()
-            for variant in genome_variants:
-                CACHED_BINDING_AFFINITIES[(variant, allele, lengths)] = values.get(
-                    variant.short_description, float("nan"))
+    result = pandas.DataFrame(
+        {
+            "variant": variants,
+            "binding_affinity": float("nan"),
+            "binding_allele": pandas.Series([None] * len(variants), dtype=object),
+        }
+    )
+    if not variants:
+        return result
+    if len({variant.reference_name for variant in variants}) > 1:
+        raise ValueError("Cannot combine reference genomes in MHC predictions")
 
-    rows = []
-    for variant in variants:
-        available = [
-            (CACHED_BINDING_AFFINITIES[(variant, allele, lengths)], allele)
-            for allele in alleles
-            if math.isfinite(CACHED_BINDING_AFFINITIES[(variant, allele, lengths)])
-        ]
-        affinity, allele = min(available) if available else (float("nan"), None)
-        rows.append((variant, affinity, allele))
-    return pandas.DataFrame(
-        rows, columns=["variant", "binding_affinity", "binding_allele"])
+    model = mhctools.NetMHCpan(alleles=alleles, default_peptide_lengths=lengths)
+    predictor = topiary.TopiaryPredictor(models=model, only_novel_epitopes=True)
+    predictions = predictor.predict_from_variants(varcode.VariantCollection(variants))
+    if predictions.empty:
+        return result
+
+    affinities = predictions.loc[
+        predictions["kind"].eq("pMHC_affinity") & predictions["affinity"].notna()
+    ]
+    # Stable sorting makes ties deterministic without comparing Variant objects.
+    best = affinities.sort_values(
+        ["affinity", "allele"], kind="stable"
+    ).drop_duplicates("variant")
+    best = best.set_index("variant")
+    # Current Topiary serializes the variant as its short description, while
+    # Varlens' public result retains the caller's Variant objects and order.
+    keys = result["variant"].map(lambda variant: variant.short_description)
+    result["binding_affinity"] = keys.map(best["affinity"])
+    result["binding_allele"] = keys.map(best["allele"])
+
+    return result

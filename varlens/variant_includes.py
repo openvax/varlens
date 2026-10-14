@@ -28,6 +28,8 @@ from . import read_evidence
 
 class Includeable(object):
     columns = None
+    string_columns = ()
+    float_columns = ()
 
     @classmethod
     def from_args(cls, args):
@@ -40,11 +42,16 @@ class Includeable(object):
         assert self.columns
         for column in self.columns:
             if column not in df.columns:
-                df[column] = pandas.Series(index=df.index, dtype=object)
-            else:
-                # An empty annotation column read from CSV is inferred as
-                # float. pandas 3 rejects assigning text into that dtype.
+                dtype = "object" if column in self.string_columns else "float64"
+                # Explicit object dtype supports partially populated text
+                # columns loaded from CSV.
+                df[column] = pandas.Series(index=df.index, dtype=dtype)
+            elif column in self.string_columns:
                 df[column] = df[column].astype(object)
+            elif column in self.float_columns:
+                # CSV inference may give a partially annotated affinity column
+                # integer dtype; pandas 3 requires room for fractional results.
+                df[column] = df[column].astype("float64")
         rows_to_annotate = pandas.isnull(df[self.columns[0]])
         for column in self.columns[1:]:
             rows_to_annotate = rows_to_annotate | pandas.isnull(df[column])
@@ -77,6 +84,7 @@ class Includeable(object):
 class Effect(Includeable):
     name = "variant effect annotations"
     columns = ["effect"]
+    string_columns = columns
 
     @staticmethod
     def add_args(parser):
@@ -99,6 +107,7 @@ class Effect(Includeable):
 class Gene(Includeable):
     name = "gene annotations"
     columns = ["gene"]
+    string_columns = columns
     
     @staticmethod
     def add_args(parser):
@@ -121,6 +130,7 @@ class Gene(Includeable):
 class Context(Includeable):
     name = "variant sequence context"
     columns = ["context_5_prime", "context_3_prime", "context_mutation"]
+    string_columns = columns
     
     @staticmethod
     def add_args(parser):
@@ -175,6 +185,8 @@ class Context(Includeable):
 class MHCBindingAffinity(Includeable):
     name = "MHC binding affinity"
     columns = ["binding_affinity", "binding_allele"]
+    string_columns = ["binding_allele"]
+    float_columns = ["binding_affinity"]
 
     noncoding_effects = set([
         "intergenic",
@@ -375,7 +387,7 @@ class ReadEvidence(Includeable):
             one of: num_ref, num_alt, total_depth
 
         Returns
-        ----------
+        -------
         column name : string
         """
         return self.column_format.format(
@@ -460,14 +472,14 @@ class ReadEvidence(Includeable):
                 variant_support_df.columns.get_level_values("source"))
 
             for allele_group in ["num_alt", "num_ref", "total_depth"]:
-                source_counts = variant_support_df[allele_group].reindex(variants)
-                for source_column in source_counts.columns:
+                sub_panel = variant_support_df[allele_group].loc[list(variants)]
+                for source_column in sub_panel.columns:
                     dest_column = self.column_name(
                         source_column, allele_group)
                     assert dest_column in self.columns, (
                             "Bad column: %s not in %s" % (
                                 dest_column, " ".join(self.columns)))
-                    values = source_counts[source_column].values
+                    values = sub_panel[source_column].values
                     assert len(values) == rows.sum(), "%d != %d" % (
                         len(values), rows.sum())
                     df.loc[rows, dest_column] = values

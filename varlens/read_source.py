@@ -52,7 +52,7 @@ class ReadSource(object):
                 try:
                     chromosome = self.chromosome_name_map[locus.contig]
                 except KeyError:
-                    logging.warn(
+                    logging.warning(
                         "No such contig in bam: %s" % locus.contig)
                     continue
                 positions = locus.pileup_positions
@@ -80,7 +80,7 @@ class ReadSource(object):
                     try:
                         chromosome = self.chromosome_name_map[locus.contig]
                     except KeyError:
-                        logging.warn(
+                        logging.warning(
                             "No such contig in bam: %s" % locus.contig)
                         continue
                     for read in self.handle.fetch(

@@ -76,7 +76,7 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
     Returns
     -------
     pandas.DataFrame
-        Rows are variants; columns have two named levels, ``metric`` and
+        Rows are variants; columns have two named levels, ``measurement`` and
         ``source``. Metrics are num_alt, num_ref, num_other, total_depth,
         alt_fraction, and any_alt_fraction. For example, ``frame["num_alt"]``
         selects all sources' alternate-read counts.
@@ -152,4 +152,6 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
             dataframe_dicts[metric], index=variants, columns=sources)
         for metric in metrics
     }
-    return pandas.concat(dataframes, axis=1, names=["metric", "source"])
+    result = pandas.concat(dataframes, axis=1, names=["measurement", "source"])
+    result.index.name = "variant"
+    return result

@@ -28,7 +28,7 @@ varlens-allele-support
 Installation
 -------------
 
-Varlens 0.3 requires Python 3.10 or newer.
+Varlens 1.0 requires Python 3.11 or newer and pandas 3 or newer.
 
 To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
 
@@ -213,7 +213,7 @@ the one-based inclusive coordinates used in VCF files).
 Insertions use an empty interval at the insertion boundary. For example,
 VCF ``1:100 A>AT`` becomes ``interbase_start=100, interbase_end=100`` with
 ``ref=""`` and ``alt="T"``. The pileup reads the base immediately to the left
-and counts only the inserted sequence. Version 0.3 corrects the older
+and counts only the inserted sequence. Version 1.0 corrects the older
 single-base insertion intervals; CSV input still accepts that older encoding.
 
 Examples
@@ -255,8 +255,8 @@ Python read-support API
 -----------------------
 
 ``varlens.support.variant_support(variants, counts)`` returns a pandas DataFrame
-with variants as its row index and two column levels named ``metric`` and
-``source``. This replaces the removed pandas Panel API in Varlens 0.3::
+with variants as its row index and two column levels named ``measurement`` and
+``source``. This replaces the removed pandas Panel API in Varlens 1.0::
 
     evidence = variant_support(variants, counts)
     alt_counts = evidence["num_alt"]  # one column per read source

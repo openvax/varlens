@@ -127,7 +127,7 @@ class PileupElement(object):
             pysam PileupRead instance. Its alignment must overlap the locus.
 
         Returns
-        ----------
+        -------
         PileupElement
 
         '''

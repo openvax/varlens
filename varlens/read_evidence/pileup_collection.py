@@ -16,10 +16,10 @@ import itertools
 import re
 
 import pandas
-import pysam
+from pysam import Samfile
 import typechecks
 
-from ..locus import Locus, chromosome_name_map
+from ..locus import Locus, normalize_contig, chromosome_name_map
 from . import Pileup, PileupElement, alignment_key, read_key
 
 MatchingEvidence = namedtuple("MatchingEvidence", "ref alt other")
@@ -36,8 +36,12 @@ class PileupCollection(object):
     parent (optional) : PileupCollection
         For PileupCollection instances that are derived (e.g. by filtering)
         from another instance, this attribute tracks the parent instance.
+
+    normalized_contig_names (optional) : bool
+        Allow normalized aliases when looking up loci. Derived collections
+        inherit this setting from their parent.
     '''
-    def __init__(self, pileups=None, parent=None):
+    def __init__(self, pileups=None, parent=None, normalized_contig_names=True):
         '''
         Construct a new PileupCollection.
         '''
@@ -45,6 +49,9 @@ class PileupCollection(object):
             pileups = {}
         self.pileups = pileups
         self.parent = parent
+        self.normalized_contig_names = (
+            parent.normalized_contig_names if parent is not None
+            else normalized_contig_names)
 
     def pileup(self, locus):
         '''
@@ -56,7 +63,16 @@ class PileupCollection(object):
         locus = to_locus(locus)
         if len(locus.positions) != 1:
             raise ValueError("Not a single-base locus: %s" % locus)
-        return self.pileups[locus]
+        return self.pileups[self._single_base_locus(locus, locus.start)]
+
+    def _single_base_locus(self, locus, position):
+        # Prefer an exact stored contig so raw names such as 'chr1' and '1'
+        # remain distinct. Retain alias lookup for normalized collections.
+        base_locus = Locus(locus.contig, position, position + 1)
+        if self.normalized_contig_names and base_locus not in self.pileups:
+            base_locus = base_locus._replace(
+                contig=normalize_contig(base_locus.contig))
+        return base_locus
 
     def at(self, *loci):
         '''
@@ -68,7 +84,7 @@ class PileupCollection(object):
         for locus in loci:
             for position in locus.pileup_positions:
                 single_position_loci.append(
-                    Locus.from_interbase_coordinates(locus.contig, position))
+                    self._single_base_locus(locus, position))
         pileups = dict(
             (locus, self.pileups[locus]) for locus in single_position_loci)
         return PileupCollection(pileups, self)
@@ -90,7 +106,7 @@ class PileupCollection(object):
         method per read.
         
         Returns
-        ----------
+        -------
         List of pysam.AlignedSegment instances. If a particular read has more
         than one alignment in this PileupCollection (e.g. one primary and one
         secondary), then the alignment returned is the one with the highest
@@ -128,7 +144,7 @@ class PileupCollection(object):
             possible attributes.
 
         Returns
-        ----------
+        -------
         pandas.Series instance giving values for the attribute in each read.
         The order of reads is fixed, so multiple calls to this function will
         return corresponding values. 
@@ -192,7 +208,7 @@ class PileupCollection(object):
             included in the result.
 
         Returns
-        ----------
+        -------
         pandas.DataFrame of read attributes.
 
         '''
@@ -264,8 +280,7 @@ class PileupCollection(object):
         If the locus is an empty interval (e.g. [5,5) ), then the alleles
         consist only of inserted bases. In this example, only bases inserted
         between reference positions 4 and 5 (zero-based) would be included.
-        An insertion after position 5 uses the empty interval [6,6).
-        In the previous insertion example, the allele
+        An insertion after position 5 uses [6,6). In the previous example, the allele
         would be "GA", indicating a 2-base insertion. Reads that have no
         insertion at that position (matches or deletions) would have the empty
         string as their allele.
@@ -276,7 +291,7 @@ class PileupCollection(object):
             The reference locus, encompassing 0 or more bases.
 
         Returns
-        ----------
+        -------
         A dict of string -> PileupCollection. The keys are nucleotide strings
         giving the bases sequenced at the locus, and the values are
         PileupCollection instances of the alignments that support that allele.
@@ -288,8 +303,7 @@ class PileupCollection(object):
         if locus.positions:
             # Our locus includes at least one reference base.
             for position in locus.positions:
-                base_position = Locus.from_interbase_coordinates(
-                    locus.contig, position)
+                base_position = self._single_base_locus(locus, position)
                 loci.append(base_position)
                 new_read_to_allele = {}
                 for element in self.pileups[base_position]:
@@ -305,16 +319,14 @@ class PileupCollection(object):
                 read_to_allele = new_read_to_allele
         else:
             # Our locus is between reference bases.
-            position_before = Locus.from_interbase_coordinates(
-                locus.contig, locus.start - 1)
+            position_before = self._single_base_locus(locus, locus.pileup_positions.start)
             loci.append(position_before)
             read_to_allele = {}
             for element in self.pileups[position_before]:
                 if not element.bases:
                     continue
                 allele = element.bases[1:]
-                # Absence of an insertion is observed only when the read
-                # spans both sides; a read end or splice is not reference support.
+                # Reference support requires an observed right flank.
                 if not allele and not any(
                         start <= locus.start < end
                         for start, end in element.alignment.get_blocks()):
@@ -357,7 +369,7 @@ class PileupCollection(object):
             Default: count number of reads.
 
         Returns
-        ----------
+        -------
         List of (allele, score) pairs.
         '''
         locus = to_locus(locus)
@@ -377,7 +389,7 @@ class PileupCollection(object):
             The variant. Must have fields 'locus', 'ref', and 'alt'.
 
         Returns
-        ----------
+        -------
         A MatchingEvidence named tuple with fields (ref, alt, other),
         each of which is a string -> PileupCollection dict mapping alleles
         to the PileupCollection of evidence supporting them.
@@ -390,7 +402,7 @@ class PileupCollection(object):
 
         alleles_dict = self.group_by_allele(locus)
         single_base_loci = [
-            Locus.from_interbase_coordinates(locus.contig, position)
+            self._single_base_locus(locus, position)
             for position in locus.positions
         ]
         empty_pileups = dict(
@@ -422,7 +434,7 @@ class PileupCollection(object):
             Default: count number of reads.
 
         Returns
-        ----------
+        -------
         List of (allele, score) pairs. This list will always have at least two
         elements. The first pair in the list is the reference allele. The
         second pair is the alternate. The subsequent items give the "third"
@@ -481,7 +493,7 @@ class PileupCollection(object):
             be retained.
 
         Returns
-        ----------
+        -------
         A new PileupCollection that includes the subset of the pileup elements
         matching all the specified filters.
         '''
@@ -531,12 +543,12 @@ class PileupCollection(object):
         loci : list of Locus instances
             Loci to collect pileups for.
 
-        normalized_contig_names : whether the contig names have been normalized
-            (e.g. Varlens removes the 'chr' prefix). Set to true to
-            de-normalize the names when querying the BAM file.
+        normalized_contig_names : bool
+            If true, normalize contig names and map aliases to BAM references.
+            If false, preserve the supplied Locus contig names exactly.
 
         Returns
-        ----------
+        -------
         PileupCollection instance containing pileups for the specified loci.
         All alignments in the BAM file are included (e.g. duplicate reads,
         secondary alignments, etc.). See `PileupCollection.filter` if these
@@ -547,7 +559,7 @@ class PileupCollection(object):
 
         close_on_completion = False
         if typechecks.is_string(pysam_samfile):
-            pysam_samfile = pysam.AlignmentFile(pysam_samfile)
+            pysam_samfile = Samfile(pysam_samfile)
             close_on_completion = True        
 
         try:
@@ -558,11 +570,14 @@ class PileupCollection(object):
             else:
                 name_map = None
 
-            result = PileupCollection({})
+            result = PileupCollection(
+                {}, normalized_contig_names=normalized_contig_names)
 
             # Optimization: we sort variants so our BAM reads are localized.
             locus_iterator = itertools.chain.from_iterable(
                 (Locus.from_interbase_coordinates(locus_interval.contig, pos)
+                    if normalized_contig_names else
+                    Locus(locus_interval.contig, pos, pos + 1)
                     for pos
                     in locus_interval.pileup_positions)
                 for locus_interval in sorted(loci))
@@ -572,10 +587,12 @@ class PileupCollection(object):
                     try:
                         chromosome = name_map[locus.contig]
                     except KeyError:
-                        logging.warn("No such contig in bam: %s" % locus.contig)
+                        logging.warning("No such contig in bam: %s" % locus.contig)
                         continue
                 else:
                     chromosome = locus.contig
+                # Keep quality and mate filtering in PileupCollection.filter;
+                # current pysam otherwise drops low-quality/overlapping bases.
                 columns = pysam_samfile.pileup(
                     chromosome,
                     locus.position,

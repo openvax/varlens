@@ -14,7 +14,6 @@ import collections
 
 import pandas
 import varcode
-import varcode.reference
 import logging
 
 from . import util, loci_util
@@ -101,7 +100,7 @@ def load_from_args_as_dataframe(args):
             metadata_column_prefix=prefix)
 
         if df.shape[0] == 0:
-            logging.warn("No variants loaded from: %s" % args.variants[i])
+            logging.warning("No variants loaded from: %s" % args.variants[i])
         else:
             for variant in df.variant:
                 variant_to_sources[variant].append(name)

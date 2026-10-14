@@ -1,30 +1,29 @@
 import pytest
-import mhctools
-from mhctools.base_predictor import BasePredictor
-
-from varlens import mhc_binding
+from pyensembl import EnsemblRelease
 
 
-@pytest.fixture
-def binding_predictor(monkeypatch):
-    """Exercise real Topiary variant processing with deterministic MHC scores."""
-    class Predictor(BasePredictor):
-        calls = []
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-netmhcpan",
+        action="store_true",
+        help="Run the optional test using an installed NetMHCpan executable",
+    )
 
-        def predict_peptides(self, peptides):
-            self.calls.append(tuple(peptides))
-            return mhctools.BindingPredictionCollection([
-                mhctools.BindingPrediction(
-                    allele=allele, peptide=peptide,
-                    affinity=(20 if allele.endswith("02:02") else 100) + len(peptide),
-                    prediction_method_name="test",
+
+def pytest_collection_modifyitems(config, items):
+    reference_installed = EnsemblRelease(75).installed()
+    for item in items:
+        if item.get_closest_marker("ensembl") and not reference_installed:
+            item.add_marker(
+                pytest.mark.skip(
+                    reason="Install reference data with: pyensembl install --release 75 --species human",
                 )
-                for peptide in peptides for allele in self.alleles
-            ])
-
-    mhc_binding.CACHED_BINDING_AFFINITIES.clear()
-    mhc_binding.BINDING_PREDICTORS.clear()
-    monkeypatch.setattr(mhctools, "NetMHCpan", Predictor)
-    yield Predictor
-    mhc_binding.CACHED_BINDING_AFFINITIES.clear()
-    mhc_binding.BINDING_PREDICTORS.clear()
+            )
+        if item.get_closest_marker("netmhcpan") and not config.getoption(
+            "--run-netmhcpan"
+        ):
+            item.add_marker(
+                pytest.mark.skip(
+                    reason="Use --run-netmhcpan to enable the external predictor test"
+                )
+            )
