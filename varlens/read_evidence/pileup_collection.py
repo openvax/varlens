@@ -19,7 +19,7 @@ import pandas
 from pysam import Samfile
 import typechecks
 
-from ..locus import Locus, normalize_contig
+from ..locus import Locus, normalize_contig, chromosome_name_map
 from . import Pileup, PileupElement, alignment_key, read_key
 
 MatchingEvidence = namedtuple("MatchingEvidence", "ref alt other")
@@ -82,7 +82,7 @@ class PileupCollection(object):
         loci = [to_locus(obj) for obj in loci]
         single_position_loci = []
         for locus in loci:
-            for position in locus.positions:
+            for position in locus.pileup_positions:
                 single_position_loci.append(
                     self._single_base_locus(locus, position))
         pileups = dict(
@@ -106,7 +106,7 @@ class PileupCollection(object):
         method per read.
         
         Returns
-        ----------
+        -------
         List of pysam.AlignedSegment instances. If a particular read has more
         than one alignment in this PileupCollection (e.g. one primary and one
         secondary), then the alignment returned is the one with the highest
@@ -144,7 +144,7 @@ class PileupCollection(object):
             possible attributes.
 
         Returns
-        ----------
+        -------
         pandas.Series instance giving values for the attribute in each read.
         The order of reads is fixed, so multiple calls to this function will
         return corresponding values. 
@@ -157,9 +157,9 @@ class PileupCollection(object):
         pandas.DataFrame.
 
         Valid attributes are the following properties of a pysam.AlignedSegment
-        instance. See:
-            http://pysam.readthedocs.org/en/latest/api.html#pysam.AlignedSegment
-        for the meaning of these attributes.
+        instance. See the `pysam API documentation
+        <https://pysam.readthedocs.io/en/latest/api.html#pysam.AlignedSegment>`_
+        for their meanings.
 
              * cigarstring
              * flag
@@ -199,7 +199,7 @@ class PileupCollection(object):
         included.
 
         Finally, the column "pysam_alignment_record" gives the underlying
-        `pysam.AlignedSegment` instances.
+        ``pysam.AlignedSegment`` instances.
 
         Parameters
         ----------
@@ -208,7 +208,7 @@ class PileupCollection(object):
             included in the result.
 
         Returns
-        ----------
+        -------
         pandas.DataFrame of read attributes.
 
         '''
@@ -279,8 +279,8 @@ class PileupCollection(object):
 
         If the locus is an empty interval (e.g. [5,5) ), then the alleles
         consist only of inserted bases. In this example, only bases inserted
-        immediately after locus 5 would be included (but *not* the base
-        actually at locus 5). In the previous insertion example, the allele
+        between reference positions 4 and 5 (zero-based) would be included.
+        An insertion after position 5 uses [6,6). In the previous example, the allele
         would be "GA", indicating a 2-base insertion. Reads that have no
         insertion at that position (matches or deletions) would have the empty
         string as their allele.
@@ -291,7 +291,7 @@ class PileupCollection(object):
             The reference locus, encompassing 0 or more bases.
 
         Returns
-        ----------
+        -------
         A dict of string -> PileupCollection. The keys are nucleotide strings
         giving the bases sequenced at the locus, and the values are
         PileupCollection instances of the alignments that support that allele.
@@ -319,11 +319,18 @@ class PileupCollection(object):
                 read_to_allele = new_read_to_allele
         else:
             # Our locus is between reference bases.
-            position_before = self._single_base_locus(locus, locus.start)
+            position_before = self._single_base_locus(locus, locus.pileup_positions.start)
             loci.append(position_before)
             read_to_allele = {}
             for element in self.pileups[position_before]:
+                if not element.bases:
+                    continue
                 allele = element.bases[1:]
+                # Reference support requires an observed right flank.
+                if not allele and not any(
+                        start <= locus.start < end
+                        for start, end in element.alignment.get_blocks()):
+                    continue
                 read_to_allele[alignment_key(element.alignment)] = allele
 
         split = defaultdict(lambda: PileupCollection(pileups={}, parent=self))
@@ -362,7 +369,7 @@ class PileupCollection(object):
             Default: count number of reads.
 
         Returns
-        ----------
+        -------
         List of (allele, score) pairs.
         '''
         locus = to_locus(locus)
@@ -382,7 +389,7 @@ class PileupCollection(object):
             The variant. Must have fields 'locus', 'ref', and 'alt'.
 
         Returns
-        ----------
+        -------
         A MatchingEvidence named tuple with fields (ref, alt, other),
         each of which is a string -> PileupCollection dict mapping alleles
         to the PileupCollection of evidence supporting them.
@@ -427,7 +434,7 @@ class PileupCollection(object):
             Default: count number of reads.
 
         Returns
-        ----------
+        -------
         List of (allele, score) pairs. This list will always have at least two
         elements. The first pair in the list is the reference allele. The
         second pair is the alternate. The subsequent items give the "third"
@@ -486,7 +493,7 @@ class PileupCollection(object):
             be retained.
 
         Returns
-        ----------
+        -------
         A new PileupCollection that includes the subset of the pileup elements
         matching all the specified filters.
         '''
@@ -530,7 +537,7 @@ class PileupCollection(object):
 
         Parameters
         ----------
-        pysam_samfile : `pysam.Samfile` instance, or filename string
+        pysam_samfile : ``pysam.Samfile`` instance, or filename string
             to a BAM file. The BAM file must be indexed.
 
         loci : list of Locus instances
@@ -541,7 +548,7 @@ class PileupCollection(object):
             If false, preserve the supplied Locus contig names exactly.
 
         Returns
-        ----------
+        -------
         PileupCollection instance containing pileups for the specified loci.
         All alignments in the BAM file are included (e.g. duplicate reads,
         secondary alignments, etc.). See `PileupCollection.filter` if these
@@ -559,13 +566,9 @@ class PileupCollection(object):
             # Map from pyensembl normalized chromosome names used in Variant to
             # the names used in the BAM file.
             if normalized_contig_names:
-                chromosome_name_map = {}
-                for name in pysam_samfile.references:
-                    normalized = normalize_contig(name)
-                    chromosome_name_map[normalized] = name
-                    chromosome_name_map[name] = name
+                name_map = chromosome_name_map(pysam_samfile.references)
             else:
-                chromosome_name_map = None
+                name_map = None
 
             result = PileupCollection(
                 {}, normalized_contig_names=normalized_contig_names)
@@ -576,13 +579,13 @@ class PileupCollection(object):
                     if normalized_contig_names else
                     Locus(locus_interval.contig, pos, pos + 1)
                     for pos
-                    in locus_interval.positions)
+                    in locus_interval.pileup_positions)
                 for locus_interval in sorted(loci))
             for locus in locus_iterator:
                 result.pileups[locus] = Pileup(locus, [])
                 if normalized_contig_names:
                     try:
-                        chromosome = chromosome_name_map[locus.contig]
+                        chromosome = name_map[locus.contig]
                     except KeyError:
                         logging.warning("No such contig in bam: %s" % locus.contig)
                         continue
@@ -597,7 +600,9 @@ class PileupCollection(object):
                     truncate=True,
                     stepper="nofilter",
                     min_base_quality=0,
-                    ignore_overlaps=False)
+                    ignore_overlaps=False,
+                    ignore_orphans=False,
+                    max_depth=2**31 - 1)
                 try:
                     column = next(columns)
                 except StopIteration:
@@ -619,29 +624,23 @@ class PileupCollection(object):
                 pysam_samfile.close()
 
 def to_locus(variant_or_locus):
-    """
-    Return a Locus object for a Variant instance.
+    """Return the half-open reference interval for a Variant or Locus.
 
-    This is necessary since the read evidence module expects Variant instances
-    to have a locus attribute st to a varcode.Locus instance of interbase
-    genomic coordinates.  The rest of varcode uses a different Variant class,
-    but will eventually be transitioned to interbase coordinates.
-
-    See test/test_read_evidence.py for a definition of the Variant class that
-    the read_evidence module is meant to work with.
-
-    This function can be passed a regular varcode.Variant instance (with fields
-    start, end, contig, etc.), a different kind of variant object that has a
-    'locus' field, or a varcode.Locus. It will return a varcode.Locus instance.
-
-    This should all get cleaned up once varcode switches to interbase
-    coordinates and we standardize on a Variant class.
+    Varcode substitutions and deletions use inclusive one-based coordinates.
+    Its insertions have an empty reference allele and are anchored at the
+    preceding one-based base; their interbase interval is [start, start).
     """
     if isinstance(variant_or_locus, Locus):
         return variant_or_locus
     try:
         return variant_or_locus.locus
     except AttributeError:
+        if variant_or_locus.ref == "":
+            # Varcode anchors insertions at the preceding one-based base.
+            return Locus.from_interbase_coordinates(
+                variant_or_locus.contig,
+                variant_or_locus.start,
+                variant_or_locus.start)
         # IMPORTANT: if varcode someday changes from inclusive to interbase
         # coordinates, this will need to be updated.
         return Locus.from_inclusive_coordinates(

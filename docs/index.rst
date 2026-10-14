@@ -21,4 +21,11 @@ varlens-allele-support
 
 .. command-output:: varlens-allele-support -h
 
+Python API
+----------------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   varlens
 

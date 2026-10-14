@@ -14,7 +14,9 @@ import collections
 import logging
 
 import pandas
+
 from .locus import normalize_contig
+from .read_evidence.pileup_collection import to_locus
 
 EXPECTED_COLUMNS = [
     "source",
@@ -65,22 +67,19 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
     allele_support_df : dataframe
         Allele support dataframe, as output by the varlens-allele-support tool.
         It should have columns: source, contig, interbase_start, interbase_end,
-        allele. The remaining columns are interpreted as read counts of various
-        subsets of reads (e.g. all reads, non-duplicate reads, etc.)
+        allele, and count (the number of supporting reads).
 
     ignore_missing : boolean
-        If True, then varaints with no allele counts will be interpreted as
-        having 0 depth. If False, then an exception will be raised if any
-        variants have no allele counts.
+        If True, variants with no allele counts have zero depth. Otherwise
+        missing counts raise ValueError.
 
     Returns
-    ----------
-
+    -------
     pandas.DataFrame
-        Rows are indexed by variant. Columns are a MultiIndex with levels
-        ``measurement`` (num_alt, num_ref, num_other, total_depth,
-        alt_fraction, any_alt_fraction) and ``source``. For example,
-        ``result["num_alt"]["tumor"]`` selects tumor alternate read counts.
+        Rows are variants; columns have two named levels, ``measurement`` and
+        ``source``. Metrics are num_alt, num_ref, num_other, total_depth,
+        alt_fraction, and any_alt_fraction. For example, ``frame["num_alt"]``
+        selects all sources' alternate-read counts.
     '''
     missing = [
         c for c in EXPECTED_COLUMNS if c not in allele_support_df.columns
@@ -90,6 +89,7 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
 
     variants = list(variants)
     allele_support_df = allele_support_df.copy()
+
     # Ensure our start and end fields are ints.
     allele_support_df[["interbase_start", "interbase_end"]] = (
         allele_support_df[["interbase_start", "interbase_end"]].astype(int))
@@ -103,7 +103,8 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
             normalize_contig(row.contig),
             row.interbase_start,
             row.interbase_end)
-        allele_support_dict[key][row.allele] = row["count"]
+        allele_support_dict[key][row.allele] = (
+            allele_support_dict[key].get(row.allele, 0) + row["count"])
 
     # We want an exception on bad lookups, so convert to a regular dict.
     allele_support_dict = dict(allele_support_dict)
@@ -113,7 +114,8 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
 
     for variant in variants:
         for source in sources:
-            key = (source, normalize_contig(variant.contig), variant.start - 1, variant.end)
+            locus = to_locus(variant)
+            key = (source, locus.contig, locus.start, locus.end)
             try:
                 alleles = allele_support_dict[key]
             except KeyError:
@@ -141,13 +143,14 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
             dataframe_dicts["any_alt_fraction"][source].append(
                 float(alt + other) / max(1, total))
 
-    measurements = [
+    metrics = (
         "num_alt", "num_ref", "num_other", "total_depth",
         "alt_fraction", "any_alt_fraction",
-    ]
+    )
     dataframes = {
-        label: pandas.DataFrame(dataframe_dicts[label], index=variants, columns=sources)
-        for label in measurements
+        metric: pandas.DataFrame(
+            dataframe_dicts[metric], index=variants, columns=sources)
+        for metric in metrics
     }
     result = pandas.concat(dataframes, axis=1, names=["measurement", "source"])
     result.index.name = "variant"

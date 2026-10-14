@@ -26,12 +26,12 @@ Print basic info for the variants found in two VCF files. Note that variants
 found in both files are listed in one row, and the 'sources' column lists
 the files each variant was found in:
 
-    %(prog)s test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf
+    %(prog)s tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf
 
 Same as the above but include additional columns giving varcode variant effect
 annotations and the genes the variants overlap, and write to a file:
 
-    %(prog)s test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf \\
+    %(prog)s tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf \\
         --include-effect \\
         --include-gene \\
         --out /tmp/result.csv
@@ -39,9 +39,9 @@ annotations and the genes the variants overlap, and write to a file:
 Print counts for number of reads supporting reference/variant/other alleles
 from the specified BAMs, counting only reads with mapping quality >= 10:
 
-    %(prog)s test/data/CELSR1/vcfs/vcf_1.vcf \\
+    %(prog)s tests/data/CELSR1/vcfs/vcf_1.vcf \\
         --include-read-evidence \\
-        --reads test/data/CELSR1/bams/*.bam \\
+        --reads tests/data/CELSR1/bams/*.bam \\
         --min-mapping-quality 10
 
 '''

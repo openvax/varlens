@@ -5,97 +5,105 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 4
 
-    varlens.read_evidence
+   varlens.read_evidence
 
 Submodules
 ----------
 
-varlens.loci_util module
-------------------------
+varlens.loci\_util module
+-------------------------
 
 .. automodule:: varlens.loci_util
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 varlens.locus module
 --------------------
 
 .. automodule:: varlens.locus
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-varlens.mhc_binding module
---------------------------
+varlens.mhc\_binding module
+---------------------------
 
 .. automodule:: varlens.mhc_binding
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-varlens.read_source module
---------------------------
+varlens.read\_source module
+---------------------------
 
 .. automodule:: varlens.read_source
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-varlens.reads_util module
--------------------------
+varlens.reads\_util module
+--------------------------
 
 .. automodule:: varlens.reads_util
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-varlens.sequence_context module
--------------------------------
+varlens.sequence\_context module
+--------------------------------
 
 .. automodule:: varlens.sequence_context
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 varlens.support module
 ----------------------
 
 .. automodule:: varlens.support
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 varlens.util module
 -------------------
 
 .. automodule:: varlens.util
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-varlens.variant_includes module
--------------------------------
+varlens.variant\_includes module
+--------------------------------
 
 .. automodule:: varlens.variant_includes
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-varlens.variants_util module
-----------------------------
+varlens.variants\_util module
+-----------------------------
 
 .. automodule:: varlens.variants_util
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
+varlens.version module
+----------------------
+
+.. automodule:: varlens.version
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 Module contents
 ---------------
 
 .. automodule:: varlens
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:

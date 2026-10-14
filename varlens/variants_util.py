@@ -170,7 +170,7 @@ def load_as_dataframe(
     if loader is None:
         if (filename.endswith(".vcf") or filename.endswith(".vcf.gz")):
             # Load from VCF
-            def loader(filename):
+            def load_vcf(filename):
                 collection = varcode.load_vcf(
                     filename,
                     genome=genome,
@@ -181,10 +181,11 @@ def load_as_dataframe(
                     collection,
                     collection.metadata,
                     metadata_column_prefix=metadata_column_prefix)
+            loader = load_vcf
 
         elif (filename.endswith(".csv") or filename.endswith(".csv.gz")):
             # Load from csv
-            def loader(filename):
+            def load_csv_frame(filename):
                 # Ignores only_passing
                 df = pandas.read_csv(filename, nrows=max_variants)
                 for column in ['ref', 'alt']:
@@ -193,6 +194,7 @@ def load_as_dataframe(
                     dataframe_row_to_variant(row) for (i, row) in df.iterrows()
                 ]
                 return df
+            loader = load_csv_frame
         else:
             raise ValueError(
                 "Unsupported input file extension for variants: %s" % filename)
@@ -210,12 +212,13 @@ def load_as_dataframe(
 def variants_to_dataframe(
         variants, metadata=None, metadata_column_prefix=""):
     def record(variant):
+        locus = pileup_collection.to_locus(variant)
         d = {
             'variant': variant,
             'genome': str(variant.reference_name),
             'contig': variant.contig,
-            'interbase_start': variant.start - 1,
-            'interbase_end': variant.end,
+            'interbase_start': locus.start,
+            'interbase_end': locus.end,
             'ref': variant.ref,
             'alt': variant.alt,
         }
@@ -240,7 +243,8 @@ def dataframe_row_to_variant(row):
     return varcode.Variant(
             genome=row.genome,
             contig=row.contig,
-            start=row.interbase_start + 1,
+            start=(row.interbase_start if row.ref == '' and
+                   row.interbase_start == row.interbase_end else row.interbase_start + 1),
             ref=row.ref,
             alt=row.alt,
             allow_extended_nucleotides=True)
@@ -259,7 +263,8 @@ def dataframe_to_variants(df):
         # We ignore the interbase_end field.
         metadata[variant] = dict((c, row[c]) for c in extra_columns)
 
-    return varcode.VariantCollection(metadata.keys(), metadata=metadata)
+    return varcode.VariantCollection(
+        metadata.keys(), source_to_metadata_dict={"csv": metadata})
 
 def load_csv(filename, genome=None):
     # Genome is ignored for now.

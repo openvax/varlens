@@ -24,7 +24,7 @@ the one-based inclusive coordinates used in VCF files).
 Example:
 
 %(prog)s \\
-    --reads test/data/CELSR1/bams/bam_1.bam \\
+    --reads tests/data/CELSR1/bams/bam_1.bam \\
     --locus 22:46931061 22:46931063
 
 '''

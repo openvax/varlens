@@ -16,14 +16,19 @@ from collections import namedtuple
 import pyensembl
 import typechecks
 
-
 def normalize_contig(contig):
-    """Keep Varlens' historical chr-prefix aliases with current PyEnsembl."""
+    """Use Ensembl-style names, preserving alternate and unplaced contigs."""
     contig = pyensembl.locus.normalize_chromosome(contig)
     if contig.startswith("chr") and "_" not in contig:
         contig = contig[3:]
-    return contig
+    return "MT" if contig == "M" else contig
 
+
+def chromosome_name_map(references):
+    """Resolve aliases to BAM references, giving exact names priority."""
+    result = {normalize_contig(name): name for name in references}
+    result.update((name, name) for name in references)
+    return result
 
 class Locus(namedtuple("Locus", "contig start end")):
     '''
@@ -47,6 +52,15 @@ class Locus(namedtuple("Locus", "contig start end")):
         A Python range object giving the bases included in this locus.
         '''
         return range(self.start, self.end)
+
+    @property
+    def pileup_positions(self):
+        """Reference bases needed to query this interval (left anchor for insertions)."""
+        if self.start == self.end:
+            if self.start < 1:
+                raise ValueError("An insertion needs a reference base to its left")
+            return range(self.start - 1, self.start)
+        return self.positions
 
     @property
     def position(self):

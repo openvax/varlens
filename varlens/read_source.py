@@ -11,11 +11,12 @@
 # limitations under the License.
 
 import logging
+import intervaltree
 
 import pysam
 
 from . import read_evidence
-from .locus import normalize_contig
+from .locus import chromosome_name_map
 
 class ReadSource(object):
     def __init__(self, name, filename, read_filters=[]):
@@ -24,11 +25,7 @@ class ReadSource(object):
         self.handle = pysam.Samfile(filename)
         self.read_filters = read_filters
 
-        self.chromosome_name_map = {}
-        for name in self.handle.references:
-            normalized = normalize_contig(name)
-            self.chromosome_name_map[normalized] = name
-            self.chromosome_name_map[name] = name
+        self.chromosome_name_map = chromosome_name_map(self.handle.references)
 
     def index_if_needed(self):
         if self.filename.endswith(".bam") and not self.handle.has_index():
@@ -51,14 +48,16 @@ class ReadSource(object):
         elif self.filename.endswith(".sam"):
             # Inefficient.
             chromosome_intervals = {}
-            for (contig, intervals) in loci.contigs.items():
+            for locus in loci:
                 try:
-                    chromosome = self.chromosome_name_map[contig]
+                    chromosome = self.chromosome_name_map[locus.contig]
                 except KeyError:
                     logging.warning(
-                        "No such contig in bam: %s" % contig)
+                        "No such contig in bam: %s" % locus.contig)
                     continue
-                chromosome_intervals[chromosome] = intervals
+                positions = locus.pileup_positions
+                chromosome_intervals.setdefault(chromosome, intervaltree.IntervalTree()).addi(
+                    positions.start, positions.stop)
 
             def reads_iterator():
                 seen = set()
@@ -86,8 +85,8 @@ class ReadSource(object):
                         continue
                     for read in self.handle.fetch(
                             chromosome,
-                            locus.start,
-                            locus.end):
+                            locus.pileup_positions.start,
+                            locus.pileup_positions.stop):
                         key = alignment_key(read)
                         if key not in seen:
                             yield read
@@ -112,7 +111,7 @@ class ReadSource(object):
 
 def alignment_key(pysam_alignment_record):
     '''
-    Return the identifying attributes of a `pysam.AlignedSegment` instance.
+    Return the identifying attributes of a ``pysam.AlignedSegment`` instance.
     This is necessary since these objects do not support a useful notion of
     equality (they compare on identify by default).
     '''
@@ -125,7 +124,7 @@ def alignment_key(pysam_alignment_record):
 
 def read_key(pysam_alignment_record):
     '''
-    Given a `pysam.AlignedSegment` instance, return the attributes identifying
+    Given a ``pysam.AlignedSegment`` instance, return the attributes identifying
     the *read* it comes from (not the alignment). There may be more than one
     alignment for a read, e.g. chimeric and secondary alignments.
     '''
