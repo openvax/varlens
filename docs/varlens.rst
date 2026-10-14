@@ -12,6 +12,14 @@ Subpackages
 Submodules
 ----------
 
+varlens.fusions module
+------------------------------------------------------------
+
+.. automodule:: varlens.fusions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 varlens.loci\_util module
 -------------------------
 

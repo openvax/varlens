@@ -41,6 +41,7 @@ from .. import variants_util
 from . import configure_logging
 from .. import support
 from ..read_evidence.pileup_collection import to_locus
+from ..errors import input_errors
 
 parser = argparse.ArgumentParser(usage=__doc__)
 group = parser.add_argument_group("output arguments")
@@ -50,6 +51,7 @@ loci_util.add_args(parser.add_argument_group("loci specification"))
 variants_util.add_args(parser)
 reads_util.add_args(parser)
 
+@input_errors(parser)
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
     configure_logging(args)
@@ -57,6 +59,7 @@ def run(raw_args=sys.argv[1:]):
     loci = loci_util.load_from_args(args)  # may be None
     variants_df = variants_util.load_from_args_as_dataframe(args)
     if variants_df is not None:
+        variants_util.require_small_variants(variants_df.variant, "allele support")
         variant_loci = loci_util.Loci(
             to_locus(variant)
             for variant in variants_df["variant"])

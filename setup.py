@@ -42,6 +42,7 @@ if __name__ == '__main__':
             'console_scripts': [
                 'varlens-allele-support = varlens.commands.allele_support:run',
                 'varlens-variants = varlens.commands.variants:run',
+                'varlens-fusions = varlens.commands.fusions:run',
                 'varlens-reads = varlens.commands.reads:run',
             ],
         },
@@ -60,13 +61,14 @@ if __name__ == '__main__':
             'intervaltree>=3.1,<4',
             'pysam>=0.24.1,<0.25',
             'typechecks>=0.1.0',
-            'varcode>=10.13.0,<11',
+            'varcode>=10.14.0,<11',
             'pyensembl>=2.27.2,<3',
             'pyfaidx>=0.9,<1',
             'mhctools>=3.53.5,<4',
             'topiary>=5.94.4,<6',
         ],
         extras_require={
+            'fusion': ['isovar>=1.53.5,<2'],
             'test': ['pytest>=8,<10', 'pytest-cov>=5', 'ruff>=0.15'],
             'docs': ['sphinx>=8,<10', 'sphinx-rtd-theme>=3,<4',
                      'sphinxcontrib-autoprogram>=0.1.9',

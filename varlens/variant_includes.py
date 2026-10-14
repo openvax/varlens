@@ -25,6 +25,7 @@ from . import mhc_binding
 from . import reads_util
 from . import support
 from . import read_evidence
+from .variants_util import require_small_variants
 
 class Includeable(object):
     columns = None
@@ -39,6 +40,7 @@ class Includeable(object):
         raise NotImplementedError()
 
     def compute(self, df, chunk_rows=None):
+        require_small_variants(df.variant, self.name)
         assert self.columns
         for column in self.columns:
             if column not in df.columns:

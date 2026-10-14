@@ -1,0 +1,14 @@
+[
+  {
+    "file": "ATP5MG--KMT2A.input.json.gz",
+    "source": "https://github.com/openvax/vaxrank/blob/54c3200db8244fd025701980446b4e920667f0dd/vaxrank/data/sid-recipe/fusion/ATP5MG--KMT2A.input.json",
+    "sha256": "1e560d3bd30c3500291ea9b5795cd4b05318be68935844415073a619d54df67a",
+    "uncompressed_sha256": "798dc877222850f8ffa0fe2f9f3a37a1452d10a4c60b2877da2ae694dd50cc5c"
+  },
+  {
+    "file": "GABBR1--SLC29A1-T1.json.gz",
+    "source": "https://github.com/openvax/topiary/blob/bfb6fa81a9abd4186041acb09bc6d303ee9e8d97/tests/data/osteosarc_rearrangements/GABBR1--SLC29A1-T1.json.gz",
+    "sha256": "8de0ce095686f5845795e2ad229658f762c4eb3e4caeca537c4c4888fdb55d54",
+    "uncompressed_sha256": "fb4e52da64c3146872c9e3abde03448daf4f2d8275ceabd444dccebc55e0020e"
+  }
+]

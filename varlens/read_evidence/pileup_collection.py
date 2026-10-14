@@ -630,6 +630,11 @@ def to_locus(variant_or_locus):
     Its insertions have an empty reference allele and are anchored at the
     preceding one-based base; their interbase interval is [start, start).
     """
+    if getattr(variant_or_locus, "is_structural", False):
+        from ..errors import InputError
+        raise InputError("A structural variant cannot be represented as one "
+                         "pileup locus. Specify explicit loci for raw reads; "
+                         "interval allele counts are not junction support.")
     if isinstance(variant_or_locus, Locus):
         return variant_or_locus
     try:
