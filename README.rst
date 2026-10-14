@@ -286,6 +286,110 @@ Examples
     bam_1.bam,22,46931062,46931063,AC,1
     bam_1.bam,22,46931062,46931063,AG,2
 
+Structural variants and empty inputs
+-----------------------------------
+
+``varlens-variants`` loads symbolic SV alleles and paired/single breakends from
+VCF using Varcode. A mixed SNV/SV file retains both kinds of event. A malformed
+structural allele that Varcode cannot parse causes an error before output is
+written. Empty or all-filtered sources produce a header-only CSV, including
+when ``--chunk-rows`` is used. By default, non-PASS calls are excluded; use
+``--include-failing-variants`` to include them. VCF ``.`` and ``*`` ALT
+placeholders are not independent variant calls. ``--max-variants-per-source``
+explicitly limits the number of loaded alleles.
+
+Structural rows add two JSON-valued CSV columns:
+
+* ``structural_variant``: the ``varlens.structural_variant.v1`` envelope and
+  Varcode constructor fields, including type, original alleles, affected span,
+  partner breakpoint, orientation, uncertainty, assembly and INFO data. Genome
+  objects are represented by their canonical assembly name.
+* ``vcf_records``: source paths and retained Varcode VCF metadata, including
+  record ID, filter, INFO and sample fields. Records from different sources are
+  retained when identical events are merged.
+
+These columns are retained without ``--include-metadata`` and are required for
+a structural CSV round trip. Do not edit the displayed locus/alleles independently
+of the typed payload. Custom ``--columns`` output can deliberately omit fields,
+but then cannot necessarily be reloaded. Ordinary variant CSVs retain their
+existing schema.
+
+For SVs, ``--variant-locus`` selects **known breakpoint bases**, including a
+remote mate, rather than every base in a deleted/duplicated interval. Confidence
+intervals are preserved but do not widen this filter. Raw contig spellings are
+retained in the payload; displayed contigs follow Varcode normalization.
+
+SV export, reload, REF/ALT filtering and breakpoint filtering are supported.
+Gene/effect/context annotations, the best-affinity variant summary, and
+single-interval read evidence currently reject SV rows with an actionable
+diagnostic. Likewise, ``varlens-reads --variants`` and
+``varlens-allele-support --variants`` reject structural events. Explicit
+``--locus`` read export remains available: those alignments are raw observations,
+not counts of molecules supporting a junction.
+
+varlens-fusions
+---------------
+
+Install the optional Isovar adapter and reconstruct supplied fusion RNA::
+
+    pip install 'varlens[fusion]'
+    varlens-fusions fusion.json.gz --out reconstruction.json
+
+Optionally predict junction-overlapping peptides with Topiary and mhctools::
+
+    varlens-fusions fusion.json.gz --hla 'HLA-A*02:01' 'HLA-B*07:02' \
+        --peptide-lengths 8 9 10 11 --out predictions.json
+
+NetMHCpan and its model data must be installed for the second command. The
+reconstruction-only command does not invoke it. Multiple JSON/JSON.gz input
+files can be supplied, and ``--out`` also accepts JSON.gz; omitted output goes
+to stdout. A failed input or prediction prevents writing a partial report.
+
+Each input is an `Isovar supplied-fusion input
+<https://github.com/openvax/isovar/blob/v1.53.5/isovar/fusion.py>`_: a JSON object
+with ``fusion``, ``references`` and ``reads`` (plus optional ``reference_names``).
+``fusion`` supplies event identity, assembly, oriented donor/acceptor breakpoints,
+RNA sequence, mapped blocks, half-open junction coordinates and provenance with
+a sample ID. References supply annotated transcript sequence/mapping and CDS
+coordinates; reads supply observed RNA sequence/mapping and sample/library/read/
+fragment identity. Isovar validates these fields and transfers frames only from
+compatible annotated donors. The ``note`` and ``original_records`` fields in
+the Sid fixture audit envelopes are retained in the report, but are not counted
+as additional RNA evidence. Unknown fields are rejected.
+
+The output ``varlens.fusions.v1`` report contains an ``events`` list. Each
+``varlens.fusion.v1`` event retains the entire input, the unmodified
+``isovar.fusion_rna.v3`` reconstruction, software versions, Topiary fragments,
+and full peptide prediction rows. ``prediction_status`` distinguishes
+``not_requested``, ``no_coding_products`` and ``completed``; a completed run may
+have no target-overlapping predictions.
+
+Unresolved and insufficient-support outcomes keep their reasons and measured
+evidence. Ambiguous or partial-CDS coding hypotheses remain separate fragments
+with explicit status on every prediction; Varlens does not choose an isoform.
+Junction read/fragment counts retain their supplied-observation scope. Unknown
+reference counts, protein-observation evidence, UMI/cell counts and comparator
+sequences are not filled with zero or inferred from alignment counts.
+Junction overlap is not a claim of proteome-wide novelty or tumor specificity.
+This command does not discover fusions, assemble arbitrary BAMs, translate
+structural VCFs, or establish whole-sample expression from selected reads.
+
+Python callers can use the same workflow::
+
+    from varlens.fusions import analyze_fusion
+    result = analyze_fusion(payload, alleles=["HLA-A*02:01"])
+
+``analyze_fusion(payload)`` performs reconstruction only. A configured
+``topiary.TopiaryPredictor`` can be passed as ``predictor=`` instead of alleles.
+``varlens.mhc_binding.fragment_predictions`` also accepts existing
+``topiary.ProteinFragment`` objects and returns target-overlapping prediction
+rows with source, sample and evidence metadata intact.
+
+The bundled Sid regressions cover ATP5MG--KMT2A (a coding hypothesis with
+ambiguous donor annotation), GABBR1--SLC29A1 T1 (unresolved frame with direct
+junction support), and the latter's unchanged raw alignment export. Their
+upstream sources and checksums are in ``tests/data/fusions/manifest.json``.
+
 Note on coordinate systems
 -----------------------------------
 

@@ -54,6 +54,7 @@ import logging
 from . import configure_logging
 from .. import variant_includes
 from .. import variants_util
+from ..errors import input_errors
 
 parser = argparse.ArgumentParser(usage=__doc__)
 variants_util.add_args(parser, positional=True)
@@ -89,15 +90,21 @@ for includeable in variant_includes.INCLUDEABLES:
 
 group.add_argument("-v", "--verbose", action="store_true", default=False)
 
+@input_errors(parser)
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
     configure_logging(args)
+    if args.chunk_rows is not None and args.chunk_rows <= 0:
+        parser.error("--chunk-rows must be positive")
 
     df = variants_util.load_from_args_as_dataframe(args)
     if df is None:
         parser.error("No variants specified.")
 
     logging.info("Loaded %d variants." % df.shape[0])
+    for includeable in variant_includes.INCLUDEABLES:
+        if includeable.requested(args):
+            variants_util.require_small_variants(df.variant, includeable.name)
 
     # We run the inverse of the column renames on the input df.
     column_renames = {}
@@ -132,8 +139,10 @@ def run(raw_args=sys.argv[1:]):
                 ]
 
         df_save = df[columns].copy()
-        df_save.interbase_start = df_save.interbase_start.astype(int)
-        df_save.interbase_end = df_save.interbase_end.astype(int)
+        for column in ("interbase_start", "interbase_end"):
+            column = column_renames.get(column, column)
+            if column in df_save:
+                df_save[column] = df_save[column].astype("Int64")
 
         if args.out is None:
             # Write to stdout.
@@ -144,6 +153,7 @@ def run(raw_args=sys.argv[1:]):
         else:
             parser.error("Unsupported output file extension: %s" % args.out)
 
+    saved = False
     for includeable in variant_includes.INCLUDEABLES:
         if includeable.requested(args):
             logging.info("Running includeable: %s" % includeable.name)
@@ -151,7 +161,8 @@ def run(raw_args=sys.argv[1:]):
             for num_rows in instance.compute(df, chunk_rows=args.chunk_rows):
                 if args.chunk_rows is not None:
                     save(df)
+                    saved = True
 
-    if args.chunk_rows is None:
+    if args.chunk_rows is None or not saved:
         save(df)
  

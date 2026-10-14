@@ -62,6 +62,7 @@ from .. import loci_util
 from .. import reads_util
 from .. import variants_util
 from ..read_evidence.pileup_collection import PileupCollection, to_locus
+from ..errors import input_errors
 
 STANDARD_FIELDS = [
     "source",
@@ -105,6 +106,7 @@ reads_util.add_args(parser, positional=True)
 loci_util.add_args(parser.add_argument_group("loci specification"))
 variants_util.add_args(parser)
 
+@input_errors(parser)
 def run(raw_args=sys.argv[1:]):
     args = parser.parse_args(raw_args)
     configure_logging(args)
@@ -116,6 +118,7 @@ def run(raw_args=sys.argv[1:]):
     loci = loci_util.load_from_args(args)  # may be None
     variants_df = variants_util.load_from_args_as_dataframe(args)
     if variants_df is not None:
+        variants_util.require_small_variants(variants_df.variant, "--variants read selection")
         variant_loci = loci_util.Loci(
             to_locus(variant)
             for variant in variants_df["variant"])

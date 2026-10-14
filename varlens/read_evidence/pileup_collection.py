@@ -637,6 +637,11 @@ def to_locus(variant_or_locus):
     This should all get cleaned up once varcode switches to interbase
     coordinates and we standardize on a Variant class.
     """
+    if getattr(variant_or_locus, "is_structural", False):
+        from ..errors import InputError
+        raise InputError("A structural variant cannot be represented as one "
+                         "pileup locus. Specify explicit loci for raw reads; "
+                         "interval allele counts are not junction support.")
     if isinstance(variant_or_locus, Locus):
         return variant_or_locus
     try:
