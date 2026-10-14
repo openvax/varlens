@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-
 import functools
 
-from nose.tools import eq_
 
 from varlens.commands import reads
 
@@ -24,118 +21,156 @@ from . import data_path, run_and_parse_csv, cols_concat, temp_file
 
 run = functools.partial(run_and_parse_csv, reads.run)
 
-expected_cols = (
-    "source,query_name,reference_start,reference_end,cigarstring").split(',')
+expected_cols = ("source,query_name,reference_start,reference_end,cigarstring").split(
+    ","
+)
+
 
 def test_basic():
-    result = run([
-        data_path("CELSR1/bams/bam_0.bam"),
-    ])
-    eq_(result.shape, (953, len(expected_cols)))
+    result = run(
+        [
+            data_path("CELSR1/bams/bam_0.bam"),
+        ]
+    )
+    assert (result.shape) == ((953, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_0.bam"),
-        "--is-duplicate",
-    ])
-    eq_(result.shape, (173, len(expected_cols)))
+    result = run(
+        [
+            data_path("CELSR1/bams/bam_0.bam"),
+            "--is-duplicate",
+        ]
+    )
+    assert (result.shape) == ((173, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_0.bam"),
-        "--is-read1",
-    ])
-    eq_(result.shape, (481, len(expected_cols)))
+    result = run(
+        [
+            data_path("CELSR1/bams/bam_0.bam"),
+            "--is-read1",
+        ]
+    )
+    assert (result.shape) == ((481, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_0.bam"),
-        "--is-read2",
-    ])
-    eq_(result.shape, (472, len(expected_cols)))
+    result = run(
+        [
+            data_path("CELSR1/bams/bam_0.bam"),
+            "--is-read2",
+        ]
+    )
+    assert (result.shape) == ((472, len(expected_cols)))
+
 
 def test_loci_filtering():
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-    ])
-    eq_(result.shape, (37053, len(expected_cols)))
+    result = run(
+        [
+            data_path("CELSR1/bams/bam_5.bam"),
+        ]
+    )
+    assert (result.shape) == ((37053, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22:46930257-46930259"
-    ])
-    eq_(result.shape, (1795, len(expected_cols)))
+    result = run(
+        [data_path("CELSR1/bams/bam_5.bam"), "--locus", "chr22:46930257-46930259"]
+    )
+    assert (result.shape) == ((1795, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22/46930256-46930259"
-    ])
-    eq_(result.shape, (1795, len(expected_cols)))
+    result = run(
+        [data_path("CELSR1/bams/bam_5.bam"), "--locus", "chr22/46930256-46930259"]
+    )
+    assert (result.shape) == ((1795, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22:46930257-46930257"
-    ])
-    eq_(result.shape, (1753, len(expected_cols)))
+    result = run(
+        [data_path("CELSR1/bams/bam_5.bam"), "--locus", "chr22:46930257-46930257"]
+    )
+    assert (result.shape) == ((1753, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22:46930257"
-    ])
-    eq_(result.shape, (1753, len(expected_cols)))
+    result = run([data_path("CELSR1/bams/bam_5.bam"), "--locus", "chr22:46930257"])
+    assert (result.shape) == ((1753, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-        "--locus", "chr22/46930256"
-    ])
-    eq_(result.shape, (1753, len(expected_cols)))
+    result = run([data_path("CELSR1/bams/bam_5.bam"), "--locus", "chr22/46930256"])
+    assert (result.shape) == ((1753, len(expected_cols)))
+
 
 def test_read_filtering():
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-        "--reference-start", '46932059',
-    ])
-    eq_(result.shape, (26, len(expected_cols)))
+    result = run(
+        [
+            data_path("CELSR1/bams/bam_5.bam"),
+            "--reference-start",
+            "46932059",
+        ]
+    )
+    assert (result.shape) == ((26, len(expected_cols)))
 
-    result = run([
-        data_path("CELSR1/bams/bam_5.bam"),
-        "--reference-start", '46932059',
-        "--query-name-contains", '57841',
-    ])
-    eq_(result.shape, (1, len(expected_cols)))
+    result = run(
+        [
+            data_path("CELSR1/bams/bam_5.bam"),
+            "--reference-start",
+            "46932059",
+            "--query-name-contains",
+            "57841",
+        ]
+    )
+    assert (result.shape) == ((1, len(expected_cols)))
+
 
 def test_round_trip():
     with temp_file(".bam") as out:
-        reads.run([
-            data_path("CELSR1/bams/bam_5.bam"),
-            "--locus", "chr22/46930276",
-            "--locus", "chr22/46930256",
-            "--out", out,
-        ])
-        result1 = run([
-            out,
-        ])
-        result2 = run([
-            data_path("CELSR1/bams/bam_5.bam"),
-            "--locus", "chr22/46930276",
-            "--locus", "chr22/46930256",
-        ])
-        eq_(sorted(cols_concat(result1, expected_cols[1:])),
-            sorted(cols_concat(result2, expected_cols[1:])))
+        reads.run(
+            [
+                data_path("CELSR1/bams/bam_5.bam"),
+                "--locus",
+                "chr22/46930276",
+                "--locus",
+                "chr22/46930256",
+                "--out",
+                out,
+            ]
+        )
+        result1 = run(
+            [
+                out,
+            ]
+        )
+        result2 = run(
+            [
+                data_path("CELSR1/bams/bam_5.bam"),
+                "--locus",
+                "chr22/46930276",
+                "--locus",
+                "chr22/46930256",
+            ]
+        )
+        assert (sorted(cols_concat(result1, expected_cols[1:]))) == (
+            sorted(cols_concat(result2, expected_cols[1:]))
+        )
+
 
 def test_round_trip_sam():
     with temp_file(".sam") as out:
         print(out)
-        reads.run([
-            data_path("CELSR1/bams/bam_5.bam"),
-            "--locus", "chr22/46930276",
-            "--locus", "chr22/46930256",
-            "--out", out,
-        ])
-        result1 = run([
-            out,
-        ])
-        result2 = run([
-            data_path("CELSR1/bams/bam_5.bam"),
-            "--locus", "chr22/46930276",
-            "--locus", "chr22/46930256",
-        ])
-        eq_(sorted(cols_concat(result1, expected_cols[1:])),
-            sorted(cols_concat(result2, expected_cols[1:])))
+        reads.run(
+            [
+                data_path("CELSR1/bams/bam_5.bam"),
+                "--locus",
+                "chr22/46930276",
+                "--locus",
+                "chr22/46930256",
+                "--out",
+                out,
+            ]
+        )
+        result1 = run(
+            [
+                out,
+            ]
+        )
+        result2 = run(
+            [
+                data_path("CELSR1/bams/bam_5.bam"),
+                "--locus",
+                "chr22/46930276",
+                "--locus",
+                "chr22/46930256",
+            ]
+        )
+        assert (sorted(cols_concat(result1, expected_cols[1:]))) == (
+            sorted(cols_concat(result2, expected_cols[1:]))
+        )

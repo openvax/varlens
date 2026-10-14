@@ -14,7 +14,6 @@ import collections
 
 import pandas
 import varcode
-import varcode.reference
 import logging
 
 from . import util, loci_util
@@ -101,7 +100,7 @@ def load_from_args_as_dataframe(args):
             metadata_column_prefix=prefix)
 
         if df.shape[0] == 0:
-            logging.warn("No variants loaded from: %s" % args.variants[i])
+            logging.warning("No variants loaded from: %s" % args.variants[i])
         else:
             for variant in df.variant:
                 variant_to_sources[variant].append(name)
@@ -112,7 +111,7 @@ def load_from_args_as_dataframe(args):
         extra_args = {}
         if args.genome:
             extra_args = {
-                'ensembl': varcode.reference.infer_genome(args.genome)
+                'genome': args.genome
             }
         for (locus_str, ref, alt) in args.single_variant:
             locus = Locus.parse(locus_str)
@@ -144,13 +143,13 @@ def load_from_args_as_dataframe(args):
 
     # Apply filters:
     if args.ref:
-        df = df.ix[df.ref.isin(args.ref)]
+        df = df.loc[df.ref.isin(args.ref)]
     if args.alt:
-        df = df.ix[df.alt.isin(args.alt)]
+        df = df.loc[df.alt.isin(args.alt)]
     loci = loci_util.load_from_args(
         util.remove_prefix_from_parsed_args(args, "variant"))
     if loci is not None:
-        df = df.ix[[
+        df = df.loc[[
             loci.intersects(pileup_collection.to_locus(v))
             for v in df.variant
         ]]
@@ -172,7 +171,7 @@ def load_as_dataframe(
         if (filename.endswith(".vcf") or filename.endswith(".vcf.gz")):
             # Load from VCF
             def loader(filename):
-                collection = varcode.load_vcf_fast(
+                collection = varcode.load_vcf(
                     filename,
                     genome=genome,
                     max_variants=max_variants,
@@ -239,7 +238,7 @@ def variants_to_dataframe(
 
 def dataframe_row_to_variant(row):
     return varcode.Variant(
-            ensembl=row.genome,
+            genome=row.genome,
             contig=row.contig,
             start=row.interbase_start + 1,
             ref=row.ref,

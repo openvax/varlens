@@ -14,6 +14,7 @@ import collections
 import logging
 
 import pandas
+from .locus import normalize_contig
 
 EXPECTED_COLUMNS = [
     "source",
@@ -75,17 +76,11 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
     Returns
     ----------
 
-    A pandas.Panel4D frame with these axes:
-
-    labels (axis=0) : the type of read being counted, i.e. the read count
-        fields in allele_support_df.
-
-    items (axis=1)  : the type of measurement (num_alt, num_ref, num_other,
-        total_depth, alt_fraction, any_alt_fraction)
-
-    major axis (axis=2) : the variants
-
-    minor axis (axis=3) : the sources
+    pandas.DataFrame
+        Rows are indexed by variant. Columns are a MultiIndex with levels
+        ``measurement`` (num_alt, num_ref, num_other, total_depth,
+        alt_fraction, any_alt_fraction) and ``source``. For example,
+        ``result["num_alt"]["tumor"]`` selects tumor alternate read counts.
     '''
     missing = [
         c for c in EXPECTED_COLUMNS if c not in allele_support_df.columns
@@ -93,6 +88,8 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
     if missing:
         raise ValueError("Missing columns: %s" % " ".join(missing))
 
+    variants = list(variants)
+    allele_support_df = allele_support_df.copy()
     # Ensure our start and end fields are ints.
     allele_support_df[["interbase_start", "interbase_end"]] = (
         allele_support_df[["interbase_start", "interbase_end"]].astype(int))
@@ -103,7 +100,7 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
     for (i, row) in allele_support_df.iterrows():
         key = (
             row['source'],
-            row.contig,
+            normalize_contig(row.contig),
             row.interbase_start,
             row.interbase_end)
         allele_support_dict[key][row.allele] = row["count"]
@@ -116,7 +113,7 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
 
     for variant in variants:
         for source in sources:
-            key = (source, variant.contig, variant.start - 1, variant.end)
+            key = (source, normalize_contig(variant.contig), variant.start - 1, variant.end)
             try:
                 alleles = allele_support_dict[key]
             except KeyError:
@@ -144,8 +141,14 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
             dataframe_dicts["any_alt_fraction"][source].append(
                 float(alt + other) / max(1, total))
 
-    dataframes = dict(
-        (label, pandas.DataFrame(value, index=variants))
-        for (label, value) in dataframe_dicts.items())
-
-    return pandas.Panel(dataframes)
+    measurements = [
+        "num_alt", "num_ref", "num_other", "total_depth",
+        "alt_fraction", "any_alt_fraction",
+    ]
+    dataframes = {
+        label: pandas.DataFrame(dataframe_dicts[label], index=variants, columns=sources)
+        for label in measurements
+    }
+    result = pandas.concat(dataframes, axis=1, names=["measurement", "source"])
+    result.index.name = "variant"
+    return result
