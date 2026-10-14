@@ -389,7 +389,7 @@ class ReadEvidence(Includeable):
             one of: num_ref, num_alt, total_depth
 
         Returns
-        ----------
+        -------
         column name : string
         """
         return self.column_format.format(

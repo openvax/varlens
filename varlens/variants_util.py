@@ -325,7 +325,7 @@ def load_as_dataframe(
 
         elif (filename.endswith(".csv") or filename.endswith(".csv.gz")):
             # Load from csv
-            def loader(filename):
+            def load_csv_frame(filename):
                 # Ignores only_passing
                 df = pandas.read_csv(filename, nrows=max_variants,
                                      dtype={"contig": str, "ref": str, "alt": str})
@@ -346,6 +346,7 @@ def load_as_dataframe(
                                 isinstance(record, dict) for record in records):
                             raise InputError("vcf_records must contain a JSON list of records")
                 return df
+            loader = load_csv_frame
         else:
             raise InputError(
                 "Unsupported variant input: %s. Use VCF or Varlens CSV; "
@@ -369,12 +370,15 @@ def variants_to_dataframe(
         variants, metadata=None, metadata_column_prefix="", source=None,
         structural_records=None):
     def record(variant):
+        locus = (Locus(variant.contig, variant.start - 1, variant.end)
+                 if isinstance(variant, varcode.StructuralVariant) else
+                 pileup_collection.to_locus(variant))
         d = {
             'variant': variant,
             'genome': str(variant.reference_name),
             'contig': variant.contig,
-            'interbase_start': variant.start - 1,
-            'interbase_end': variant.end,
+            'interbase_start': locus.start,
+            'interbase_end': locus.end,
             'ref': variant.ref,
             'alt': variant.alt,
         }
@@ -433,7 +437,8 @@ def dataframe_row_to_variant(row):
     return varcode.Variant(
             genome=row.genome,
             contig=row.contig,
-            start=row.interbase_start + 1,
+            start=(row.interbase_start if row.ref == '' and
+                   row.interbase_start == row.interbase_end else row.interbase_start + 1),
             ref=row.ref,
             alt=row.alt,
             allow_extended_nucleotides=True)

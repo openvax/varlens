@@ -28,8 +28,7 @@ varlens-allele-support
 Installation
 -------------
 
-Varlens 1.0 requires Python 3.11 or newer and pandas 3. The package uses
-the current Topiary 5 prediction API.
+Varlens 1.0 requires Python 3.11 or newer and pandas 3 or newer.
 
 To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
 
@@ -43,67 +42,8 @@ Or from a git checkout:
 
     pip install .
 
-To run the tests:
-
-::
-
-    pip install -e '.[test]'
-    ./lint.sh
-    ./test.sh
-
-Tests that need Ensembl annotation data are skipped unless human release 75
-is installed. To run these tests as well:
-
-::
-
-    pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
-    ./test.sh
-
-The Topiary integration test uses the real annotation and prediction pipeline
-with an in-process test predictor, so it does not need NetMHCpan. To also test
-the external predictor, install NetMHCpan and its model data, put ``netMHCpan``
-on ``PATH``, then run ``./test.sh --run-netmhcpan``. MHC affinity results use
-Topiary's normalized allele names, such as ``HLA-A*02:01``.
-
-CI tests Python 3.11 through 3.14 and runs reference-dependent annotation
-tests in a separate job.
-
-To build the documentation (just this README plus the commandline tool help):
-
-::
-
-    pip install -e .
-    pip install Sphinx
-    cd docs
-    make clean setup rst html
-
-The docs will be written to the ``_build/html`` directory.
-
-
-Python API
-------------
-
-The same read-evidence tools are available directly from Python:
-
-.. code-block:: python
-
-    from varlens.locus import Locus
-    from varlens.read_evidence import PileupCollection
-
-    locus = Locus.from_inclusive_coordinates("chr17", 41244936)
-    evidence = PileupCollection.from_bam("sample.bam", [locus])
-    counts = evidence.allele_summary(locus)
-    filtered = evidence.filter(min_base_quality=20, min_mapping_quality=30)
-
-The BAM must be indexed. ``Locus`` stores zero-based, half-open coordinates;
-``from_inclusive_coordinates`` accepts one-based inclusive coordinates.
-
-``varlens.support.allele_support_df(loci, sources)`` returns an allele-count
-DataFrame from ``ReadSource`` objects. ``variant_support(variants, counts)``
-now returns a DataFrame indexed by variant, with two column levels named
-``measurement`` and ``source``. This replaces the removed ``pandas.Panel``
-return type. For example, ``result["num_alt"]["tumor"]`` selects alternate
-read counts for the source named ``tumor``.
+The examples below use test data from the ``tests/data`` directory of a git
+checkout.
 
 
 varlens-variants
@@ -127,7 +67,7 @@ the files each variant was found in:
 
 ::
 
-    $ varlens-variants test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf
+    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf
 
     genome,contig,interbase_start,interbase_end,ref,alt,sources
     GRCh37,22,21829554,21829555,T,G,1.vcf
@@ -142,7 +82,7 @@ annotations and the genes the variants overlap, and write to a file:
 
 ::
 
-    $ varlens-variants test/data/CELSR1/vcfs/vcf_1.vcf test/data/CELSR1/vcfs/vcf_2.vcf \
+    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf \
         --include-effect \
         --include-gene \
         --out /tmp/result.csv
@@ -156,7 +96,7 @@ annotations and the genes the variants overlap, and write to a file:
     GRCh37,22,46931059,46931060,A,C,1.vcf,p.S670A,CELSR1
     GRCh37,22,46931061,46931062,G,A,1.vcf 2.vcf,p.S669F,CELSR1
     GRCh37,22,50636217,50636218,A,C,1.vcf,intronic,TRABD
-    GRCh37,22,50875932,50875933,A,C,1.vcf,splice-acceptor,PPP6R2
+    GRCh37,22,50875932,50875933,A,C,1.vcf,splice-set:exon-skip ENSE00002203506 (p.A562fs),PPP6R2
     GRCh37,22,45309892,45309893,T,G,2.vcf,p.T214P,PHF21B
 
 Print counts for number of reads supporting reference/variant/other alleles
@@ -164,9 +104,9 @@ from the specified BAM, counting only reads with mapping quality >= 10:
 
 ::
 
-    $ varlens-variants test/data/CELSR1/vcfs/vcf_1.vcf \
+    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf \
         --include-read-evidence \
-        --reads test/data/CELSR1/bams/bam_1.bam \
+        --reads tests/data/CELSR1/bams/bam_1.bam \
         --min-mapping-quality 10
 
     genome,contig,interbase_start,interbase_end,ref,alt,sources,num_alt,num_ref,total_depth
@@ -192,7 +132,7 @@ Print basic fields for the reads in a BAM:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam
 
     query_name,reference_start,reference_end,cigarstring
     HISEQ:142:C5822ANXX:3:2116:16538:101199,46929962,46930062,100M
@@ -212,7 +152,7 @@ bases in the output:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam \
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam \
         --is-reverse \
         --field mapping_quality query_alignment_sequence \
         --out /tmp/result.csv
@@ -238,7 +178,7 @@ overlapping a certain locus:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam \
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam \
         --min-mapping-quality 30 \
         --locus 22:46932040-46932050 \
         --out /tmp/result.bam
@@ -247,15 +187,15 @@ Write a bam file consisting of reads overlapping variants from a VCF:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam \
-        --variants test/data/CELSR1/vcfs/vcf_1.vcf \
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam \
+        --variants tests/data/CELSR1/vcfs/vcf_1.vcf \
         --out /tmp/result.bam
 
 Print just the header for a BAM in csv format:
 
 ::
 
-    $ varlens-reads test/data/CELSR1/bams/bam_0.bam --header
+    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam --header
 
 varlens-allele-support
 ----------------------
@@ -270,13 +210,19 @@ The positions outputted by this command are in *interbase coordinates*, i.e.
 starting at 0, inclusive on first index, exclusive on second (as opposed to
 the one-based inclusive coordinates used in VCF files).
 
+Insertions use an empty interval at the insertion boundary. For example,
+VCF ``1:100 A>AT`` becomes ``interbase_start=100, interbase_end=100`` with
+``ref=""`` and ``alt="T"``. The pileup reads the base immediately to the left
+and counts only the inserted sequence. Version 1.0 corrects the older
+single-base insertion intervals; CSV input still accepts that older encoding.
+
 Examples
 `````````````
 
 ::
 
     varlens-allele-support \
-        --reads test/data/CELSR1/bams/bam_1.bam \
+        --reads tests/data/CELSR1/bams/bam_1.bam \
         --locus 22:46931061 22:46931063
 
     source,contig,interbase_start,interbase_end,allele,count
@@ -409,6 +355,56 @@ slash instead of a colon).
 
 See this `blog post <http://alternateallele.blogspot.com/2012/03/genome-coordinate-conventions.html>`_
 for more details on coordinate systems.
+
+Python read-support API
+-----------------------
+
+``varlens.support.variant_support(variants, counts)`` returns a pandas DataFrame
+with variants as its row index and two column levels named ``measurement`` and
+``source``. This replaces the removed pandas Panel API in Varlens 1.0::
+
+    evidence = variant_support(variants, counts)
+    alt_counts = evidence["num_alt"]  # one column per read source
+    tumor_depth = evidence[("total_depth", "tumor")]
+
+The metrics are ``num_alt``, ``num_ref``, ``num_other``, ``total_depth``,
+``alt_fraction``, and ``any_alt_fraction``. Commandline CSV columns retain their
+existing names. Counts include low-quality bases and overlapping mates unless
+read filters are requested. Common ``chr`` aliases resolve to BAM references;
+alternate and unplaced contig names are preserved.
+
+MHC binding uses the current Topiary API with a local NetMHCpan installation.
+It reports the lowest affinity in nM among peptides overlapping the mutation,
+and the corresponding input allele. Variants without predictions have missing
+values. Prediction caches distinguish peptide-length requests. Effect labels
+come from the installed Varcode version and may change as its annotations improve.
+
+Development
+-----------
+
+To run the tests from a git checkout:
+
+::
+
+    pip install -e '.[test,fusion]'
+    pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+    ./lint.sh
+    ./test.sh
+
+External NetMHCpan tests are opt-in: run ``./test.sh --run-netmhcpan`` with
+NetMHCpan and its model data installed. The other tests do not require it.
+
+To build the documentation (just this README plus the commandline tool help):
+
+::
+
+    pip install -e '.[docs]'
+    python -m sphinx -W --keep-going -b html docs docs/_build/html
+
+The docs will be written to ``docs/_build/html``. Maintainers with push access
+can publish them using ``./deploy-gh-pages.sh``; it builds in a temporary
+directory and updates the existing GitHub Pages branch without rewriting its
+history. Set ``PYTHON`` to select a particular environment's Python executable.
 
 .. Documentation
     -------------

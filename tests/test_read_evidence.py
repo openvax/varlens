@@ -68,7 +68,7 @@ def test_raw_contig_names_remain_distinct(tmp_path):
         assert evidence.allele_summary(locus) == [(sequence, 1)]
         assert evidence.at(first_base).allele_summary(first_base) == [(sequence[0], 1)]
         assert evidence.pileup(first_base).locus == first_base
-        assert evidence.allele_summary(Locus(locus.contig, 0, 0)) == [("", 1)]
+        assert evidence.allele_summary(Locus(locus.contig, 1, 1)) == [("", 1)]
         assert evidence.match_summary(Variant(locus, sequence, "GG")) == [
             (sequence, 1),
             ("GG", 0),
@@ -253,7 +253,7 @@ def test_read_evidence_gatk_mini_bundle_extract():
     assert (
         evidence.filter(drop_duplicates=True).allele_summary(
             Locus.from_interbase_coordinates(
-                loci[10].contig, loci[10].start, loci[10].start
+                loci[10].contig, loci[10].end, loci[10].end
             )
         )
     ) == ([("", 2), ("A", 1), ("AA", 1)])

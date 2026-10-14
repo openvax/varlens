@@ -29,7 +29,7 @@ view:
 	open _build/html/index.html
 
 setup:
-	pip install Sphinx sphinxcontrib-autoprogram sphinx-rtd-theme sphinxcontrib-autorun2 sphinxcontrib-programoutput numpydoc
+	pip install Sphinx sphinxcontrib-autoprogram sphinx-rtd-theme sphinxcontrib-programoutput numpydoc
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
