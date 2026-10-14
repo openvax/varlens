@@ -1,0 +1,1062 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens package &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="varlens.read_evidence package" href="varlens.read_evidence.html" />
+    <link rel="prev" title="Varlens Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">varlens package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html">varlens.read_evidence package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.fusions">varlens.fusions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.fusions.analyze_fusion"><code class="docutils literal notranslate"><span class="pre">analyze_fusion()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.loci_util">varlens.loci_util module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.loci_util.Loci"><code class="docutils literal notranslate"><span class="pre">Loci</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.loci_util.Loci.intersects"><code class="docutils literal notranslate"><span class="pre">Loci.intersects()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.loci_util.Loci.union"><code class="docutils literal notranslate"><span class="pre">Loci.union()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.loci_util.add_args"><code class="docutils literal notranslate"><span class="pre">add_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.loci_util.load_from_args"><code class="docutils literal notranslate"><span class="pre">load_from_args()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.locus">varlens.locus module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.locus.Locus"><code class="docutils literal notranslate"><span class="pre">Locus</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.from_inclusive_coordinates"><code class="docutils literal notranslate"><span class="pre">Locus.from_inclusive_coordinates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.from_interbase_coordinates"><code class="docutils literal notranslate"><span class="pre">Locus.from_interbase_coordinates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.inclusive_end"><code class="docutils literal notranslate"><span class="pre">Locus.inclusive_end</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.inclusive_start"><code class="docutils literal notranslate"><span class="pre">Locus.inclusive_start</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.parse"><code class="docutils literal notranslate"><span class="pre">Locus.parse()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.pileup_positions"><code class="docutils literal notranslate"><span class="pre">Locus.pileup_positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.position"><code class="docutils literal notranslate"><span class="pre">Locus.position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.locus.Locus.positions"><code class="docutils literal notranslate"><span class="pre">Locus.positions</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.locus.chromosome_name_map"><code class="docutils literal notranslate"><span class="pre">chromosome_name_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.locus.normalize_contig"><code class="docutils literal notranslate"><span class="pre">normalize_contig()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.mhc_binding">varlens.mhc_binding module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.mhc_binding.binding_affinities"><code class="docutils literal notranslate"><span class="pre">binding_affinities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.mhc_binding.fragment_predictions"><code class="docutils literal notranslate"><span class="pre">fragment_predictions()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.read_source">varlens.read_source module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.read_source.ReadSource"><code class="docutils literal notranslate"><span class="pre">ReadSource</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.read_source.ReadSource.index_if_needed"><code class="docutils literal notranslate"><span class="pre">ReadSource.index_if_needed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.read_source.ReadSource.pileups"><code class="docutils literal notranslate"><span class="pre">ReadSource.pileups()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.read_source.ReadSource.read_passes_filters"><code class="docutils literal notranslate"><span class="pre">ReadSource.read_passes_filters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.read_source.ReadSource.reads"><code class="docutils literal notranslate"><span class="pre">ReadSource.reads()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.read_source.alignment_key"><code class="docutils literal notranslate"><span class="pre">alignment_key()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.read_source.read_key"><code class="docutils literal notranslate"><span class="pre">read_key()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.reads_util">varlens.reads_util module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.reads_util.add_args"><code class="docutils literal notranslate"><span class="pre">add_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.reads_util.field_contains"><code class="docutils literal notranslate"><span class="pre">field_contains()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.reads_util.flatten_header"><code class="docutils literal notranslate"><span class="pre">flatten_header()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.reads_util.load_bam"><code class="docutils literal notranslate"><span class="pre">load_bam()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.reads_util.load_from_args"><code class="docutils literal notranslate"><span class="pre">load_from_args()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.sequence_context">varlens.sequence_context module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.sequence_context.variant_context"><code class="docutils literal notranslate"><span class="pre">variant_context()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.support">varlens.support module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.support.allele_support_df"><code class="docutils literal notranslate"><span class="pre">allele_support_df()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.support.allele_support_rows"><code class="docutils literal notranslate"><span class="pre">allele_support_rows()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.support.variant_support"><code class="docutils literal notranslate"><span class="pre">variant_support()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.util">varlens.util module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.util.PrefixedArgumentParser"><code class="docutils literal notranslate"><span class="pre">PrefixedArgumentParser</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.util.PrefixedArgumentParser.add_argument"><code class="docutils literal notranslate"><span class="pre">PrefixedArgumentParser.add_argument()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.util.drop_prefix"><code class="docutils literal notranslate"><span class="pre">drop_prefix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.util.expand"><code class="docutils literal notranslate"><span class="pre">expand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.util.remove_prefix_from_parsed_args"><code class="docutils literal notranslate"><span class="pre">remove_prefix_from_parsed_args()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.variant_includes">varlens.variant_includes module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variant_includes.Context"><code class="docutils literal notranslate"><span class="pre">Context</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Context.add_args"><code class="docutils literal notranslate"><span class="pre">Context.add_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Context.columns"><code class="docutils literal notranslate"><span class="pre">Context.columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Context.from_args"><code class="docutils literal notranslate"><span class="pre">Context.from_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Context.name"><code class="docutils literal notranslate"><span class="pre">Context.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Context.process_chunk"><code class="docutils literal notranslate"><span class="pre">Context.process_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Context.requested"><code class="docutils literal notranslate"><span class="pre">Context.requested()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Context.string_columns"><code class="docutils literal notranslate"><span class="pre">Context.string_columns</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variant_includes.Effect"><code class="docutils literal notranslate"><span class="pre">Effect</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Effect.add_args"><code class="docutils literal notranslate"><span class="pre">Effect.add_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Effect.columns"><code class="docutils literal notranslate"><span class="pre">Effect.columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Effect.name"><code class="docutils literal notranslate"><span class="pre">Effect.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Effect.process_chunk"><code class="docutils literal notranslate"><span class="pre">Effect.process_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Effect.requested"><code class="docutils literal notranslate"><span class="pre">Effect.requested()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Effect.string_columns"><code class="docutils literal notranslate"><span class="pre">Effect.string_columns</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variant_includes.Gene"><code class="docutils literal notranslate"><span class="pre">Gene</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Gene.add_args"><code class="docutils literal notranslate"><span class="pre">Gene.add_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Gene.columns"><code class="docutils literal notranslate"><span class="pre">Gene.columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Gene.name"><code class="docutils literal notranslate"><span class="pre">Gene.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Gene.process_chunk"><code class="docutils literal notranslate"><span class="pre">Gene.process_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Gene.requested"><code class="docutils literal notranslate"><span class="pre">Gene.requested()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Gene.string_columns"><code class="docutils literal notranslate"><span class="pre">Gene.string_columns</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variant_includes.Includeable"><code class="docutils literal notranslate"><span class="pre">Includeable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Includeable.columns"><code class="docutils literal notranslate"><span class="pre">Includeable.columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Includeable.compute"><code class="docutils literal notranslate"><span class="pre">Includeable.compute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Includeable.float_columns"><code class="docutils literal notranslate"><span class="pre">Includeable.float_columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Includeable.from_args"><code class="docutils literal notranslate"><span class="pre">Includeable.from_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Includeable.process_chunk"><code class="docutils literal notranslate"><span class="pre">Includeable.process_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.Includeable.string_columns"><code class="docutils literal notranslate"><span class="pre">Includeable.string_columns</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.add_args"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.add_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.columns"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.float_columns"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.float_columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.from_args"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.from_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.name"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.noncoding_effects"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.noncoding_effects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.process_chunk"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.process_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.requested"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.requested()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.string_columns"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.string_columns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.MHCBindingAffinity.string_to_hla_alleles"><code class="docutils literal notranslate"><span class="pre">MHCBindingAffinity.string_to_hla_alleles()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence"><code class="docutils literal notranslate"><span class="pre">ReadEvidence</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.add_args"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.add_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.column_name"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.column_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.default_column_format"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.default_column_format</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.from_args"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.from_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.name"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.process_chunk"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.process_chunk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.read_source_names"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.read_source_names()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.requested"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.requested()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#varlens.variant_includes.ReadEvidence.set_columns"><code class="docutils literal notranslate"><span class="pre">ReadEvidence.set_columns()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.variants_util">varlens.variants_util module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.add_args"><code class="docutils literal notranslate"><span class="pre">add_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.dataframe_row_to_variant"><code class="docutils literal notranslate"><span class="pre">dataframe_row_to_variant()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.dataframe_to_variants"><code class="docutils literal notranslate"><span class="pre">dataframe_to_variants()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.load_as_dataframe"><code class="docutils literal notranslate"><span class="pre">load_as_dataframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.load_csv"><code class="docutils literal notranslate"><span class="pre">load_csv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.load_from_args_as_dataframe"><code class="docutils literal notranslate"><span class="pre">load_from_args_as_dataframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.require_small_variants"><code class="docutils literal notranslate"><span class="pre">require_small_variants()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.variant_loci"><code class="docutils literal notranslate"><span class="pre">variant_loci()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.variants_util.variants_to_dataframe"><code class="docutils literal notranslate"><span class="pre">variants_to_dataframe()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens.version">varlens.version module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.version.print_name_and_version"><code class="docutils literal notranslate"><span class="pre">print_name_and_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varlens.version.print_version"><code class="docutils literal notranslate"><span class="pre">print_version()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-varlens">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">varlens package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/varlens.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="varlens-package">
+<h1>varlens package<a class="headerlink" href="#varlens-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="varlens.read_evidence.html">varlens.read_evidence package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="varlens.read_evidence.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.read_evidence.html#module-varlens.read_evidence.pileup">varlens.read_evidence.pileup module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup.Pileup"><code class="docutils literal notranslate"><span class="pre">Pileup</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup.Pileup.append"><code class="docutils literal notranslate"><span class="pre">Pileup.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup.Pileup.filter"><code class="docutils literal notranslate"><span class="pre">Pileup.filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup.Pileup.update"><code class="docutils literal notranslate"><span class="pre">Pileup.update()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.read_evidence.html#module-varlens.read_evidence.pileup_collection">varlens.read_evidence.pileup_collection module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.MatchingEvidence"><code class="docutils literal notranslate"><span class="pre">MatchingEvidence</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.MatchingEvidence.alt"><code class="docutils literal notranslate"><span class="pre">MatchingEvidence.alt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.MatchingEvidence.other"><code class="docutils literal notranslate"><span class="pre">MatchingEvidence.other</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.MatchingEvidence.ref"><code class="docutils literal notranslate"><span class="pre">MatchingEvidence.ref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection"><code class="docutils literal notranslate"><span class="pre">PileupCollection</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.allele_summary"><code class="docutils literal notranslate"><span class="pre">PileupCollection.allele_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.at"><code class="docutils literal notranslate"><span class="pre">PileupCollection.at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.filter"><code class="docutils literal notranslate"><span class="pre">PileupCollection.filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.from_bam"><code class="docutils literal notranslate"><span class="pre">PileupCollection.from_bam()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.group_by_allele"><code class="docutils literal notranslate"><span class="pre">PileupCollection.group_by_allele()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.group_by_match"><code class="docutils literal notranslate"><span class="pre">PileupCollection.group_by_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.line"><code class="docutils literal notranslate"><span class="pre">PileupCollection.line</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.loci"><code class="docutils literal notranslate"><span class="pre">PileupCollection.loci()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.match"><code class="docutils literal notranslate"><span class="pre">PileupCollection.match</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.match_summary"><code class="docutils literal notranslate"><span class="pre">PileupCollection.match_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.merge"><code class="docutils literal notranslate"><span class="pre">PileupCollection.merge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.num_reads"><code class="docutils literal notranslate"><span class="pre">PileupCollection.num_reads()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.pileup"><code class="docutils literal notranslate"><span class="pre">PileupCollection.pileup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.read_attribute"><code class="docutils literal notranslate"><span class="pre">PileupCollection.read_attribute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.read_attributes"><code class="docutils literal notranslate"><span class="pre">PileupCollection.read_attributes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.reads"><code class="docutils literal notranslate"><span class="pre">PileupCollection.reads()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_collection.to_locus"><code class="docutils literal notranslate"><span class="pre">to_locus()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.read_evidence.html#module-varlens.read_evidence.pileup_element">varlens.read_evidence.pileup_element module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement"><code class="docutils literal notranslate"><span class="pre">PileupElement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement.base_qualities"><code class="docutils literal notranslate"><span class="pre">PileupElement.base_qualities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement.bases"><code class="docutils literal notranslate"><span class="pre">PileupElement.bases</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement.fields"><code class="docutils literal notranslate"><span class="pre">PileupElement.fields()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement.from_pysam_alignment"><code class="docutils literal notranslate"><span class="pre">PileupElement.from_pysam_alignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement.min_base_quality"><code class="docutils literal notranslate"><span class="pre">PileupElement.min_base_quality</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.read_evidence.html#module-varlens.read_evidence.util">varlens.read_evidence.util module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.util.alignment_key"><code class="docutils literal notranslate"><span class="pre">alignment_key()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.util.read_key"><code class="docutils literal notranslate"><span class="pre">read_key()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.read_evidence.html#module-varlens.read_evidence">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.Pileup"><code class="docutils literal notranslate"><span class="pre">Pileup</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.Pileup.append"><code class="docutils literal notranslate"><span class="pre">Pileup.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.Pileup.filter"><code class="docutils literal notranslate"><span class="pre">Pileup.filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.Pileup.update"><code class="docutils literal notranslate"><span class="pre">Pileup.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection"><code class="docutils literal notranslate"><span class="pre">PileupCollection</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.allele_summary"><code class="docutils literal notranslate"><span class="pre">PileupCollection.allele_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.at"><code class="docutils literal notranslate"><span class="pre">PileupCollection.at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.filter"><code class="docutils literal notranslate"><span class="pre">PileupCollection.filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.from_bam"><code class="docutils literal notranslate"><span class="pre">PileupCollection.from_bam()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.group_by_allele"><code class="docutils literal notranslate"><span class="pre">PileupCollection.group_by_allele()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.group_by_match"><code class="docutils literal notranslate"><span class="pre">PileupCollection.group_by_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.line"><code class="docutils literal notranslate"><span class="pre">PileupCollection.line</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.loci"><code class="docutils literal notranslate"><span class="pre">PileupCollection.loci()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.match"><code class="docutils literal notranslate"><span class="pre">PileupCollection.match</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.match_summary"><code class="docutils literal notranslate"><span class="pre">PileupCollection.match_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.merge"><code class="docutils literal notranslate"><span class="pre">PileupCollection.merge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.num_reads"><code class="docutils literal notranslate"><span class="pre">PileupCollection.num_reads()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.pileup"><code class="docutils literal notranslate"><span class="pre">PileupCollection.pileup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.read_attribute"><code class="docutils literal notranslate"><span class="pre">PileupCollection.read_attribute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.read_attributes"><code class="docutils literal notranslate"><span class="pre">PileupCollection.read_attributes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupCollection.reads"><code class="docutils literal notranslate"><span class="pre">PileupCollection.reads()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupElement"><code class="docutils literal notranslate"><span class="pre">PileupElement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupElement.base_qualities"><code class="docutils literal notranslate"><span class="pre">PileupElement.base_qualities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupElement.bases"><code class="docutils literal notranslate"><span class="pre">PileupElement.bases</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupElement.fields"><code class="docutils literal notranslate"><span class="pre">PileupElement.fields()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupElement.from_pysam_alignment"><code class="docutils literal notranslate"><span class="pre">PileupElement.from_pysam_alignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.PileupElement.min_base_quality"><code class="docutils literal notranslate"><span class="pre">PileupElement.min_base_quality</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.alignment_key"><code class="docutils literal notranslate"><span class="pre">alignment_key()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="varlens.read_evidence.html#varlens.read_evidence.read_key"><code class="docutils literal notranslate"><span class="pre">read_key()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-varlens.fusions">
+<span id="varlens-fusions-module"></span><h2>varlens.fusions module<a class="headerlink" href="#module-varlens.fusions" title="Link to this heading"></a></h2>
+<p>Supplied fusion RNA -&gt; Isovar evidence -&gt; Topiary protein fragments.</p>
+<p>This adapter does not discover fusions from BAMs or infer a coding frame from
+gene names. Isovar validates the supplied sequence, mappings, references and
+read observations, retaining every supported frame and unresolved outcome.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.fusions.analyze_fusion">
+<span class="sig-prename descclassname"><span class="pre">varlens.fusions.</span></span><span class="sig-name descname"><span class="pre">analyze_fusion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">alleles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epitope_lengths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(8,</span> <span class="pre">9,</span> <span class="pre">10,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_fragments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/fusions.html#analyze_fusion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.fusions.analyze_fusion" title="Link to this definition"></a></dt>
+<dd><p>Return a JSON-serializable reconstruction, fragments and predictions.</p>
+<p><code class="docutils literal notranslate"><span class="pre">payload</span></code> follows Isovar’s supplied-fusion input contract (<code class="docutils literal notranslate"><span class="pre">fusion</span></code>,
+<code class="docutils literal notranslate"><span class="pre">references</span></code>, <code class="docutils literal notranslate"><span class="pre">reads</span></code>, optional <code class="docutils literal notranslate"><span class="pre">reference_names</span></code>). The Sid fixture
+envelope fields <code class="docutils literal notranslate"><span class="pre">note</span></code> and <code class="docutils literal notranslate"><span class="pre">original_records</span></code> are preserved but not
+passed to Isovar as evidence. Unknown fields are rejected by Isovar.</p>
+<p>All coding hypotheses, including ambiguous/partial-CDS hypotheses, become
+separately identified fragments. Their status is carried onto prediction
+rows; no hypothesis is selected as the true protein. No alleles/predictor
+means reconstruction only. <code class="docutils literal notranslate"><span class="pre">predictor</span></code> may be a configured TopiaryPredictor
+for a Python caller; otherwise supplied alleles select mhctools.NetMHCpan.</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.loci_util">
+<span id="varlens-loci-util-module"></span><h2>varlens.loci_util module<a class="headerlink" href="#module-varlens.loci_util" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.loci_util.Loci">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.loci_util.</span></span><span class="sig-name descname"><span class="pre">Loci</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus_iterator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contig_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">insertions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/loci_util.html#Loci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.loci_util.Loci" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.loci_util.Loci.intersects">
+<span class="sig-name descname"><span class="pre">intersects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/loci_util.html#Loci.intersects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.loci_util.Loci.intersects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.loci_util.Loci.union">
+<span class="sig-name descname"><span class="pre">union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/loci_util.html#Loci.union"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.loci_util.Loci.union" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.loci_util.add_args">
+<span class="sig-prename descclassname"><span class="pre">varlens.loci_util.</span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/loci_util.html#add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.loci_util.add_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.loci_util.load_from_args">
+<span class="sig-prename descclassname"><span class="pre">varlens.loci_util.</span></span><span class="sig-name descname"><span class="pre">load_from_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/loci_util.html#load_from_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.loci_util.load_from_args" title="Link to this definition"></a></dt>
+<dd><p>Return a Loci object giving the loci specified on the command line.</p>
+<p>If no loci-related arguments are specified, return None. This makes it
+possible to distinguish an empty set of loci, for example due to filters
+removing all loci, from the case where the user didn’t specify any
+arguments.</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.locus">
+<span id="varlens-locus-module"></span><h2>varlens.locus module<a class="headerlink" href="#module-varlens.locus" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.locus.Locus">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.locus.</span></span><span class="sig-name descname"><span class="pre">Locus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/locus.html#Locus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.locus.Locus" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#varlens.locus.Locus" title="varlens.locus.Locus"><code class="xref py py-class docutils literal notranslate"><span class="pre">Locus</span></code></a></p>
+<p>A genomic interval in 0-indexed interbase coordinates.</p>
+<dl class="simple">
+<dt>See this blog post for a discussion on coordinate systems:</dt><dd><p><a class="reference external" href="http://alternateallele.blogspot.com/2012/03/genome-coordinate-conventions.html">http://alternateallele.blogspot.com/2012/03/genome-coordinate-conventions.html</a></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.locus.Locus.from_inclusive_coordinates">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_inclusive_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/locus.html#Locus.from_inclusive_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.locus.Locus.from_inclusive_coordinates" title="Link to this definition"></a></dt>
+<dd><p>Given coordinates in 1-based coordinates that are inclusive on start
+and end, return a Locus instance. Locus instances are always 0-based
+“interbase” coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.locus.Locus.from_interbase_coordinates">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_interbase_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/locus.html#Locus.from_interbase_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.locus.Locus.from_interbase_coordinates" title="Link to this definition"></a></dt>
+<dd><p>Given coordinates in 0-based interbase coordinates, return a Locus
+instance.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.locus.Locus.inclusive_end">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">inclusive_end</span></span><a class="headerlink" href="#varlens.locus.Locus.inclusive_end" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.locus.Locus.inclusive_start">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">inclusive_start</span></span><a class="headerlink" href="#varlens.locus.Locus.inclusive_start" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.locus.Locus.parse">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/locus.html#Locus.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.locus.Locus.parse" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.locus.Locus.pileup_positions">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">pileup_positions</span></span><a class="headerlink" href="#varlens.locus.Locus.pileup_positions" title="Link to this definition"></a></dt>
+<dd><p>Reference bases needed to query this interval (left anchor for insertions).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.locus.Locus.position">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">position</span></span><a class="headerlink" href="#varlens.locus.Locus.position" title="Link to this definition"></a></dt>
+<dd><p>If this locus spans a single base, this property gives that position.
+Otherwise, raises a ValueError.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.locus.Locus.positions">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">positions</span></span><a class="headerlink" href="#varlens.locus.Locus.positions" title="Link to this definition"></a></dt>
+<dd><p>A Python range object giving the bases included in this locus.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.locus.chromosome_name_map">
+<span class="sig-prename descclassname"><span class="pre">varlens.locus.</span></span><span class="sig-name descname"><span class="pre">chromosome_name_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">references</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/locus.html#chromosome_name_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.locus.chromosome_name_map" title="Link to this definition"></a></dt>
+<dd><p>Resolve aliases to BAM references, giving exact names priority.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.locus.normalize_contig">
+<span class="sig-prename descclassname"><span class="pre">varlens.locus.</span></span><span class="sig-name descname"><span class="pre">normalize_contig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contig</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/locus.html#normalize_contig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.locus.normalize_contig" title="Link to this definition"></a></dt>
+<dd><p>Use Ensembl-style names, preserving alternate and unplaced contigs.</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.mhc_binding">
+<span id="varlens-mhc-binding-module"></span><h2>varlens.mhc_binding module<a class="headerlink" href="#module-varlens.mhc_binding" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.mhc_binding.binding_affinities">
+<span class="sig-prename descclassname"><span class="pre">varlens.mhc_binding.</span></span><span class="sig-name descname"><span class="pre">binding_affinities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variants</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alleles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epitope_lengths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(8,</span> <span class="pre">9,</span> <span class="pre">10,</span> <span class="pre">11)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/mhc_binding.html#binding_affinities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.mhc_binding.binding_affinities" title="Link to this definition"></a></dt>
+<dd><p>Return each variant’s lowest mutant-peptide affinity (nM) and allele.</p>
+<p>Variants without an affinity prediction have a missing affinity and allele.
+Topiary’s presentation scores are deliberately excluded from this summary.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.mhc_binding.fragment_predictions">
+<span class="sig-prename descclassname"><span class="pre">varlens.mhc_binding.</span></span><span class="sig-name descname"><span class="pre">fragment_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fragments</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alleles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epitope_lengths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(8,</span> <span class="pre">9,</span> <span class="pre">10,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/mhc_binding.html#fragment_predictions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.mhc_binding.fragment_predictions" title="Link to this definition"></a></dt>
+<dd><p>Predict target-overlapping peptides, retaining all fragment metadata.</p>
+<p>Unlike the small-variant best-affinity summary, this returns Topiary’s
+full prediction rows, with score kinds, fragment/sample identity and
+evidence. Target overlap is not a claim of proteome-wide novelty.</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.read_source">
+<span id="varlens-read-source-module"></span><h2>varlens.read_source module<a class="headerlink" href="#module-varlens.read_source" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_source.ReadSource">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_source.</span></span><span class="sig-name descname"><span class="pre">ReadSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_source.html#ReadSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_source.ReadSource" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_source.ReadSource.index_if_needed">
+<span class="sig-name descname"><span class="pre">index_if_needed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_source.html#ReadSource.index_if_needed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_source.ReadSource.index_if_needed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_source.ReadSource.pileups">
+<span class="sig-name descname"><span class="pre">pileups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loci</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_source.html#ReadSource.pileups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_source.ReadSource.pileups" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_source.ReadSource.read_passes_filters">
+<span class="sig-name descname"><span class="pre">read_passes_filters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">read</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_source.html#ReadSource.read_passes_filters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_source.ReadSource.read_passes_filters" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_source.ReadSource.reads">
+<span class="sig-name descname"><span class="pre">reads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loci</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_source.html#ReadSource.reads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_source.ReadSource.reads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.read_source.alignment_key">
+<span class="sig-prename descclassname"><span class="pre">varlens.read_source.</span></span><span class="sig-name descname"><span class="pre">alignment_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_alignment_record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_source.html#alignment_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_source.alignment_key" title="Link to this definition"></a></dt>
+<dd><p>Return the identifying attributes of a <code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instance.
+This is necessary since these objects do not support a useful notion of
+equality (they compare on identify by default).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.read_source.read_key">
+<span class="sig-prename descclassname"><span class="pre">varlens.read_source.</span></span><span class="sig-name descname"><span class="pre">read_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_alignment_record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_source.html#read_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_source.read_key" title="Link to this definition"></a></dt>
+<dd><p>Given a <code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instance, return the attributes identifying
+the <em>read</em> it comes from (not the alignment). There may be more than one
+alignment for a read, e.g. chimeric and secondary alignments.</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.reads_util">
+<span id="varlens-reads-util-module"></span><h2>varlens.reads_util module<a class="headerlink" href="#module-varlens.reads_util" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.reads_util.add_args">
+<span class="sig-prename descclassname"><span class="pre">varlens.reads_util.</span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/reads_util.html#add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.reads_util.add_args" title="Link to this definition"></a></dt>
+<dd><p>Extends a commandline argument parser with arguments for specifying
+read sources.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.reads_util.field_contains">
+<span class="sig-prename descclassname"><span class="pre">varlens.reads_util.</span></span><span class="sig-name descname"><span class="pre">field_contains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parsed_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/reads_util.html#field_contains"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.reads_util.field_contains" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.reads_util.flatten_header">
+<span class="sig-prename descclassname"><span class="pre">varlens.reads_util.</span></span><span class="sig-name descname"><span class="pre">flatten_header</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/reads_util.html#flatten_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.reads_util.flatten_header" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.reads_util.load_bam">
+<span class="sig-prename descclassname"><span class="pre">varlens.reads_util.</span></span><span class="sig-name descname"><span class="pre">load_bam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/reads_util.html#load_bam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.reads_util.load_bam" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.reads_util.load_from_args">
+<span class="sig-prename descclassname"><span class="pre">varlens.reads_util.</span></span><span class="sig-name descname"><span class="pre">load_from_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/reads_util.html#load_from_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.reads_util.load_from_args" title="Link to this definition"></a></dt>
+<dd><p>Given parsed commandline arguments, returns a list of ReadSource objects</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.sequence_context">
+<span id="varlens-sequence-context-module"></span><h2>varlens.sequence_context module<a class="headerlink" href="#module-varlens.sequence_context" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.sequence_context.variant_context">
+<span class="sig-prename descclassname"><span class="pre">varlens.sequence_context.</span></span><span class="sig-name descname"><span class="pre">variant_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclusive_start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclusive_end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_length</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/sequence_context.html#variant_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.sequence_context.variant_context" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the surronding reference region from a variant.</p>
+<p>SNVs are canonicalized so the reference base is a pyrmidine (C/T). For
+indels the reverse complement will still be taken if the first base of
+the reference is not a pyrmidine, but since the reference will also be
+reversed, that doesn’t guarantee it will start with a pyrmidine.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>reference_fasta</strong><span class="classifier">FastaReference</span></dt><dd><p>reference sequence from pyfaidx package</p>
+</dd>
+<dt><strong>contig</strong><span class="classifier">str</span></dt><dd><p>Chromosome of the variant</p>
+</dd>
+<dt><strong>inclusive_start</strong><span class="classifier">int</span></dt><dd><p>start of the variant in 1-based inclusive coordinates</p>
+</dd>
+<dt><strong>inclusive_end</strong><span class="classifier">int</span></dt><dd><p>end of the variant in 1-based inclusive coordinates</p>
+</dd>
+<dt><strong>alt</strong><span class="classifier">string</span></dt><dd><p>alt sequence</p>
+</dd>
+<dt><strong>context_length</strong><span class="classifier">int</span></dt><dd><p>number of bases on either side of the variant to return</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt>A tuple of (5’, mutation, 3’) where</dt><dd><p>5’ - bases immediately 5 prime to the mutation</p>
+<p>3’ - bases immediately 3 prime to the mutation</p>
+<dl class="simple">
+<dt>mutation - the ref sequence followed by a &gt; character followed by the</dt><dd><p>the alt sequence</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-varlens.support">
+<span id="varlens-support-module"></span><h2>varlens.support module<a class="headerlink" href="#module-varlens.support" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.support.allele_support_df">
+<span class="sig-prename descclassname"><span class="pre">varlens.support.</span></span><span class="sig-name descname"><span class="pre">allele_support_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loci</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/support.html#allele_support_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.support.allele_support_df" title="Link to this definition"></a></dt>
+<dd><p>Returns a DataFrame of allele counts for all given loci in the read sources</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.support.allele_support_rows">
+<span class="sig-prename descclassname"><span class="pre">varlens.support.</span></span><span class="sig-name descname"><span class="pre">allele_support_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loci</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/support.html#allele_support_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.support.allele_support_rows" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.support.variant_support">
+<span class="sig-prename descclassname"><span class="pre">varlens.support.</span></span><span class="sig-name descname"><span class="pre">variant_support</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variants</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allele_support_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_missing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/support.html#variant_support"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.support.variant_support" title="Link to this definition"></a></dt>
+<dd><p>Collect the read evidence support for the given variants.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>variants</strong><span class="classifier">iterable of varcode.Variant</span></dt><dd></dd>
+<dt><strong>allele_support_df</strong><span class="classifier">dataframe</span></dt><dd><p>Allele support dataframe, as output by the varlens-allele-support tool.
+It should have columns: source, contig, interbase_start, interbase_end,
+allele, and count (the number of supporting reads).</p>
+</dd>
+<dt><strong>ignore_missing</strong><span class="classifier">boolean</span></dt><dd><p>If True, variants with no allele counts have zero depth. Otherwise
+missing counts raise ValueError.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>pandas.DataFrame</dt><dd><p>Rows are variants; columns have two named levels, <code class="docutils literal notranslate"><span class="pre">measurement</span></code> and
+<code class="docutils literal notranslate"><span class="pre">source</span></code>. Metrics are num_alt, num_ref, num_other, total_depth,
+alt_fraction, and any_alt_fraction. For example, <code class="docutils literal notranslate"><span class="pre">frame[&quot;num_alt&quot;]</span></code>
+selects all sources’ alternate-read counts.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-varlens.util">
+<span id="varlens-util-module"></span><h2>varlens.util module<a class="headerlink" href="#module-varlens.util" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.util.PrefixedArgumentParser">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.util.</span></span><span class="sig-name descname"><span class="pre">PrefixedArgumentParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/util.html#PrefixedArgumentParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.util.PrefixedArgumentParser" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.util.PrefixedArgumentParser.add_argument">
+<span class="sig-name descname"><span class="pre">add_argument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/util.html#PrefixedArgumentParser.add_argument"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.util.PrefixedArgumentParser.add_argument" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.util.drop_prefix">
+<span class="sig-prename descclassname"><span class="pre">varlens.util.</span></span><span class="sig-name descname"><span class="pre">drop_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/util.html#drop_prefix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.util.drop_prefix" title="Link to this definition"></a></dt>
+<dd><p>Removes common prefix from a collection of strings</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.util.expand">
+<span class="sig-prename descclassname"><span class="pre">varlens.util.</span></span><span class="sig-name descname"><span class="pre">expand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/util.html#expand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.util.expand" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.util.remove_prefix_from_parsed_args">
+<span class="sig-prename descclassname"><span class="pre">varlens.util.</span></span><span class="sig-name descname"><span class="pre">remove_prefix_from_parsed_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/util.html#remove_prefix_from_parsed_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.util.remove_prefix_from_parsed_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-varlens.variant_includes">
+<span id="varlens-variant-includes-module"></span><h2>varlens.variant_includes module<a class="headerlink" href="#module-varlens.variant_includes" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.variant_includes.</span></span><span class="sig-name descname"><span class="pre">Context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_num_bases</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Context" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#varlens.variant_includes.Includeable" title="varlens.variant_includes.Includeable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Includeable</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context.add_args">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Context.add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Context.add_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context.columns">
+<span class="sig-name descname"><span class="pre">columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['context_5_prime',</span> <span class="pre">'context_3_prime',</span> <span class="pre">'context_mutation']</span></span><a class="headerlink" href="#varlens.variant_includes.Context.columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context.from_args">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Context.from_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Context.from_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'variant</span> <span class="pre">sequence</span> <span class="pre">context'</span></span><a class="headerlink" href="#varlens.variant_includes.Context.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context.process_chunk">
+<span class="sig-name descname"><span class="pre">process_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Context.process_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Context.process_chunk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context.requested">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">requested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Context.requested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Context.requested" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Context.string_columns">
+<span class="sig-name descname"><span class="pre">string_columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['context_5_prime',</span> <span class="pre">'context_3_prime',</span> <span class="pre">'context_mutation']</span></span><a class="headerlink" href="#varlens.variant_includes.Context.string_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.variant_includes.Effect">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.variant_includes.</span></span><span class="sig-name descname"><span class="pre">Effect</span></span><a class="reference internal" href="_modules/varlens/variant_includes.html#Effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Effect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#varlens.variant_includes.Includeable" title="varlens.variant_includes.Includeable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Includeable</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Effect.add_args">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Effect.add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Effect.add_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Effect.columns">
+<span class="sig-name descname"><span class="pre">columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['effect']</span></span><a class="headerlink" href="#varlens.variant_includes.Effect.columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Effect.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'variant</span> <span class="pre">effect</span> <span class="pre">annotations'</span></span><a class="headerlink" href="#varlens.variant_includes.Effect.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Effect.process_chunk">
+<span class="sig-name descname"><span class="pre">process_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Effect.process_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Effect.process_chunk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Effect.requested">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">requested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Effect.requested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Effect.requested" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Effect.string_columns">
+<span class="sig-name descname"><span class="pre">string_columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['effect']</span></span><a class="headerlink" href="#varlens.variant_includes.Effect.string_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.variant_includes.Gene">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.variant_includes.</span></span><span class="sig-name descname"><span class="pre">Gene</span></span><a class="reference internal" href="_modules/varlens/variant_includes.html#Gene"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Gene" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#varlens.variant_includes.Includeable" title="varlens.variant_includes.Includeable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Includeable</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Gene.add_args">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Gene.add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Gene.add_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Gene.columns">
+<span class="sig-name descname"><span class="pre">columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['gene']</span></span><a class="headerlink" href="#varlens.variant_includes.Gene.columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Gene.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gene</span> <span class="pre">annotations'</span></span><a class="headerlink" href="#varlens.variant_includes.Gene.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Gene.process_chunk">
+<span class="sig-name descname"><span class="pre">process_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Gene.process_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Gene.process_chunk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Gene.requested">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">requested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Gene.requested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Gene.requested" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Gene.string_columns">
+<span class="sig-name descname"><span class="pre">string_columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['gene']</span></span><a class="headerlink" href="#varlens.variant_includes.Gene.string_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.variant_includes.Includeable">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.variant_includes.</span></span><span class="sig-name descname"><span class="pre">Includeable</span></span><a class="reference internal" href="_modules/varlens/variant_includes.html#Includeable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Includeable" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Includeable.columns">
+<span class="sig-name descname"><span class="pre">columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#varlens.variant_includes.Includeable.columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Includeable.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_rows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Includeable.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Includeable.compute" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Includeable.float_columns">
+<span class="sig-name descname"><span class="pre">float_columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#varlens.variant_includes.Includeable.float_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Includeable.from_args">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Includeable.from_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Includeable.from_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.Includeable.process_chunk">
+<span class="sig-name descname"><span class="pre">process_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#Includeable.process_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.Includeable.process_chunk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.Includeable.string_columns">
+<span class="sig-name descname"><span class="pre">string_columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#varlens.variant_includes.Includeable.string_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.variant_includes.</span></span><span class="sig-name descname"><span class="pre">MHCBindingAffinity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hla</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hla_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">donor_to_hla</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#MHCBindingAffinity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#varlens.variant_includes.Includeable" title="varlens.variant_includes.Includeable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Includeable</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.add_args">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#MHCBindingAffinity.add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.add_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.columns">
+<span class="sig-name descname"><span class="pre">columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['binding_affinity',</span> <span class="pre">'binding_allele']</span></span><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.float_columns">
+<span class="sig-name descname"><span class="pre">float_columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['binding_affinity']</span></span><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.float_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.from_args">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#MHCBindingAffinity.from_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.from_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'MHC</span> <span class="pre">binding</span> <span class="pre">affinity'</span></span><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.noncoding_effects">
+<span class="sig-name descname"><span class="pre">noncoding_effects</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{&quot;3'</span> <span class="pre">UTR&quot;,</span> <span class="pre">&quot;5'</span> <span class="pre">UTR&quot;,</span> <span class="pre">'intergenic',</span> <span class="pre">'intronic',</span> <span class="pre">'non-coding-transcript',</span> <span class="pre">'silent'}</span></span><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.noncoding_effects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.process_chunk">
+<span class="sig-name descname"><span class="pre">process_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#MHCBindingAffinity.process_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.process_chunk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.requested">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">requested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#MHCBindingAffinity.requested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.requested" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.string_columns">
+<span class="sig-name descname"><span class="pre">string_columns</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['binding_allele']</span></span><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.string_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.MHCBindingAffinity.string_to_hla_alleles">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">string_to_hla_alleles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#MHCBindingAffinity.string_to_hla_alleles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.MHCBindingAffinity.string_to_hla_alleles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.variant_includes.</span></span><span class="sig-name descname"><span class="pre">ReadEvidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">read_sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_sources_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{source}_count_{allele_group}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">survive_errors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#varlens.variant_includes.Includeable" title="varlens.variant_includes.Includeable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Includeable</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.add_args">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence.add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.add_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.column_name">
+<span class="sig-name descname"><span class="pre">column_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allele_group</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence.column_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.column_name" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>source</strong><span class="classifier">string</span></dt><dd><p>name of the ReadSource</p>
+</dd>
+<dt><strong>allele_group</strong><span class="classifier">string</span></dt><dd><p>one of: num_ref, num_alt, total_depth</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>column name</strong><span class="classifier">string</span></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.default_column_format">
+<span class="sig-name descname"><span class="pre">default_column_format</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'{source}_count_{allele_group}'</span></span><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.default_column_format" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.from_args">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence.from_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.from_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'read</span> <span class="pre">evidence'</span></span><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.process_chunk">
+<span class="sig-name descname"><span class="pre">process_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence.process_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.process_chunk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.read_source_names">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">read_source_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">read_sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_sources_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence.read_source_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.read_source_names" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.requested">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">requested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence.requested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.requested" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.variant_includes.ReadEvidence.set_columns">
+<span class="sig-name descname"><span class="pre">set_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variant_includes.html#ReadEvidence.set_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variant_includes.ReadEvidence.set_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-varlens.variants_util">
+<span id="varlens-variants-util-module"></span><h2>varlens.variants_util module<a class="headerlink" href="#module-varlens.variants_util" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.add_args">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">add_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#add_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.add_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.dataframe_row_to_variant">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">dataframe_row_to_variant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#dataframe_row_to_variant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.dataframe_row_to_variant" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.dataframe_to_variants">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">dataframe_to_variants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#dataframe_to_variants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.dataframe_to_variants" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.load_as_dataframe">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">load_as_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">genome</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_variants</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_passing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata_column_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#load_as_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.load_as_dataframe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.load_csv">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">load_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">genome</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#load_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.load_csv" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.load_from_args_as_dataframe">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">load_from_args_as_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#load_from_args_as_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.load_from_args_as_dataframe" title="Link to this definition"></a></dt>
+<dd><p>Given parsed variant-loading arguments, return a pandas DataFrame.</p>
+<p>If no variant loading arguments are specified, return None.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.require_small_variants">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">require_small_variants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variants</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#require_small_variants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.require_small_variants" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.variant_loci">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">variant_loci</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#variant_loci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.variant_loci" title="Link to this definition"></a></dt>
+<dd><p>Small-variant interval, or each known SV breakpoint as a single base.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.variants_util.variants_to_dataframe">
+<span class="sig-prename descclassname"><span class="pre">varlens.variants_util.</span></span><span class="sig-name descname"><span class="pre">variants_to_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variants</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata_column_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structural_records</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/variants_util.html#variants_to_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.variants_util.variants_to_dataframe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-varlens.version">
+<span id="varlens-version-module"></span><h2>varlens.version module<a class="headerlink" href="#module-varlens.version" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.version.print_name_and_version">
+<span class="sig-prename descclassname"><span class="pre">varlens.version.</span></span><span class="sig-name descname"><span class="pre">print_name_and_version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/version.html#print_name_and_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.version.print_name_and_version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.version.print_version">
+<span class="sig-prename descclassname"><span class="pre">varlens.version.</span></span><span class="sig-name descname"><span class="pre">print_version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/version.html#print_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.version.print_version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-varlens">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-varlens" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Varlens Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="varlens.read_evidence.html" class="btn btn-neutral float-right" title="varlens.read_evidence package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

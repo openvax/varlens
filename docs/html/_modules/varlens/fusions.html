@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens.fusions &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../varlens.html">varlens package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">varlens.fusions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for varlens.fusions</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Supplied fusion RNA -&gt; Isovar evidence -&gt; Topiary protein fragments.</span>
+
+<span class="sd">This adapter does not discover fusions from BAMs or infer a coding frame from</span>
+<span class="sd">gene names. Isovar validates the supplied sequence, mappings, references and</span>
+<span class="sd">read observations, retaining every supported frame and unresolved outcome.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">hashlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha256</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InputError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>
+
+
+<div class="viewcode-block" id="analyze_fusion">
+<a class="viewcode-back" href="../../varlens.html#varlens.fusions.analyze_fusion">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">analyze_fusion</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alleles</span><span class="o">=</span><span class="p">(),</span> <span class="n">epitope_lengths</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
+                   <span class="n">min_fragments</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Return a JSON-serializable reconstruction, fragments and predictions.</span>
+
+<span class="sd">    ``payload`` follows Isovar's supplied-fusion input contract (``fusion``,</span>
+<span class="sd">    ``references``, ``reads``, optional ``reference_names``). The Sid fixture</span>
+<span class="sd">    envelope fields ``note`` and ``original_records`` are preserved but not</span>
+<span class="sd">    passed to Isovar as evidence. Unknown fields are rejected by Isovar.</span>
+
+<span class="sd">    All coding hypotheses, including ambiguous/partial-CDS hypotheses, become</span>
+<span class="sd">    separately identified fragments. Their status is carried onto prediction</span>
+<span class="sd">    rows; no hypothesis is selected as the true protein. No alleles/predictor</span>
+<span class="sd">    means reconstruction only. ``predictor`` may be a configured TopiaryPredictor</span>
+<span class="sd">    for a Python caller; otherwise supplied alleles select mhctools.NetMHCpan.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">isovar</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">isovar.fusion</span><span class="w"> </span><span class="kn">import</span> <span class="n">fusion_from_dict</span><span class="p">,</span> <span class="n">reconstruct_fusion</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Fusion reconstruction requires pip install 'varlens[fusion]'"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+<span class="w">    </span><span class="kn">import</span> <span class="n">topiary</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Expected one supplied-fusion JSON object"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">alleles</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Configure alleles on the predictor or pass alleles, not both"</span><span class="p">)</span>
+    <span class="c1"># Copy so caller mutations cannot change the recorded provenance.</span>
+    <span class="n">supplied</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">native</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">supplied</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"note"</span><span class="p">,</span> <span class="s2">"original_records"</span><span class="p">)}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">reconstruct_fusion</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">fusion_from_dict</span><span class="p">(</span><span class="n">native</span><span class="p">),</span> <span class="n">peptide_lengths</span><span class="o">=</span><span class="n">epitope_lengths</span><span class="p">,</span>
+            <span class="n">min_fragments</span><span class="o">=</span><span class="n">min_fragments</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Invalid supplied fusion: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">error</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+    <span class="k">if</span> <span class="n">reconstruction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"schema"</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"isovar.fusion_rna.v3"</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Unsupported Isovar fusion result schema"</span><span class="p">)</span>
+
+    <span class="n">fragments</span> <span class="o">=</span> <span class="n">_fragments</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"schema"</span><span class="p">:</span> <span class="s2">"varlens.fusion.v1"</span><span class="p">,</span>
+        <span class="s2">"software"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"varlens"</span><span class="p">:</span> <span class="n">__version__</span><span class="p">,</span> <span class="s2">"isovar"</span><span class="p">:</span> <span class="n">isovar</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
+                     <span class="s2">"topiary"</span><span class="p">:</span> <span class="n">topiary</span><span class="o">.</span><span class="n">__version__</span><span class="p">},</span>
+        <span class="s2">"input"</span><span class="p">:</span> <span class="n">supplied</span><span class="p">,</span>
+        <span class="s2">"reconstruction"</span><span class="p">:</span> <span class="n">reconstruction</span><span class="p">,</span>
+        <span class="s2">"fragments"</span><span class="p">:</span> <span class="p">[</span><span class="n">fragment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">fragment</span> <span class="ow">in</span> <span class="n">fragments</span><span class="p">],</span>
+        <span class="s2">"prediction_status"</span><span class="p">:</span> <span class="s2">"not_requested"</span><span class="p">,</span>
+        <span class="s2">"predictions"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">alleles</span> <span class="ow">or</span> <span class="n">predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fragments</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">"prediction_status"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"no_coding_products"</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.mhc_binding</span><span class="w"> </span><span class="kn">import</span> <span class="n">fragment_predictions</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="n">fragment_predictions</span><span class="p">(</span>
+                <span class="n">fragments</span><span class="p">,</span> <span class="n">alleles</span><span class="o">=</span><span class="n">alleles</span><span class="p">,</span> <span class="n">epitope_lengths</span><span class="o">=</span><span class="n">epitope_lengths</span><span class="p">,</span>
+                <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">)</span>
+            <span class="c1"># pandas encodes missing predictions as JSON null, never NaN or 0.</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">"predictions"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">predictions</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">"records"</span><span class="p">))</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">"prediction_status"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"completed"</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fragments</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Adapt only the validated result produced above, without retranslation."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">topiary</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProteinFragment</span>
+
+    <span class="n">fragments</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">"paths"</span><span class="p">]:</span>
+        <span class="n">junction</span><span class="p">,</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="s2">"junctions"</span><span class="p">]</span>
+        <span class="n">support</span> <span class="o">=</span> <span class="n">junction</span><span class="p">[</span><span class="s2">"direct_support"</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">translation</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="s2">"translations"</span><span class="p">]):</span>
+            <span class="c1"># A boundary inside a codon targets that residue. At a codon</span>
+            <span class="c1"># boundary the zero-width interval requires a peptide to cross it.</span>
+            <span class="c1"># Keep both sides of an inserted sequence as separate boundaries.</span>
+            <span class="n">boundaries</span> <span class="o">=</span> <span class="n">translation</span><span class="p">[</span><span class="s2">"junction_in_translated_cds"</span><span class="p">]</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({(</span><span class="n">b</span> <span class="o">//</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">boundaries</span><span class="p">})</span>
+            <span class="n">identity</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">"sample_id"</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s2">"event_id"</span><span class="p">],</span> <span class="n">path</span><span class="p">[</span><span class="s2">"path_id"</span><span class="p">],</span>
+                        <span class="n">index</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="s2">"sequence_sha256"</span><span class="p">],</span> <span class="n">translation</span><span class="p">[</span><span class="s2">"amino_acids"</span><span class="p">]]</span>
+            <span class="n">identifier</span> <span class="o">=</span> <span class="s2">"fusion:"</span> <span class="o">+</span> <span class="n">sha256</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">identity</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+            <span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ProteinFragment</span><span class="p">(</span>
+                <span class="n">fragment_id</span><span class="o">=</span><span class="n">identifier</span><span class="p">,</span> <span class="n">source_type</span><span class="o">=</span><span class="s2">"sv:fusion"</span><span class="p">,</span>
+                <span class="n">sequence</span><span class="o">=</span><span class="n">translation</span><span class="p">[</span><span class="s2">"amino_acids"</span><span class="p">],</span> <span class="n">target_intervals</span><span class="o">=</span><span class="n">targets</span><span class="p">,</span>
+                <span class="n">variant</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">"event_id"</span><span class="p">],</span> <span class="n">sample_name</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">"sample_id"</span><span class="p">],</span>
+                <span class="n">n_rna_alt_reads</span><span class="o">=</span><span class="n">support</span><span class="p">[</span><span class="s2">"reads"</span><span class="p">],</span>
+                <span class="n">n_rna_alt_fragments</span><span class="o">=</span><span class="n">support</span><span class="p">[</span><span class="s2">"fragments"</span><span class="p">],</span>
+                <span class="n">annotations</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">"fusion_reconstruction_status"</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">"status"</span><span class="p">],</span>
+                    <span class="s2">"fusion_reconstruction_reasons"</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">"reasons"</span><span class="p">],</span>
+                    <span class="s2">"fusion_path_id"</span><span class="p">:</span> <span class="n">path</span><span class="p">[</span><span class="s2">"path_id"</span><span class="p">],</span>
+                    <span class="s2">"fusion_translation_index"</span><span class="p">:</span> <span class="n">index</span><span class="p">,</span>
+                    <span class="s2">"fusion_complete_5prime"</span><span class="p">:</span> <span class="n">translation</span><span class="p">[</span><span class="s2">"complete_5prime"</span><span class="p">],</span>
+                    <span class="s2">"fusion_translation_observed"</span><span class="p">:</span> <span class="n">translation</span><span class="p">[</span><span class="s2">"translation_observed"</span><span class="p">],</span>
+                    <span class="s2">"fusion_transcript_ids"</span><span class="p">:</span> <span class="n">translation</span><span class="p">[</span><span class="s2">"transcript_ids"</span><span class="p">],</span>
+                    <span class="s2">"fusion_frame_evidence"</span><span class="p">:</span> <span class="n">translation</span><span class="p">[</span><span class="s2">"frame_evidence"</span><span class="p">],</span>
+                    <span class="s2">"fusion_provenance"</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">"provenance"</span><span class="p">],</span>
+                    <span class="s2">"fusion_rna_evidence_scope"</span><span class="p">:</span> <span class="s2">"supplied_direct_junction_observations"</span><span class="p">,</span>
+                    <span class="s2">"fusion_junction_in_translated_cds"</span><span class="p">:</span> <span class="n">boundaries</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">))</span>
+    <span class="k">return</span> <span class="n">fragments</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

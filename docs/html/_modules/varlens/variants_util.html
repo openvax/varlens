@@ -1,0 +1,591 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens.variants_util &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../varlens.html">varlens package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">varlens.variants_util</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for varlens.variants_util</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlparse</span><span class="p">,</span> <span class="n">unquote</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.request</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlopen</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">varcode</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">util</span><span class="p">,</span> <span class="n">loci_util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.locus</span><span class="w"> </span><span class="kn">import</span> <span class="n">Locus</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InputError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.read_evidence</span><span class="w"> </span><span class="kn">import</span> <span class="n">pileup_collection</span>
+
+<span class="n">STANDARD_DATAFRAME_COLUMNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"genome"</span><span class="p">,</span>
+    <span class="s2">"contig"</span><span class="p">,</span>
+    <span class="s2">"interbase_start"</span><span class="p">,</span>
+    <span class="s2">"interbase_end"</span><span class="p">,</span>
+    <span class="s2">"ref"</span><span class="p">,</span>
+    <span class="s2">"alt"</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">STRUCTURAL_COLUMN</span> <span class="o">=</span> <span class="s2">"structural_variant"</span>
+<span class="n">STRUCTURAL_SCHEMA</span> <span class="o">=</span> <span class="s2">"varlens.structural_variant.v1"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_structural_vcf_records</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">variants</span><span class="p">,</span> <span class="n">only_passing</span><span class="p">,</span> <span class="n">max_variants</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Retain each source record before Varcode's per-event metadata deduplicates.</span>
+
+<span class="sd">    Use Varcode's header/allele parsers so confidence intervals and alternate</span>
+<span class="sd">    assemblies distinguish events even at an identical VCF locus/ALT.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">varcode.vcf_parsing</span><span class="w"> </span><span class="kn">import</span> <span class="n">VCFHeader</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">varcode.sv_allele_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_symbolic_alt</span>
+
+    <span class="n">structural</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variants</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">varcode</span><span class="o">.</span><span class="n">StructuralVariant</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">structural</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">{(</span><span class="n">v</span><span class="o">.</span><span class="n">original_contig</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">original_start</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">original_ref</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">original_alt</span><span class="p">):</span> <span class="n">v</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">structural</span><span class="p">}</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">parsed_url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="p">(</span><span class="n">urlopen</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">if</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"http"</span><span class="p">,</span> <span class="s2">"https"</span><span class="p">)</span> <span class="k">else</span>
+           <span class="nb">open</span><span class="p">(</span><span class="n">unquote</span><span class="p">(</span><span class="n">parsed_url</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s2">"file"</span> <span class="k">else</span> <span class="n">filename</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">GzipFile</span><span class="p">(</span><span class="n">fileobj</span><span class="o">=</span><span class="n">raw</span><span class="p">)</span> <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".gz"</span><span class="p">)</span> <span class="k">else</span> <span class="n">raw</span>
+        <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">TextIOWrapper</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
+            <span class="n">header_lines</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+                <span class="n">header_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"#CHROM"</span><span class="p">):</span>
+                    <span class="k">break</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">VCFHeader</span><span class="o">.</span><span class="n">from_lines</span><span class="p">(</span><span class="n">header_lines</span><span class="p">)</span>
+            <span class="n">loaded</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"#"</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">record_id</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">alts</span><span class="p">,</span> <span class="n">qual</span><span class="p">,</span> <span class="n">filters</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[:</span><span class="mi">7</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">only_passing</span> <span class="ow">and</span> <span class="n">filters</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"PASS"</span><span class="p">,</span> <span class="s2">"."</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">alt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">alts</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">alt</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="s2">"*"</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">max_variants</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">loaded</span> <span class="o">&gt;=</span> <span class="n">max_variants</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">records</span>
+                    <span class="n">loaded</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">example</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">chrom</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="p">),</span> <span class="n">ref</span><span class="p">,</span> <span class="n">alt</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">example</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">parse_info</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+                    <span class="n">variant</span> <span class="o">=</span> <span class="n">parse_symbolic_alt</span><span class="p">(</span>
+                        <span class="n">chrom</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="p">),</span> <span class="n">ref</span><span class="p">,</span> <span class="n">alt</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="n">info</span><span class="p">,</span>
+                        <span class="n">genome</span><span class="o">=</span><span class="n">example</span><span class="o">.</span><span class="n">original_genome</span><span class="p">,</span>
+                        <span class="n">normalize_contig_names</span><span class="o">=</span><span class="n">example</span><span class="o">.</span><span class="n">normalize_contig_names</span><span class="p">,</span>
+                        <span class="n">convert_ucsc_contig_names</span><span class="o">=</span><span class="n">example</span><span class="o">.</span><span class="n">convert_ucsc_contig_names</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">structural</span><span class="p">:</span>
+                        <span class="n">records</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                            <span class="s2">"source"</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+                            <span class="s2">"vcf_line"</span><span class="p">:</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">),</span>
+                            <span class="s2">"metadata"</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">"id"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">record_id</span> <span class="o">==</span> <span class="s2">"."</span> <span class="k">else</span> <span class="n">record_id</span><span class="p">,</span>
+                                <span class="s2">"qual"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">qual</span> <span class="o">==</span> <span class="s2">"."</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">qual</span><span class="p">),</span>
+                                <span class="s2">"filter"</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="n">filters</span> <span class="o">==</span> <span class="s2">"."</span> <span class="k">else</span>
+                                           <span class="p">[]</span> <span class="k">if</span> <span class="n">filters</span> <span class="o">==</span> <span class="s2">"PASS"</span> <span class="k">else</span> <span class="n">filters</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">";"</span><span class="p">)),</span>
+                                <span class="s2">"info"</span><span class="p">:</span> <span class="n">info</span><span class="p">,</span>
+                                <span class="s2">"sample_info"</span><span class="p">:</span> <span class="n">header</span><span class="o">.</span><span class="n">parse_samples</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">9</span><span class="p">:],</span> <span class="n">fields</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
+                                <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">samples</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="s2">"alt_allele_index"</span><span class="p">:</span> <span class="n">index</span><span class="p">,</span>
+                                <span class="s2">"vcf_alt_alleles"</span><span class="p">:</span> <span class="n">alts</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">),</span>
+                            <span class="p">},</span>
+                        <span class="p">})</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">records</span><span class="p">)</span> <span class="o">!=</span> <span class="n">structural</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Could not retain all structural VCF source records"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">records</span>
+
+
+<div class="viewcode-block" id="require_small_variants">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.require_small_variants">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">require_small_variants</span><span class="p">(</span><span class="n">variants</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">varcode</span><span class="o">.</span><span class="n">StructuralVariant</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span>
+                <span class="s2">"</span><span class="si">%s</span><span class="s2"> does not support structural variants (</span><span class="si">%s</span><span class="s2">). Export/filter "</span>
+                <span class="s2">"the calls with varlens-variants, or use varlens-fusions for "</span>
+                <span class="s2">"supplied fusion RNA; interval allele counts are not junction "</span>
+                <span class="s2">"support."</span> <span class="o">%</span> <span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">variant</span><span class="o">.</span><span class="n">short_description</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="variant_loci">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.variant_loci">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">variant_loci</span><span class="p">(</span><span class="n">variant</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Small-variant interval, or each known SV breakpoint as a single base."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">varcode</span><span class="o">.</span><span class="n">StructuralVariant</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Locus</span><span class="o">.</span><span class="n">from_inclusive_coordinates</span><span class="p">(</span><span class="n">contig</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">contig</span><span class="p">,</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">breakpoints</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">pileup_collection</span><span class="o">.</span><span class="n">to_locus</span><span class="p">(</span><span class="n">variant</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="add_args">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.add_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_args</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">positional</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">"variant loading"</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"variants"</span> <span class="k">if</span> <span class="n">positional</span> <span class="k">else</span> <span class="s2">"--variants"</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="p">(</span><span class="s2">"*"</span> <span class="k">if</span> <span class="n">positional</span> <span class="k">else</span> <span class="s2">"+"</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Path to VCF file. Any number of VCF files may be specified. "</span>
+        <span class="s2">"CSV files in the format outputted by the varlens-variants tool are "</span>
+        <span class="s2">"also supported."</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--genome"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Genome for the variants (e.g. b37). Required when the genome "</span>
+        <span class="s2">"cannot be guessed from the metadata in the VCF."</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--include-failing-variants"</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Include variants with a non-PASS filter field."</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--variant-source-name"</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Names for variant sources. Must specify one name per variant "</span>
+        <span class="s2">"source. If not specified, the filenames are used."</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--max-variants-per-source"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">"N"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Load at most N variants from each source."</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--single-variant"</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"append"</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">"X"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Literal variant specified as three arguments: LOCUS REF ALT. "</span>
+        <span class="s2">"Can be specified any number of times by repeating the "</span>
+        <span class="s2">"--single-variant option."</span><span class="p">)</span>
+
+    <span class="c1"># Filters</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">"variant filtering"</span><span class="p">,</span>
+        <span class="s2">"If multiple filters are specified, the variants must pass *all* "</span>
+        <span class="s2">"filters. For filtering by loci, any variants that overlap "</span>
+        <span class="s2">"the specified loci are included. Structural variants match known "</span>
+        <span class="s2">"breakpoint bases (including remote mates), not the full SV span."</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--ref"</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Include only variants where ref is one of the given values."</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--alt"</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Include only variants where alt is one of the given values."</span><span class="p">)</span>
+    <span class="n">loci_util</span><span class="o">.</span><span class="n">add_args</span><span class="p">(</span><span class="n">util</span><span class="o">.</span><span class="n">PrefixedArgumentParser</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">"variant"</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="load_from_args_as_dataframe">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.load_from_args_as_dataframe">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_from_args_as_dataframe</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">'''</span>
+<span class="sd">    Given parsed variant-loading arguments, return a pandas DataFrame.</span>
+
+<span class="sd">    If no variant loading arguments are specified, return None.</span>
+<span class="sd">    '''</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">variants</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">single_variant</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">variant_source_name</span><span class="p">:</span>
+        <span class="n">variant_source_names</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">variant_source_name</span><span class="p">,</span>
+            <span class="s1">'variant_source_name'</span><span class="p">,</span>
+            <span class="s1">'variant source'</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variants</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variant_source_names</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">drop_prefix</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variants</span><span class="p">)</span>
+
+    <span class="n">variant_to_sources</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="n">dfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variants</span><span class="p">)):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">variant_source_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">'metadata:'</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variants</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"metadata:</span><span class="si">%s</span><span class="s2">:"</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">load_as_dataframe</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">variants</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">genome</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">genome</span><span class="p">,</span>
+            <span class="n">max_variants</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">max_variants_per_source</span><span class="p">,</span>
+            <span class="n">only_passing</span><span class="o">=</span><span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">include_failing_variants</span><span class="p">,</span>
+            <span class="n">metadata_column_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No variants loaded from: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">variants</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">variant</span><span class="p">:</span>
+                <span class="n">variant_to_sources</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">single_variant</span><span class="p">:</span>
+        <span class="n">variants</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">extra_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">genome</span><span class="p">:</span>
+            <span class="n">extra_args</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">'genome'</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">genome</span>
+            <span class="p">}</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">locus_str</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">alt</span><span class="p">)</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">single_variant</span><span class="p">:</span>
+            <span class="n">locus</span> <span class="o">=</span> <span class="n">Locus</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">locus_str</span><span class="p">)</span>
+            <span class="n">variant</span> <span class="o">=</span> <span class="n">varcode</span><span class="o">.</span><span class="n">Variant</span><span class="p">(</span>
+                    <span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span>
+                    <span class="n">locus</span><span class="o">.</span><span class="n">inclusive_start</span><span class="p">,</span>
+                    <span class="n">ref</span><span class="p">,</span>
+                    <span class="n">alt</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">extra_args</span><span class="p">)</span>
+            <span class="n">variants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+            <span class="n">variant_to_sources</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"commandline"</span><span class="p">)</span>
+        <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variants_to_dataframe</span><span class="p">(</span><span class="n">variants</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dfs</span><span class="p">:</span>
+        <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variants_to_dataframe</span><span class="p">([]))</span>
+
+    <span class="c1"># These columns describe the typed object and its source records, not a</span>
+    <span class="c1"># source-specific annotation. Preserve one object and all source records</span>
+    <span class="c1"># when the same event occurs in several files.</span>
+    <span class="n">structural</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">STRUCTURAL_COLUMN</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">variant</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">variant</span><span class="p">,</span> <span class="n">frame</span><span class="p">[</span><span class="n">STRUCTURAL_COLUMN</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="n">pandas</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                    <span class="n">structural</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">frame</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">STRUCTURAL_COLUMN</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"vcf_records"</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">variant</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">variant</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">vcf_records</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">pandas</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                    <span class="n">records</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+            <span class="n">frame</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">"vcf_records"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">dfs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">other_df</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span>
+            <span class="n">other_df</span><span class="p">,</span>
+            <span class="n">how</span><span class="o">=</span><span class="s1">'outer'</span><span class="p">,</span>
+            <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">"variant"</span><span class="p">]</span> <span class="o">+</span> <span class="n">STANDARD_DATAFRAME_COLUMNS</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">structural</span><span class="p">:</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">STRUCTURAL_COLUMN</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">structural</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">variant</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">records</span><span class="p">:</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">"vcf_records"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">records</span><span class="p">[</span><span class="n">v</span><span class="p">],</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                             <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">records</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">variant</span><span class="p">]</span>
+
+    <span class="n">genomes</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"genome"</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">genomes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span>
+                <span class="s2">"Mixing references is not supported. "</span>
+                <span class="s2">"Reference genomes: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">genomes</span><span class="p">)))</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="s2">"sources"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">variant_to_sources</span><span class="p">[</span><span class="n">v</span><span class="p">])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">variant</span><span class="p">]</span>
+
+    <span class="c1"># Apply filters:</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ref</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">ref</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">alt</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">alt</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">alt</span><span class="p">)]</span>
+    <span class="n">loci</span> <span class="o">=</span> <span class="n">loci_util</span><span class="o">.</span><span class="n">load_from_args</span><span class="p">(</span>
+        <span class="n">util</span><span class="o">.</span><span class="n">remove_prefix_from_parsed_args</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">"variant"</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">loci</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span>
+            <span class="nb">any</span><span class="p">(</span><span class="n">loci</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span> <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">variant_loci</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">variant</span>
+        <span class="p">]]</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="load_as_dataframe">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.load_as_dataframe">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_as_dataframe</span><span class="p">(</span>
+        <span class="n">filename</span><span class="p">,</span>
+        <span class="n">loader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">genome</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_variants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">only_passing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">metadata_column_prefix</span><span class="o">=</span><span class="s1">''</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">filename</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_variants</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">max_variants</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"max_variants must be nonnegative"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">loader</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".vcf"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".vcf.gz"</span><span class="p">)):</span>
+            <span class="c1"># Load from VCF</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">loader</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+                <span class="c1"># A successful export must not omit unsupported structural</span>
+                <span class="c1"># alleles. Filtering PASS records and VCF placeholders remains</span>
+                <span class="c1"># Varcode's normal, documented loading behavior.</span>
+                <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
+                        <span class="s2">"error"</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="sa">r</span><span class="s2">"(Could not parse|Skipped).*symbolic/breakend"</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">collection</span> <span class="o">=</span> <span class="n">varcode</span><span class="o">.</span><span class="n">load_vcf</span><span class="p">(</span>
+                            <span class="n">filename</span><span class="p">,</span> <span class="n">genome</span><span class="o">=</span><span class="n">genome</span><span class="p">,</span> <span class="n">max_variants</span><span class="o">=</span><span class="n">max_variants</span><span class="p">,</span>
+                            <span class="n">only_passing</span><span class="o">=</span><span class="n">only_passing</span><span class="p">,</span>
+                            <span class="n">allow_extended_nucleotides</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">parse_structural_variants</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">UserWarning</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span>
+                            <span class="s2">"</span><span class="si">%s</span><span class="s2"> No partial output was written."</span> <span class="o">%</span> <span class="n">error</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+                <span class="k">return</span> <span class="n">variants_to_dataframe</span><span class="p">(</span>
+                    <span class="n">collection</span><span class="p">,</span>
+                    <span class="n">collection</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                    <span class="n">metadata_column_prefix</span><span class="o">=</span><span class="n">metadata_column_prefix</span><span class="p">,</span>
+                    <span class="n">source</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+                    <span class="n">structural_records</span><span class="o">=</span><span class="n">_structural_vcf_records</span><span class="p">(</span>
+                        <span class="n">filename</span><span class="p">,</span> <span class="n">collection</span><span class="p">,</span> <span class="n">only_passing</span><span class="p">,</span> <span class="n">max_variants</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".csv"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".csv.gz"</span><span class="p">)):</span>
+            <span class="c1"># Load from csv</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">load_csv_frame</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+                <span class="c1"># Ignores only_passing</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">max_variants</span><span class="p">,</span>
+                                     <span class="n">dtype</span><span class="o">=</span><span class="p">{</span><span class="s2">"contig"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"ref"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"alt"</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
+                <span class="k">if</span> <span class="s2">"genome"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span> <span class="ow">and</span> <span class="n">genome</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">df</span><span class="p">[</span><span class="s2">"genome"</span><span class="p">]</span> <span class="o">=</span> <span class="n">genome</span>
+                <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">STANDARD_DATAFRAME_COLUMNS</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Missing CSV column: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">column</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'ref'</span><span class="p">,</span> <span class="s1">'alt'</span><span class="p">]:</span>
+                    <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">''</span><span class="p">)</span>
+                <span class="c1"># CSV cannot contain live Variant objects, even when a caller</span>
+                <span class="c1"># saved a Python dataframe including its internal column.</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">"variant"</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">"vcf_records"</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">vcf_records</span><span class="o">.</span><span class="n">dropna</span><span class="p">():</span>
+                        <span class="n">records</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">records</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+                                <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">):</span>
+                            <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"vcf_records must contain a JSON list of records"</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">df</span>
+            <span class="n">loader</span> <span class="o">=</span> <span class="n">load_csv_frame</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span>
+                <span class="s2">"Unsupported variant input: </span><span class="si">%s</span><span class="s2">. Use VCF or Varlens CSV; "</span>
+                <span class="s2">"for supplied fusion RNA JSON use varlens-fusions."</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">loader</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">'genome'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="s2">"genome"</span><span class="p">]</span> <span class="o">=</span> <span class="n">genome</span>
+
+        <span class="k">if</span> <span class="s2">"variant"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="s2">"variant"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">dataframe_row_to_variant</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span>
+            <span class="p">]</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">error</span><span class="p">))</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="variants_to_dataframe">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.variants_to_dataframe">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">variants_to_dataframe</span><span class="p">(</span>
+        <span class="n">variants</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata_column_prefix</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">structural_records</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="n">variant</span><span class="p">):</span>
+        <span class="n">locus</span> <span class="o">=</span> <span class="p">(</span><span class="n">Locus</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span> <span class="n">variant</span><span class="o">.</span><span class="n">start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">variant</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">varcode</span><span class="o">.</span><span class="n">StructuralVariant</span><span class="p">)</span> <span class="k">else</span>
+                 <span class="n">pileup_collection</span><span class="o">.</span><span class="n">to_locus</span><span class="p">(</span><span class="n">variant</span><span class="p">))</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">'variant'</span><span class="p">:</span> <span class="n">variant</span><span class="p">,</span>
+            <span class="s1">'genome'</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">reference_name</span><span class="p">),</span>
+            <span class="s1">'contig'</span><span class="p">:</span> <span class="n">variant</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span>
+            <span class="s1">'interbase_start'</span><span class="p">:</span> <span class="n">locus</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+            <span class="s1">'interbase_end'</span><span class="p">:</span> <span class="n">locus</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+            <span class="s1">'ref'</span><span class="p">:</span> <span class="n">variant</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+            <span class="s1">'alt'</span><span class="p">:</span> <span class="n">variant</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">varcode</span><span class="o">.</span><span class="n">StructuralVariant</span><span class="p">):</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">variant</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="c1"># Genome instances are not JSON values; the canonical reference</span>
+            <span class="c1"># name recreates the same assembly without serializing its cache.</span>
+            <span class="n">values</span><span class="p">[</span><span class="s2">"genome"</span><span class="p">]</span> <span class="o">=</span> <span class="n">variant</span><span class="o">.</span><span class="n">reference_name</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">STRUCTURAL_COLUMN</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">"schema"</span><span class="p">:</span> <span class="n">STRUCTURAL_SCHEMA</span><span class="p">,</span> <span class="s2">"variant"</span><span class="p">:</span> <span class="n">values</span><span class="p">},</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">records</span> <span class="o">=</span> <span class="p">(</span><span class="n">structural_records</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="k">if</span> <span class="n">structural_records</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[{</span>
+                    <span class="s2">"source"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span>
+                    <span class="s2">"metadata"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="p">{})</span> <span class="k">if</span> <span class="n">metadata</span> <span class="k">else</span> <span class="p">{},</span>
+                <span class="p">}])</span>
+                <span class="n">d</span><span class="p">[</span><span class="s2">"vcf_records"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">records</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metadata</span><span class="p">:</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">'info'</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">info_col</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">column</span> <span class="o">=</span> <span class="s1">'</span><span class="si">%s</span><span class="s1">info:</span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span>
+                            <span class="n">metadata_column_prefix</span><span class="p">,</span> <span class="n">info_col</span><span class="p">)</span>
+                        <span class="n">d</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">d</span><span class="p">[</span><span class="s2">"</span><span class="si">%s%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">metadata_column_prefix</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">())]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">record</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="p">(</span><span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="k">if</span> <span class="n">rows</span> <span class="k">else</span>
+          <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">STANDARD_DATAFRAME_COLUMNS</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"variant"</span><span class="p">]))</span>
+    <span class="n">column_indices</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">STANDARD_DATAFRAME_COLUMNS</span><span class="p">))</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">column_indices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="dataframe_row_to_variant">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.dataframe_row_to_variant">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dataframe_row_to_variant</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+    <span class="n">serialized</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">STRUCTURAL_COLUMN</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">serialized</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pandas</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">serialized</span><span class="p">):</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"schema"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">STRUCTURAL_SCHEMA</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Unsupported structural_variant schema"</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">variant</span> <span class="o">=</span> <span class="n">varcode</span><span class="o">.</span><span class="n">StructuralVariant</span><span class="p">(</span><span class="o">**</span><span class="n">payload</span><span class="p">[</span><span class="s2">"variant"</span><span class="p">])</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Invalid structural_variant payload: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">error</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">reference_name</span><span class="p">,</span> <span class="n">variant</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span> <span class="n">variant</span><span class="o">.</span><span class="n">start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">variant</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">variant</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span> <span class="n">variant</span><span class="o">.</span><span class="n">alt</span><span class="p">)</span>
+        <span class="n">observed</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">genome</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">contig</span><span class="p">),</span> <span class="n">row</span><span class="o">.</span><span class="n">interbase_start</span><span class="p">,</span>
+                    <span class="n">row</span><span class="o">.</span><span class="n">interbase_end</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">alt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">expected</span> <span class="o">!=</span> <span class="n">observed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"CSV columns disagree with structural_variant payload"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">variant</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">character</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">alt</span> <span class="k">for</span> <span class="n">character</span> <span class="ow">in</span> <span class="s2">"&lt;&gt;[]."</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"Structural CSV alleles require the structural_variant "</span>
+                         <span class="s2">"column; load the original VCF to preserve event fields"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">varcode</span><span class="o">.</span><span class="n">Variant</span><span class="p">(</span>
+            <span class="n">genome</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">genome</span><span class="p">,</span>
+            <span class="n">contig</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">interbase_start</span> <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">ref</span> <span class="o">==</span> <span class="s1">''</span> <span class="ow">and</span>
+                   <span class="n">row</span><span class="o">.</span><span class="n">interbase_start</span> <span class="o">==</span> <span class="n">row</span><span class="o">.</span><span class="n">interbase_end</span> <span class="k">else</span> <span class="n">row</span><span class="o">.</span><span class="n">interbase_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">ref</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+            <span class="n">alt</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span>
+            <span class="n">allow_extended_nucleotides</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dataframe_to_variants">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.dataframe_to_variants">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dataframe_to_variants</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">STANDARD_DATAFRAME_COLUMNS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Missing column: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">column</span><span class="p">)</span>
+
+    <span class="n">extra_columns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STANDARD_DATAFRAME_COLUMNS</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"variant"</span><span class="p">]</span>
+    <span class="p">]</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">variant</span> <span class="o">=</span> <span class="n">dataframe_row_to_variant</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">c</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="n">c</span><span class="p">])</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">extra_columns</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">varcode</span><span class="o">.</span><span class="n">VariantCollection</span><span class="p">(</span>
+        <span class="n">metadata</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">source_to_metadata_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">"dataframe"</span><span class="p">:</span> <span class="n">metadata</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="load_csv">
+<a class="viewcode-back" href="../../varlens.html#varlens.variants_util.load_csv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">genome</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">load_as_dataframe</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">genome</span><span class="o">=</span><span class="n">genome</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataframe_to_variants</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

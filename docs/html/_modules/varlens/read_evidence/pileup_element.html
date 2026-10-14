@@ -1,0 +1,260 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens.read_evidence.pileup_element &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../varlens.html">varlens package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">varlens.read_evidence.pileup_element</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for varlens.read_evidence.pileup_element</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">alignment_key</span>
+
+<div class="viewcode-block" id="PileupElement">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PileupElement</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">'''</span>
+<span class="sd">    A PileupElement represents the segment of an alignment that aligns to a</span>
+<span class="sd">    particular base in the reference.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    locus : Varcode.Locus</span>
+<span class="sd">        The reference locus. Must be length 1, i.e. a single base.</span>
+
+<span class="sd">    offset_start : int</span>
+<span class="sd">        0-based start offset into the alignment sequence, inclusive</span>
+
+<span class="sd">    offset_end : int</span>
+<span class="sd">        0-based end offset into the alignment sequence, exclusive</span>
+
+<span class="sd">    alignment : pysam.AlignedSegment</span>
+<span class="sd">        pysam alignment instance</span>
+
+<span class="sd">    alignment_key : tuple</span>
+<span class="sd">        value computed from the alignment instance that uniquely specifies its</span>
+<span class="sd">        properties. Used for comparisons since pysam.AlignedSegment instances</span>
+<span class="sd">        do not support a useful notion of equality (they compare using object</span>
+<span class="sd">        identity). See `read_evidence.alignment_key` for the implementation of</span>
+<span class="sd">        this key.</span>
+<span class="sd">    '''</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locus</span><span class="p">,</span> <span class="n">offset_start</span><span class="p">,</span> <span class="n">offset_end</span><span class="p">,</span> <span class="n">alignment</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Construct a PileupElement object.</span>
+<span class="sd">        '''</span>
+        <span class="k">assert</span> <span class="n">offset_end</span> <span class="o">&gt;=</span> <span class="n">offset_start</span><span class="p">,</span> \
+            <span class="s2">"offset_start=</span><span class="si">%d</span><span class="s2"> &gt; offset_end=</span><span class="si">%d</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">offset_start</span><span class="p">,</span> <span class="n">offset_end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locus</span> <span class="o">=</span> <span class="n">locus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset_start</span> <span class="o">=</span> <span class="n">offset_start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset_end</span> <span class="o">=</span> <span class="n">offset_end</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">alignment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alignment_key</span> <span class="o">=</span> <span class="n">alignment_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alignment</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PileupElement.fields">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement.fields">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Fields that should be considered for our notion of object equality.</span>
+<span class="sd">        '''</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locus</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alignment_key</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s2">"fields"</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">fields</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        The sequenced bases in the alignment that align to this locus in the</span>
+<span class="sd">        genome, as a string.</span>
+
+<span class="sd">        Empty string in the case of a deletion. String of length &gt; 1 if there</span>
+<span class="sd">        is an insertion here.</span>
+<span class="sd">        '''</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">query_sequence</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset_end</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">),</span> \
+            <span class="s2">"End offset=</span><span class="si">%d</span><span class="s2"> &gt; sequence length=</span><span class="si">%d</span><span class="s2">. CIGAR=</span><span class="si">%s</span><span class="s2">. SEQUENCE=</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">offset_end</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">cigarstring</span><span class="p">,</span>
+                <span class="n">sequence</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">offset_start</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">offset_end</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">base_qualities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        The phred-scaled base quality scores corresponding to ``self.bases``, as</span>
+<span class="sd">        a list.</span>
+<span class="sd">        '''</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">query_qualities</span><span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offset_start</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">offset_end</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">min_base_quality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        The minimum of the base qualities. In the case of a deletion, in which</span>
+<span class="sd">        case there are no bases in this PileupElement, the minimum is taken</span>
+<span class="sd">        over the sequenced bases immediately before and after the deletion.</span>
+<span class="sd">        '''</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_qualities</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># We are mid-deletion. We return the minimum of the adjacent bases.</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset_start</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset_end</span>
+            <span class="n">adjacent_qualities</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">query_qualities</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">offset_start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset_start</span><span class="p">]</span>
+                <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">query_qualities</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">adjacent_qualities</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PileupElement.from_pysam_alignment">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_element.PileupElement.from_pysam_alignment">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_pysam_alignment</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">pileup_read</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Factory function to create a new PileupElement from a pysam</span>
+<span class="sd">        ``PileupRead``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        locus : varcode.Locus</span>
+<span class="sd">            Reference locus for which to construct a PileupElement. Must</span>
+<span class="sd">            include exactly one base.</span>
+
+<span class="sd">        pileup_read : pysam.calignmentfile.PileupRead</span>
+<span class="sd">            pysam PileupRead instance. Its alignment must overlap the locus.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        PileupElement</span>
+
+<span class="sd">        '''</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">pileup_read</span><span class="o">.</span><span class="n">is_refskip</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">"Can't create a PileupElement in a refskip (typically an intronic "</span>
+            <span class="s2">"gap in an RNA alignment)"</span><span class="p">)</span>
+
+        <span class="c1"># PileupRead already resolves the CIGAR at this reference base. Walking</span>
+        <span class="c1"># aligned_pairs again expands long introns and can incorrectly append</span>
+        <span class="c1"># a terminal soft clip to the allele.</span>
+        <span class="k">if</span> <span class="n">pileup_read</span><span class="o">.</span><span class="n">is_del</span><span class="p">:</span>
+            <span class="n">offset_start</span> <span class="o">=</span> <span class="n">offset_end</span> <span class="o">=</span> <span class="n">pileup_read</span><span class="o">.</span><span class="n">query_position_or_next</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">offset_start</span> <span class="o">=</span> <span class="n">pileup_read</span><span class="o">.</span><span class="n">query_position</span>
+            <span class="n">offset_end</span> <span class="o">=</span> <span class="n">offset_start</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pileup_read</span><span class="o">.</span><span class="n">indel</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">offset_end</span> <span class="o">&gt;=</span> <span class="n">offset_start</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">PileupElement</span><span class="p">(</span>
+            <span class="n">locus</span><span class="p">,</span> <span class="n">offset_start</span><span class="p">,</span> <span class="n">offset_end</span><span class="p">,</span> <span class="n">pileup_read</span><span class="o">.</span><span class="n">alignment</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>   </div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

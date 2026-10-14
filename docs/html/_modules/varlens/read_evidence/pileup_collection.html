@@ -1,0 +1,802 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens.read_evidence.pileup_collection &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../varlens.html">varlens package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">varlens.read_evidence.pileup_collection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for varlens.read_evidence.pileup_collection</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pysam</span><span class="w"> </span><span class="kn">import</span> <span class="n">Samfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typechecks</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..locus</span><span class="w"> </span><span class="kn">import</span> <span class="n">Locus</span><span class="p">,</span> <span class="n">normalize_contig</span><span class="p">,</span> <span class="n">chromosome_name_map</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pileup</span><span class="p">,</span> <span class="n">PileupElement</span><span class="p">,</span> <span class="n">alignment_key</span><span class="p">,</span> <span class="n">read_key</span>
+
+<span class="n">MatchingEvidence</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">"MatchingEvidence"</span><span class="p">,</span> <span class="s2">"ref alt other"</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PileupCollection">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PileupCollection</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">'''</span>
+<span class="sd">    A collection of Pileup instances for some loci.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pileups (optional) : dict of Locus -&gt; Pileup</span>
+<span class="sd">        A map from 1-base Locus instances to the Pileup at that locus.</span>
+
+<span class="sd">    parent (optional) : PileupCollection</span>
+<span class="sd">        For PileupCollection instances that are derived (e.g. by filtering)</span>
+<span class="sd">        from another instance, this attribute tracks the parent instance.</span>
+
+<span class="sd">    normalized_contig_names (optional) : bool</span>
+<span class="sd">        Allow normalized aliases when looking up loci. Derived collections</span>
+<span class="sd">        inherit this setting from their parent.</span>
+<span class="sd">    '''</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pileups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalized_contig_names</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Construct a new PileupCollection.</span>
+<span class="sd">        '''</span>
+        <span class="k">if</span> <span class="n">pileups</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pileups</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span> <span class="o">=</span> <span class="n">pileups</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalized_contig_names</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">normalized_contig_names</span> <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">normalized_contig_names</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PileupCollection.pileup">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.pileup">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pileup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locus</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Given a 1-base locus, return the Pileup at that locus.</span>
+
+<span class="sd">        Raises a KeyError if this PileupCollection does not have a Pileup at</span>
+<span class="sd">        the specified locus.</span>
+<span class="sd">        '''</span>
+        <span class="n">locus</span> <span class="o">=</span> <span class="n">to_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">locus</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Not a single-base locus: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">locus</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_single_base_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">locus</span><span class="o">.</span><span class="n">start</span><span class="p">)]</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_single_base_locus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locus</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
+        <span class="c1"># Prefer an exact stored contig so raw names such as 'chr1' and '1'</span>
+        <span class="c1"># remain distinct. Retain alias lookup for normalized collections.</span>
+        <span class="n">base_locus</span> <span class="o">=</span> <span class="n">Locus</span><span class="p">(</span><span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">position</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalized_contig_names</span> <span class="ow">and</span> <span class="n">base_locus</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="p">:</span>
+            <span class="n">base_locus</span> <span class="o">=</span> <span class="n">base_locus</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+                <span class="n">contig</span><span class="o">=</span><span class="n">normalize_contig</span><span class="p">(</span><span class="n">base_locus</span><span class="o">.</span><span class="n">contig</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">base_locus</span>
+
+<div class="viewcode-block" id="PileupCollection.at">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.at">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">loci</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Return a new PileupCollection instance including only pileups for </span>
+<span class="sd">        the specified loci.</span>
+<span class="sd">        '''</span>
+        <span class="n">loci</span> <span class="o">=</span> <span class="p">[</span><span class="n">to_locus</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">loci</span><span class="p">]</span>
+        <span class="n">single_position_loci</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">loci</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">locus</span><span class="o">.</span><span class="n">pileup_positions</span><span class="p">:</span>
+                <span class="n">single_position_loci</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_single_base_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">position</span><span class="p">))</span>
+        <span class="n">pileups</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">])</span> <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">single_position_loci</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">PileupCollection</span><span class="p">(</span><span class="n">pileups</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.loci">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.loci">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loci</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Returns the loci included in this instance.</span>
+<span class="sd">        '''</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.reads">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.reads">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        The reads in this PileupCollection. All reads will have an alignment</span>
+<span class="sd">        that overlaps at least one of the included loci.</span>
+
+<span class="sd">        Since SAM (and pysam) have no real notion of a "read", the returned</span>
+<span class="sd">        instances are actually pysam.AlignedSegment instances, (i.e. </span>
+<span class="sd">        alignments). However, only one alignment will be returned by this</span>
+<span class="sd">        method per read.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List of pysam.AlignedSegment instances. If a particular read has more</span>
+<span class="sd">        than one alignment in this PileupCollection (e.g. one primary and one</span>
+<span class="sd">        secondary), then the alignment returned is the one with the highest</span>
+<span class="sd">        mapping quality.</span>
+<span class="sd">        '''</span>
+        <span class="c1"># TODO: Optimize this.</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">alignment_precedence</span><span class="p">(</span><span class="n">pysam_alignment_record</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">pysam_alignment_record</span><span class="o">.</span><span class="n">mapping_quality</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">pileup</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">pileup</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">read_key</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">alignment</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="n">alignment_precedence</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">alignment</span><span class="p">)</span> <span class="o">&gt;</span>
+                        <span class="n">alignment_precedence</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">])):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">alignment</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.num_reads">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.num_reads">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_reads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Returns the number of reads in this PileupCollection.</span>
+<span class="sd">        '''</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reads</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.read_attribute">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.read_attribute">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Query a read attribute across all reads in this PileupCollection.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        attribute : string</span>
+<span class="sd">            Attribute to query. See `PileupCollection.read_attributes` for</span>
+<span class="sd">            possible attributes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.Series instance giving values for the attribute in each read.</span>
+<span class="sd">        The order of reads is fixed, so multiple calls to this function will</span>
+<span class="sd">        return corresponding values. </span>
+<span class="sd">        '''</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_attributes</span><span class="p">([</span><span class="n">attribute</span><span class="p">])[</span><span class="n">attribute</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.read_attributes">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.read_attributes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Collect read attributes across reads in this PileupCollection into a</span>
+<span class="sd">        pandas.DataFrame.</span>
+
+<span class="sd">        Valid attributes are the following properties of a pysam.AlignedSegment</span>
+<span class="sd">        instance. See the `pysam API documentation</span>
+<span class="sd">        &lt;https://pysam.readthedocs.io/en/latest/api.html#pysam.AlignedSegment&gt;`_</span>
+<span class="sd">        for their meanings.</span>
+
+<span class="sd">             * cigarstring</span>
+<span class="sd">             * flag</span>
+<span class="sd">             * inferred_length</span>
+<span class="sd">             * is_duplicate</span>
+<span class="sd">             * is_paired</span>
+<span class="sd">             * is_proper_pair</span>
+<span class="sd">             * is_qcfail</span>
+<span class="sd">             * is_read1</span>
+<span class="sd">             * is_read2</span>
+<span class="sd">             * is_reverse</span>
+<span class="sd">             * is_secondary</span>
+<span class="sd">             * is_unmapped</span>
+<span class="sd">             * mapping_quality</span>
+<span class="sd">             * mate_is_reverse</span>
+<span class="sd">             * mate_is_unmapped</span>
+<span class="sd">             * next_reference_id</span>
+<span class="sd">             * next_reference_start</span>
+<span class="sd">             * query_alignment_end</span>
+<span class="sd">             * query_alignment_length</span>
+<span class="sd">             * query_alignment_qualities</span>
+<span class="sd">             * query_alignment_sequence</span>
+<span class="sd">             * query_alignment_start</span>
+<span class="sd">             * query_length</span>
+<span class="sd">             * query_name</span>
+<span class="sd">             * reference_end</span>
+<span class="sd">             * reference_id</span>
+<span class="sd">             * reference_length</span>
+<span class="sd">             * reference_start</span>
+<span class="sd">             * template_length</span>
+
+<span class="sd">        (Note: the above list is parsed into the _READ_ATTRIBUTE_NAMES class</span>
+<span class="sd">        variable, so be careful when modifying it.)</span>
+
+<span class="sd">        Additionally, for alignment "tags" (arbitrary key values associated</span>
+<span class="sd">        with an alignment), a column of the form "TAG_{tag name}" is</span>
+<span class="sd">        included.</span>
+
+<span class="sd">        Finally, the column "pysam_alignment_record" gives the underlying</span>
+<span class="sd">        ``pysam.AlignedSegment`` instances.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        attributes (optional): list of strings</span>
+<span class="sd">            List of columns to include. If unspecified, all columns are</span>
+<span class="sd">            included in the result.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.DataFrame of read attributes.</span>
+
+<span class="sd">        '''</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">include</span><span class="p">(</span><span class="n">attribute</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">attributes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">attributes</span>
+
+        <span class="n">reads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reads</span><span class="p">()</span>
+
+        <span class="n">possible_column_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">PileupCollection</span><span class="o">.</span><span class="n">_READ_ATTRIBUTE_NAMES</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">read</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">read</span> <span class="ow">in</span> <span class="n">reads</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">PileupCollection</span><span class="o">.</span><span class="n">_READ_ATTRIBUTE_NAMES</span>
+            <span class="k">if</span> <span class="n">include</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="c1"># Add tag columns.</span>
+        <span class="k">if</span> <span class="n">reads</span><span class="p">:</span>
+            <span class="n">tag_dicts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">get_tags</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reads</span><span class="p">]</span>
+            <span class="n">tag_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+                <span class="o">*</span><span class="p">[</span><span class="nb">set</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tag_dicts</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">tag_key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tag_keys</span><span class="p">):</span>
+                <span class="n">column_name</span> <span class="o">=</span> <span class="s2">"TAG_</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">tag_key</span>
+                <span class="n">possible_column_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">include</span><span class="p">(</span><span class="n">column_name</span><span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tag_key</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">tag_dicts</span><span class="p">]</span>
+
+        <span class="c1"># Lastly, we include the underlying pysam alignment record.</span>
+        <span class="n">possible_column_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"pysam_alignment_record"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">include</span><span class="p">(</span><span class="s2">"pysam_alignment_record"</span><span class="p">):</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">"pysam_alignment_record"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reads</span>
+
+        <span class="c1"># If particular attributes were requested, check that they're here.</span>
+        <span class="k">if</span> <span class="n">attributes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">"No such attribute: </span><span class="si">%s</span><span class="s2">. Valid attributes are: </span><span class="si">%s</span><span class="s2">"</span>
+                        <span class="o">%</span> <span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">possible_column_names</span><span class="p">)))</span>
+            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Parse the bulleted list of attributes in the previous method's docstring.</span>
+    <span class="n">_READ_ATTRIBUTE_NAMES</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">read_attributes</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">):</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s+\*\s*(\w+)\s*"</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">_READ_ATTRIBUTE_NAMES</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+
+<div class="viewcode-block" id="PileupCollection.group_by_allele">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.group_by_allele">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">group_by_allele</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locus</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Split the PileupCollection by the alleles suggested by the reads at the</span>
+<span class="sd">        specified locus.</span>
+
+<span class="sd">        If a read has an insertion immediately following the locus, then the</span>
+<span class="sd">        insertion is included in the allele. For example, if locus is the</span>
+<span class="sd">        1-base range [5,6), one allele might be "AGA", indicating that at</span>
+<span class="sd">        locus 5 some read has an "A" followed by a 2-base insertion ("GA"). If</span>
+<span class="sd">        a read has a deletion at the specified locus, the allele is the empty</span>
+<span class="sd">        string.</span>
+
+<span class="sd">        The given locus may include any number of bases. If the locus includes</span>
+<span class="sd">        multiple bases, then the alleles consist of all bases aligning to that</span>
+<span class="sd">        range in any read. Note that only sequences actually sequenced in a</span>
+<span class="sd">        particular read are included. For example, if one read has "ATT" at a</span>
+<span class="sd">        locus and another read has "GCC", then the alleles are "ATT" and</span>
+<span class="sd">        "GCC", but not "GTT". That is, the bases in each allele are phased. For</span>
+<span class="sd">        this reason, only reads that overlap the entire locus are included.</span>
+
+<span class="sd">        If the locus is an empty interval (e.g. [5,5) ), then the alleles</span>
+<span class="sd">        consist only of inserted bases. In this example, only bases inserted</span>
+<span class="sd">        between reference positions 4 and 5 (zero-based) would be included.</span>
+<span class="sd">        An insertion after position 5 uses [6,6). In the previous example, the allele</span>
+<span class="sd">        would be "GA", indicating a 2-base insertion. Reads that have no</span>
+<span class="sd">        insertion at that position (matches or deletions) would have the empty</span>
+<span class="sd">        string as their allele.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        locus : Locus</span>
+<span class="sd">            The reference locus, encompassing 0 or more bases.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        A dict of string -&gt; PileupCollection. The keys are nucleotide strings</span>
+<span class="sd">        giving the bases sequenced at the locus, and the values are</span>
+<span class="sd">        PileupCollection instances of the alignments that support that allele.</span>
+
+<span class="sd">        '''</span>
+        <span class="n">locus</span> <span class="o">=</span> <span class="n">to_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span>
+        <span class="n">read_to_allele</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">loci</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">locus</span><span class="o">.</span><span class="n">positions</span><span class="p">:</span>
+            <span class="c1"># Our locus includes at least one reference base.</span>
+            <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">locus</span><span class="o">.</span><span class="n">positions</span><span class="p">:</span>
+                <span class="n">base_position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_base_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span>
+                <span class="n">loci</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base_position</span><span class="p">)</span>
+                <span class="n">new_read_to_allele</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">base_position</span><span class="p">]:</span>
+                    <span class="n">allele_prefix</span> <span class="o">=</span> <span class="s2">""</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">alignment_key</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">alignment</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">read_to_allele</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">allele_prefix</span> <span class="o">=</span> <span class="n">read_to_allele</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                    <span class="n">allele</span> <span class="o">=</span> <span class="n">allele_prefix</span> <span class="o">+</span> <span class="n">element</span><span class="o">.</span><span class="n">bases</span>
+                    <span class="n">new_read_to_allele</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">allele</span>
+                <span class="n">read_to_allele</span> <span class="o">=</span> <span class="n">new_read_to_allele</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Our locus is between reference bases.</span>
+            <span class="n">position_before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_base_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">locus</span><span class="o">.</span><span class="n">pileup_positions</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="n">loci</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">position_before</span><span class="p">)</span>
+            <span class="n">read_to_allele</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">position_before</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">element</span><span class="o">.</span><span class="n">bases</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">allele</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">bases</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="c1"># Reference support requires an observed right flank.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">allele</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
+                        <span class="n">start</span> <span class="o">&lt;=</span> <span class="n">locus</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">end</span>
+                        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">get_blocks</span><span class="p">()):</span>
+                    <span class="k">continue</span>
+                <span class="n">read_to_allele</span><span class="p">[</span><span class="n">alignment_key</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">alignment</span><span class="p">)]</span> <span class="o">=</span> <span class="n">allele</span>
+
+        <span class="n">split</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">PileupCollection</span><span class="p">(</span><span class="n">pileups</span><span class="o">=</span><span class="p">{},</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">loci</span><span class="p">:</span>
+            <span class="n">pileup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">pileup</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">read_to_allele</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alignment_key</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">alignment</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">split</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">pileups</span><span class="p">:</span>
+                        <span class="n">split</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">split</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span> <span class="o">=</span> <span class="n">Pileup</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="p">[</span><span class="n">e</span><span class="p">])</span>
+
+        <span class="c1"># Sort by number of reads (descending). Break ties with the</span>
+        <span class="c1"># lexicographic ordering of the allele string.</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">sorter</span><span class="p">(</span><span class="n">pair</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">allele</span><span class="p">,</span> <span class="n">pileup_collection</span><span class="p">)</span> <span class="o">=</span> <span class="n">pair</span>
+            <span class="k">return</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">pileup_collection</span><span class="o">.</span><span class="n">num_reads</span><span class="p">(),</span> <span class="n">allele</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">sorter</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.allele_summary">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.allele_summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allele_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locus</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">num_reads</span><span class="p">()):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Convenience method to summarize the evidence for each of the alleles</span>
+<span class="sd">        present at a locus. Applies a score function to the PileupCollection</span>
+<span class="sd">        associated with each allele.</span>
+
+<span class="sd">        See also `PileupCollection.group_by_allele`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        locus : Locus</span>
+<span class="sd">            The reference locus, encompassing 0 or more bases.</span>
+
+<span class="sd">        score (optional) : PileupCollection -&gt; object</span>
+<span class="sd">            Function to apply to summarize the evidence for each allele.</span>
+<span class="sd">            Default: count number of reads.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List of (allele, score) pairs.</span>
+<span class="sd">        '''</span>
+        <span class="n">locus</span> <span class="o">=</span> <span class="n">to_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">allele</span><span class="p">,</span> <span class="n">score</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">allele</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_by_allele</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.group_by_match">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.group_by_match">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">group_by_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Given a variant, split the PileupCollection based on whether it the</span>
+<span class="sd">        data supports the reference allele, the alternate allele, or neither.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variant : Variant</span>
+<span class="sd">            The variant. Must have fields 'locus', 'ref', and 'alt'.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        A MatchingEvidence named tuple with fields (ref, alt, other),</span>
+<span class="sd">        each of which is a string -&gt; PileupCollection dict mapping alleles</span>
+<span class="sd">        to the PileupCollection of evidence supporting them.</span>
+<span class="sd">        '''</span>
+        <span class="n">locus</span> <span class="o">=</span> <span class="n">to_locus</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">locus</span><span class="o">.</span><span class="n">positions</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"Ref is length </span><span class="si">%d</span><span class="s2"> but locus has </span><span class="si">%d</span><span class="s2"> bases in variant: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span>
+                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">ref</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">locus</span><span class="o">.</span><span class="n">positions</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">variant</span><span class="p">)))</span>
+
+        <span class="n">alleles_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_by_allele</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span>
+        <span class="n">single_base_loci</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_single_base_locus</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">locus</span><span class="o">.</span><span class="n">positions</span>
+        <span class="p">]</span>
+        <span class="n">empty_pileups</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">Pileup</span><span class="p">(</span><span class="n">locus</span><span class="o">=</span><span class="n">locus</span><span class="p">,</span> <span class="n">elements</span><span class="o">=</span><span class="p">[]))</span>
+            <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">single_base_loci</span><span class="p">)</span>
+        <span class="n">empty_collection</span> <span class="o">=</span> <span class="n">PileupCollection</span><span class="p">(</span><span class="n">pileups</span><span class="o">=</span><span class="n">empty_pileups</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">ref</span> <span class="o">=</span> <span class="p">{</span><span class="n">variant</span><span class="o">.</span><span class="n">ref</span><span class="p">:</span> <span class="n">alleles_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span> <span class="n">empty_collection</span><span class="p">)}</span>
+        <span class="n">alt</span> <span class="o">=</span> <span class="p">{</span><span class="n">variant</span><span class="o">.</span><span class="n">alt</span><span class="p">:</span> <span class="n">alleles_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">variant</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span> <span class="n">empty_collection</span><span class="p">)}</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">alleles_dict</span>
+
+        <span class="c1"># TODO: consider end of read issues for insertions</span>
+        <span class="k">return</span> <span class="n">MatchingEvidence</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">alt</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.match_summary">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.match_summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">match_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">num_reads</span><span class="p">()):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Convenience method to summarize the evidence for and against a variant</span>
+<span class="sd">        using a user-specified score function.</span>
+
+<span class="sd">        See also `PileupCollection.group_by_match`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variant : Variant</span>
+<span class="sd">            The variant. Must have fields 'locus', 'ref', and 'alt'.</span>
+
+<span class="sd">        score (optional) : PileupCollection -&gt; object</span>
+<span class="sd">            Function to apply to summarize the evidence for each allele.</span>
+<span class="sd">            Default: count number of reads.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List of (allele, score) pairs. This list will always have at least two</span>
+<span class="sd">        elements. The first pair in the list is the reference allele. The</span>
+<span class="sd">        second pair is the alternate. The subsequent items give the "third"</span>
+<span class="sd">        alleles (neither ref nor alt), if any.</span>
+<span class="sd">        '''</span>
+        <span class="n">split</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_by_match</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="n">allele_to_pileup_collection</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">allele_to_pileup_collection</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">aggregate_and_score</span><span class="p">(</span><span class="n">pileup_collections</span><span class="p">):</span>
+            <span class="n">merged</span> <span class="o">=</span> <span class="n">PileupCollection</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="o">*</span><span class="n">pileup_collections</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">score</span><span class="p">(</span><span class="n">merged</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">name</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">ref</span><span class="p">),</span> <span class="n">aggregate_and_score</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span>
+            <span class="p">(</span><span class="n">name</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">alt</span><span class="p">),</span> <span class="n">aggregate_and_score</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">alt</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span>
+        <span class="p">]</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">allele</span><span class="p">,</span> <span class="n">score</span><span class="p">(</span><span class="n">collection</span><span class="p">))</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">allele</span><span class="p">,</span> <span class="n">collection</span><span class="p">)</span> <span class="ow">in</span> <span class="n">split</span><span class="o">.</span><span class="n">other</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.filter">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.filter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">drop_duplicates</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">drop_improper_mate_pairs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">min_mapping_quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">min_base_quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Return a new PileupCollection that includes only pileup elements</span>
+<span class="sd">        satisfying the specified criteria.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        drop_duplicates (optional, default False) : boolean</span>
+<span class="sd">            Remove alignments with the is_duplicate flag.</span>
+
+<span class="sd">        drop_improper_mate_pairs (optional, default False) : boolean</span>
+<span class="sd">            Retain only alignments that have mapped mate pairs, where one</span>
+<span class="sd">            alignment in the pair is on the forward strand and the other</span>
+<span class="sd">            is on the reverse.</span>
+
+<span class="sd">        min_mapping_quality (optional) : int</span>
+<span class="sd">            If specified, retain only alignments with mapping quality &gt;= the</span>
+<span class="sd">            specified threshold.</span>
+
+<span class="sd">        min_base_quality (optional) : int</span>
+<span class="sd">            If specified, retain only pileup elements where the base quality</span>
+<span class="sd">            for the bases aligning to the pileup's locus are &gt;= the specified</span>
+<span class="sd">            threshold.</span>
+
+<span class="sd">        filters (optional) : list of PileupElement -&gt; bool functions</span>
+<span class="sd">            User-specified filter functions to apply. This will be called on </span>
+<span class="sd">            each PileupElement, and should return True if the element should</span>
+<span class="sd">            be retained.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        A new PileupCollection that includes the subset of the pileup elements</span>
+<span class="sd">        matching all the specified filters.</span>
+<span class="sd">        '''</span>
+
+        <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">drop_duplicates</span><span class="p">:</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="ow">not</span> <span class="n">e</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">is_duplicate</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">drop_improper_mate_pairs</span><span class="p">:</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">is_proper_pair</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">min_mapping_quality</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">alignment</span><span class="o">.</span><span class="n">mapping_quality</span> <span class="o">&gt;=</span> <span class="n">min_mapping_quality</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">min_base_quality</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">min_base_quality</span> <span class="o">&gt;=</span> <span class="n">min_base_quality</span><span class="p">)</span>
+        <span class="n">pileups</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">pileup</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filters</span><span class="p">))</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">pileup</span><span class="p">)</span>
+            <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pileups</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">PileupCollection</span><span class="p">(</span><span class="n">pileups</span><span class="o">=</span><span class="n">pileups</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.merge">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.merge">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Return a new PileupCollection that is the union of self and the other</span>
+<span class="sd">        specified collections.</span>
+<span class="sd">        '''</span>
+        <span class="n">new_pileups</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">collection</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="p">,)</span> <span class="o">+</span> <span class="n">others</span><span class="p">:</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">pileup</span><span class="p">)</span> <span class="ow">in</span> <span class="n">collection</span><span class="o">.</span><span class="n">pileups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">new_pileups</span><span class="p">:</span>
+                    <span class="n">new_pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pileup</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span> <span class="o">=</span> <span class="n">Pileup</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">pileup</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">PileupCollection</span><span class="p">(</span><span class="n">new_pileups</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PileupCollection.from_bam">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.PileupCollection.from_bam">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_bam</span><span class="p">(</span><span class="n">pysam_samfile</span><span class="p">,</span> <span class="n">loci</span><span class="p">,</span> <span class="n">normalized_contig_names</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">'''</span>
+<span class="sd">        Create a PileupCollection for a set of loci from a BAM file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pysam_samfile : ``pysam.Samfile`` instance, or filename string</span>
+<span class="sd">            to a BAM file. The BAM file must be indexed.</span>
+
+<span class="sd">        loci : list of Locus instances</span>
+<span class="sd">            Loci to collect pileups for.</span>
+
+<span class="sd">        normalized_contig_names : bool</span>
+<span class="sd">            If true, normalize contig names and map aliases to BAM references.</span>
+<span class="sd">            If false, preserve the supplied Locus contig names exactly.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        PileupCollection instance containing pileups for the specified loci.</span>
+<span class="sd">        All alignments in the BAM file are included (e.g. duplicate reads,</span>
+<span class="sd">        secondary alignments, etc.). See `PileupCollection.filter` if these</span>
+<span class="sd">        need to be removed. </span>
+<span class="sd">        '''</span>
+
+        <span class="n">loci</span> <span class="o">=</span> <span class="p">[</span><span class="n">to_locus</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">loci</span><span class="p">]</span>
+
+        <span class="n">close_on_completion</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">typechecks</span><span class="o">.</span><span class="n">is_string</span><span class="p">(</span><span class="n">pysam_samfile</span><span class="p">):</span>
+            <span class="n">pysam_samfile</span> <span class="o">=</span> <span class="n">Samfile</span><span class="p">(</span><span class="n">pysam_samfile</span><span class="p">)</span>
+            <span class="n">close_on_completion</span> <span class="o">=</span> <span class="kc">True</span>        
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Map from pyensembl normalized chromosome names used in Variant to</span>
+            <span class="c1"># the names used in the BAM file.</span>
+            <span class="k">if</span> <span class="n">normalized_contig_names</span><span class="p">:</span>
+                <span class="n">name_map</span> <span class="o">=</span> <span class="n">chromosome_name_map</span><span class="p">(</span><span class="n">pysam_samfile</span><span class="o">.</span><span class="n">references</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name_map</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">PileupCollection</span><span class="p">(</span>
+                <span class="p">{},</span> <span class="n">normalized_contig_names</span><span class="o">=</span><span class="n">normalized_contig_names</span><span class="p">)</span>
+
+            <span class="c1"># Optimization: we sort variants so our BAM reads are localized.</span>
+            <span class="n">locus_iterator</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">Locus</span><span class="o">.</span><span class="n">from_interbase_coordinates</span><span class="p">(</span><span class="n">locus_interval</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">normalized_contig_names</span> <span class="k">else</span>
+                    <span class="n">Locus</span><span class="p">(</span><span class="n">locus_interval</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">pos</span>
+                    <span class="ow">in</span> <span class="n">locus_interval</span><span class="o">.</span><span class="n">pileup_positions</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">locus_interval</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">loci</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">locus_iterator</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span> <span class="o">=</span> <span class="n">Pileup</span><span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="k">if</span> <span class="n">normalized_contig_names</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">chromosome</span> <span class="o">=</span> <span class="n">name_map</span><span class="p">[</span><span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No such contig in bam: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">chromosome</span> <span class="o">=</span> <span class="n">locus</span><span class="o">.</span><span class="n">contig</span>
+                <span class="c1"># Keep quality and mate filtering in PileupCollection.filter;</span>
+                <span class="c1"># current pysam otherwise drops low-quality/overlapping bases.</span>
+                <span class="n">columns</span> <span class="o">=</span> <span class="n">pysam_samfile</span><span class="o">.</span><span class="n">pileup</span><span class="p">(</span>
+                    <span class="n">chromosome</span><span class="p">,</span>
+                    <span class="n">locus</span><span class="o">.</span><span class="n">position</span><span class="p">,</span>
+                    <span class="n">locus</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># exclusive, 0-indexed</span>
+                    <span class="n">truncate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">stepper</span><span class="o">=</span><span class="s2">"nofilter"</span><span class="p">,</span>
+                    <span class="n">min_base_quality</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">ignore_overlaps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">ignore_orphans</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">max_depth</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">column</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="c1"># No reads align to this locus.</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Note that storing the pileups here is necessary, since the</span>
+                <span class="c1"># subsequent assertion will invalidate our column.</span>
+                <span class="n">pileups</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="n">pileups</span>
+                <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="p">[]</span>  <span class="c1"># column is invalid after this.</span>
+                <span class="k">for</span> <span class="n">pileup_read</span> <span class="ow">in</span> <span class="n">pileups</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">pileup_read</span><span class="o">.</span><span class="n">is_refskip</span><span class="p">:</span>
+                        <span class="n">element</span> <span class="o">=</span> <span class="n">PileupElement</span><span class="o">.</span><span class="n">from_pysam_alignment</span><span class="p">(</span>
+                            <span class="n">locus</span><span class="p">,</span> <span class="n">pileup_read</span><span class="p">)</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">close_on_completion</span><span class="p">:</span>
+                <span class="n">pysam_samfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="to_locus">
+<a class="viewcode-back" href="../../../varlens.read_evidence.html#varlens.read_evidence.pileup_collection.to_locus">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_locus</span><span class="p">(</span><span class="n">variant_or_locus</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Return the half-open reference interval for a Variant or Locus.</span>
+
+<span class="sd">    Varcode substitutions and deletions use inclusive one-based coordinates.</span>
+<span class="sd">    Its insertions have an empty reference allele and are anchored at the</span>
+<span class="sd">    preceding one-based base; their interbase interval is [start, start).</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">variant_or_locus</span><span class="p">,</span> <span class="s2">"is_structural"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InputError</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"A structural variant cannot be represented as one "</span>
+                         <span class="s2">"pileup locus. Specify explicit loci for raw reads; "</span>
+                         <span class="s2">"interval allele counts are not junction support."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant_or_locus</span><span class="p">,</span> <span class="n">Locus</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">variant_or_locus</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">locus</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">ref</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
+            <span class="c1"># Varcode anchors insertions at the preceding one-based base.</span>
+            <span class="k">return</span> <span class="n">Locus</span><span class="o">.</span><span class="n">from_interbase_coordinates</span><span class="p">(</span>
+                <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span>
+                <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+        <span class="c1"># IMPORTANT: if varcode someday changes from inclusive to interbase</span>
+        <span class="c1"># coordinates, this will need to be updated.</span>
+        <span class="k">return</span> <span class="n">Locus</span><span class="o">.</span><span class="n">from_inclusive_coordinates</span><span class="p">(</span>
+            <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">contig</span><span class="p">,</span>
+            <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+            <span class="n">variant_or_locus</span><span class="o">.</span><span class="n">end</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

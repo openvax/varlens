@@ -1,0 +1,207 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens.loci_util &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../varlens.html">varlens package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">varlens.loci_util</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for varlens.loci_util</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">intervaltree</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.locus</span><span class="w"> </span><span class="kn">import</span> <span class="n">Locus</span>
+
+<div class="viewcode-block" id="add_args">
+<a class="viewcode-back" href="../../varlens.html#varlens.loci_util.add_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_args</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+    <span class="c1"># TODO:</span>
+    <span class="c1"># - Load intervals_list files</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--locus'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Genomic locus, like chr1:2342332 or chr1:2342-23423. "</span>
+        <span class="s2">"Any number of loci may be specified."</span><span class="p">)</span></div>
+
+    <span class="c1"># parser.add_argument("--neighbor-offsets",</span>
+    <span class="c1">#    nargs="+", type=int, default=[],</span>
+    <span class="c1">#    help="")</span>
+
+<div class="viewcode-block" id="load_from_args">
+<a class="viewcode-back" href="../../varlens.html#varlens.loci_util.load_from_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_from_args</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Return a Loci object giving the loci specified on the command line.</span>
+
+<span class="sd">    If no loci-related arguments are specified, return None. This makes it</span>
+<span class="sd">    possible to distinguish an empty set of loci, for example due to filters</span>
+<span class="sd">    removing all loci, from the case where the user didn't specify any</span>
+<span class="sd">    arguments.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">locus</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">loci_iterator</span> <span class="o">=</span> <span class="p">(</span><span class="n">Locus</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span> <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">locus</span><span class="p">)</span>
+
+<span class="c1">#   if args.neighbor_offsets:</span>
+<span class="c1">#       loci_iterator = expand_with_neighbors(</span>
+<span class="c1">#           loci_iterator, args.neighbor_offsets)</span>
+
+    <span class="k">return</span> <span class="n">Loci</span><span class="p">(</span><span class="n">loci_iterator</span><span class="p">)</span></div>
+
+
+<span class="c1"># def expand_with_neighbors(loci_iterator, neighbor_offsets):</span>
+<span class="c1">#    offsets = sorted(set(neighbor_offsets + [0]))</span>
+<span class="c1">#    for locus in loci_iterator:</span>
+<span class="c1">#        for offset in offsets:</span>
+<span class="c1">#            if offset == 0:</span>
+<span class="c1">#                yield locus</span>
+<span class="c1">#            else:</span>
+<span class="c1">#                yield Locus(</span>
+<span class="c1">#                    locus.contig, locus.start + offset, locus.end + offset)</span>
+
+<div class="viewcode-block" id="Loci">
+<a class="viewcode-back" href="../../varlens.html#varlens.loci_util.Loci">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Loci</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locus_iterator</span><span class="o">=</span><span class="p">(),</span> <span class="n">contig_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">insertions</span><span class="o">=</span><span class="p">()):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contigs</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="n">intervaltree</span><span class="o">.</span><span class="n">IntervalTree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">insertions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">insertions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">contig_map</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">contig_map</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">locus_iterator</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">locus</span><span class="o">.</span><span class="n">start</span> <span class="o">==</span> <span class="n">locus</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">insertions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">locus</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="p">[</span><span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">]</span><span class="o">.</span><span class="n">addi</span><span class="p">(</span><span class="n">locus</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">locus</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">contig</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">interval</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="p">[</span><span class="n">contig</span><span class="p">]):</span>
+                <span class="k">yield</span> <span class="n">Locus</span><span class="p">(</span><span class="n">contig</span><span class="p">,</span> <span class="n">interval</span><span class="o">.</span><span class="n">begin</span><span class="p">,</span> <span class="n">interval</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">insertions</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span> <span class="k">for</span> <span class="n">tree</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">insertions</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Loci.intersects">
+<a class="viewcode-back" href="../../varlens.html#varlens.loci_util.Loci.intersects">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">intersects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locus</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">locus</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">insertions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">locus</span><span class="o">.</span><span class="n">pileup_positions</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="p">[</span><span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">]</span><span class="o">.</span><span class="n">overlaps</span><span class="p">(</span><span class="n">positions</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">positions</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">contig</span> <span class="o">==</span> <span class="n">locus</span><span class="o">.</span><span class="n">contig</span> <span class="ow">and</span> <span class="n">locus</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">p</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;=</span> <span class="n">locus</span><span class="o">.</span><span class="n">end</span>
+                       <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">insertions</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Loci.union">
+<a class="viewcode-back" href="../../varlens.html#varlens.loci_util.Loci.union">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">union</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">contig_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">contig</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">contigs</span><span class="p">):</span>
+            <span class="n">contig_map</span><span class="p">[</span><span class="n">contig</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">contigs</span><span class="p">[</span><span class="n">contig</span><span class="p">]</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+                <span class="n">other</span><span class="o">.</span><span class="n">contigs</span><span class="p">[</span><span class="n">contig</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Loci</span><span class="p">(</span><span class="n">contig_map</span><span class="o">=</span><span class="n">contig_map</span><span class="p">,</span> <span class="n">insertions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">insertions</span> <span class="o">|</span> <span class="n">other</span><span class="o">.</span><span class="n">insertions</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

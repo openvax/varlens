@@ -1,0 +1,259 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens.read_source &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../varlens.html">varlens package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">varlens.read_source</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for varlens.read_source</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">intervaltree</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pysam</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_evidence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.locus</span><span class="w"> </span><span class="kn">import</span> <span class="n">chromosome_name_map</span>
+
+<div class="viewcode-block" id="ReadSource">
+<a class="viewcode-back" href="../../varlens.html#varlens.read_source.ReadSource">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReadSource</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">read_filters</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handle</span> <span class="o">=</span> <span class="n">pysam</span><span class="o">.</span><span class="n">Samfile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_filters</span> <span class="o">=</span> <span class="n">read_filters</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">chromosome_name_map</span> <span class="o">=</span> <span class="n">chromosome_name_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">references</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReadSource.index_if_needed">
+<a class="viewcode-back" href="../../varlens.html#varlens.read_source.ReadSource.index_if_needed">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index_if_needed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".bam"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">has_index</span><span class="p">():</span>
+            <span class="c1"># pysam strangely requires and index even to iterate through a bam.</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">"Attempting to create BAM index for file: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">samtools_output</span> <span class="o">=</span> <span class="n">pysam</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">"Done indexing"</span> <span class="o">+</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="s2">": "</span> <span class="o">+</span> <span class="n">samtools_output</span><span class="p">)</span> <span class="k">if</span> <span class="n">samtools_output</span> <span class="k">else</span> <span class="s1">''</span><span class="p">))</span>
+
+            <span class="c1"># Reopen</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">handle</span> <span class="o">=</span> <span class="n">pysam</span><span class="o">.</span><span class="n">Samfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReadSource.reads">
+<a class="viewcode-back" href="../../varlens.html#varlens.read_source.ReadSource.reads">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loci</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">loci</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">reads_iterator</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">until_eof</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".sam"</span><span class="p">):</span>
+            <span class="c1"># Inefficient.</span>
+            <span class="n">chromosome_intervals</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">loci</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">chromosome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chromosome_name_map</span><span class="p">[</span><span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">"No such contig in bam: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">positions</span> <span class="o">=</span> <span class="n">locus</span><span class="o">.</span><span class="n">pileup_positions</span>
+                <span class="n">chromosome_intervals</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">chromosome</span><span class="p">,</span> <span class="n">intervaltree</span><span class="o">.</span><span class="n">IntervalTree</span><span class="p">())</span><span class="o">.</span><span class="n">addi</span><span class="p">(</span>
+                    <span class="n">positions</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">positions</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">reads_iterator</span><span class="p">():</span>
+                <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">read</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">until_eof</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                    <span class="n">intervals</span> <span class="o">=</span> <span class="n">chromosome_intervals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">read</span><span class="o">.</span><span class="n">reference_name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">intervals</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">intervals</span><span class="o">.</span><span class="n">overlaps_range</span><span class="p">(</span>
+                            <span class="n">read</span><span class="o">.</span><span class="n">reference_start</span><span class="p">,</span>
+                            <span class="n">read</span><span class="o">.</span><span class="n">reference_end</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">alignment_key</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">read</span>
+                        <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index_if_needed</span><span class="p">()</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">reads_iterator</span><span class="p">():</span>
+                <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">locus</span> <span class="ow">in</span> <span class="n">loci</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">chromosome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chromosome_name_map</span><span class="p">[</span><span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="s2">"No such contig in bam: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">locus</span><span class="o">.</span><span class="n">contig</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="k">for</span> <span class="n">read</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span>
+                            <span class="n">chromosome</span><span class="p">,</span>
+                            <span class="n">locus</span><span class="o">.</span><span class="n">pileup_positions</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                            <span class="n">locus</span><span class="o">.</span><span class="n">pileup_positions</span><span class="o">.</span><span class="n">stop</span><span class="p">):</span>
+                        <span class="n">key</span> <span class="o">=</span> <span class="n">alignment_key</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                            <span class="k">yield</span> <span class="n">read</span>
+                            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">read</span> <span class="k">for</span> <span class="n">read</span> <span class="ow">in</span> <span class="n">reads_iterator</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_passes_filters</span><span class="p">(</span><span class="n">read</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ReadSource.read_passes_filters">
+<a class="viewcode-back" href="../../varlens.html#varlens.read_source.ReadSource.read_passes_filters">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_passes_filters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">read</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">read_filter</span><span class="p">(</span><span class="n">read</span><span class="p">)</span> <span class="k">for</span> <span class="n">read_filter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_filters</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReadSource.pileups">
+<a class="viewcode-back" href="../../varlens.html#varlens.read_source.ReadSource.pileups">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pileups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loci</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_if_needed</span><span class="p">()</span>
+        <span class="n">collection</span> <span class="o">=</span> <span class="n">read_evidence</span><span class="o">.</span><span class="n">PileupCollection</span><span class="o">.</span><span class="n">from_bam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span> <span class="n">loci</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_filters</span><span class="p">:</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">locus</span><span class="p">,</span> <span class="n">pileup</span><span class="p">)</span> <span class="ow">in</span> <span class="n">collection</span><span class="o">.</span><span class="n">pileups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">collection</span><span class="o">.</span><span class="n">pileups</span><span class="p">[</span><span class="n">locus</span><span class="p">]</span> <span class="o">=</span> <span class="n">pileup</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="p">[</span><span class="k">lambda</span> <span class="n">element</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">read_passes_filters</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">alignment</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">collection</span></div>
+</div>
+
+
+<div class="viewcode-block" id="alignment_key">
+<a class="viewcode-back" href="../../varlens.html#varlens.read_source.alignment_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">alignment_key</span><span class="p">(</span><span class="n">pysam_alignment_record</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">'''</span>
+<span class="sd">    Return the identifying attributes of a ``pysam.AlignedSegment`` instance.</span>
+<span class="sd">    This is necessary since these objects do not support a useful notion of</span>
+<span class="sd">    equality (they compare on identify by default).</span>
+<span class="sd">    '''</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">read_key</span><span class="p">(</span><span class="n">pysam_alignment_record</span><span class="p">),</span>
+        <span class="n">pysam_alignment_record</span><span class="o">.</span><span class="n">query_alignment_start</span><span class="p">,</span>
+        <span class="n">pysam_alignment_record</span><span class="o">.</span><span class="n">query_alignment_end</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="read_key">
+<a class="viewcode-back" href="../../varlens.html#varlens.read_source.read_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_key</span><span class="p">(</span><span class="n">pysam_alignment_record</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">'''</span>
+<span class="sd">    Given a ``pysam.AlignedSegment`` instance, return the attributes identifying</span>
+<span class="sd">    the *read* it comes from (not the alignment). There may be more than one</span>
+<span class="sd">    alignment for a read, e.g. chimeric and secondary alignments.</span>
+<span class="sd">    '''</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">pysam_alignment_record</span><span class="o">.</span><span class="n">query_name</span><span class="p">,</span>
+        <span class="n">pysam_alignment_record</span><span class="o">.</span><span class="n">is_duplicate</span><span class="p">,</span>
+        <span class="n">pysam_alignment_record</span><span class="o">.</span><span class="n">is_read1</span><span class="p">,</span>
+        <span class="n">pysam_alignment_record</span><span class="o">.</span><span class="n">is_read2</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1184 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>varlens.read_evidence package &mdash; varlens 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="varlens package" href="varlens.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            varlens
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="varlens.html">varlens package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="varlens.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">varlens.read_evidence package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-varlens.read_evidence.pileup">varlens.read_evidence.pileup module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-varlens.read_evidence.pileup_collection">varlens.read_evidence.pileup_collection module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-varlens.read_evidence.pileup_element">varlens.read_evidence.pileup_element module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-varlens.read_evidence.util">varlens.read_evidence.util module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-varlens.read_evidence">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.fusions">varlens.fusions module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.loci_util">varlens.loci_util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.locus">varlens.locus module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.mhc_binding">varlens.mhc_binding module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.read_source">varlens.read_source module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.reads_util">varlens.reads_util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.sequence_context">varlens.sequence_context module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.support">varlens.support module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.util">varlens.util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.variant_includes">varlens.variant_includes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.variants_util">varlens.variants_util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens.version">varlens.version module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="varlens.html#module-varlens">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">varlens</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="varlens.html">varlens package</a></li>
+      <li class="breadcrumb-item active">varlens.read_evidence package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/varlens.read_evidence.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="varlens-read-evidence-package">
+<h1>varlens.read_evidence package<a class="headerlink" href="#varlens-read-evidence-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-varlens.read_evidence.pileup">
+<span id="varlens-read-evidence-pileup-module"></span><h2>varlens.read_evidence.pileup module<a class="headerlink" href="#module-varlens.read_evidence.pileup" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup.Pileup">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.pileup.</span></span><span class="sig-name descname"><span class="pre">Pileup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup.Pileup" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A Pileup is a collection of PileupElement instances at a particular locus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Varcode.Locus</span></dt><dd><p>The reference locus. Must be length 1, i.e. a single base.</p>
+</dd>
+<dt><strong>elements</strong><span class="classifier">OrderedDict of PileupElement instances</span></dt><dd><p>This is logically and ordered set, which we implement as an OrderedDict
+with all values mapping to None.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup.Pileup.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup.Pileup.append" title="Link to this definition"></a></dt>
+<dd><p>Append a PileupElement to this Pileup. If an identical PileupElement is
+already part of this Pileup, do nothing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup.Pileup.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup.Pileup.filter" title="Link to this definition"></a></dt>
+<dd><p>Apply filters to the pileup elements, and return a new Pileup with the
+filtered elements removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>filters</strong><span class="classifier">list of PileupElement -&gt; bool callables</span></dt><dd><p>A PileupUp element is retained if all filters return True when
+called on it.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup.Pileup.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup.Pileup.update" title="Link to this definition"></a></dt>
+<dd><p>Add all pileup elements from other into self.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-varlens.read_evidence.pileup_collection">
+<span id="varlens-read-evidence-pileup-collection-module"></span><h2>varlens.read_evidence.pileup_collection module<a class="headerlink" href="#module-varlens.read_evidence.pileup_collection" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.MatchingEvidence">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.pileup_collection.</span></span><span class="sig-name descname"><span class="pre">MatchingEvidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#varlens.read_evidence.pileup_collection.MatchingEvidence" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.MatchingEvidence.alt">
+<span class="sig-name descname"><span class="pre">alt</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_collection.MatchingEvidence.alt" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.MatchingEvidence.other">
+<span class="sig-name descname"><span class="pre">other</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_collection.MatchingEvidence.other" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.MatchingEvidence.ref">
+<span class="sig-name descname"><span class="pre">ref</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_collection.MatchingEvidence.ref" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.pileup_collection.</span></span><span class="sig-name descname"><span class="pre">PileupCollection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pileups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized_contig_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A collection of Pileup instances for some loci.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pileups (optional)</strong><span class="classifier">dict of Locus -&gt; Pileup</span></dt><dd><p>A map from 1-base Locus instances to the Pileup at that locus.</p>
+</dd>
+<dt><strong>parent (optional)</strong><span class="classifier">PileupCollection</span></dt><dd><p>For PileupCollection instances that are derived (e.g. by filtering)
+from another instance, this attribute tracks the parent instance.</p>
+</dd>
+<dt><strong>normalized_contig_names (optional)</strong><span class="classifier">bool</span></dt><dd><p>Allow normalized aliases when looking up loci. Derived collections
+inherit this setting from their parent.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.allele_summary">
+<span class="sig-name descname"><span class="pre">allele_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">PileupCollection.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.allele_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.allele_summary" title="Link to this definition"></a></dt>
+<dd><p>Convenience method to summarize the evidence for each of the alleles
+present at a locus. Applies a score function to the PileupCollection
+associated with each allele.</p>
+<p>See also <a class="reference internal" href="#varlens.read_evidence.pileup_collection.PileupCollection.group_by_allele" title="varlens.read_evidence.pileup_collection.PileupCollection.group_by_allele"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.group_by_allele</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Locus</span></dt><dd><p>The reference locus, encompassing 0 or more bases.</p>
+</dd>
+<dt><strong>score (optional)</strong><span class="classifier">PileupCollection -&gt; object</span></dt><dd><p>Function to apply to summarize the evidence for each allele.
+Default: count number of reads.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>List of (allele, score) pairs.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.at">
+<span class="sig-name descname"><span class="pre">at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">loci</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.at"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.at" title="Link to this definition"></a></dt>
+<dd><p>Return a new PileupCollection instance including only pileups for 
+the specified loci.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drop_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_improper_mate_pairs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_mapping_quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_base_quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.filter" title="Link to this definition"></a></dt>
+<dd><p>Return a new PileupCollection that includes only pileup elements
+satisfying the specified criteria.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>drop_duplicates (optional, default False)</strong><span class="classifier">boolean</span></dt><dd><p>Remove alignments with the is_duplicate flag.</p>
+</dd>
+<dt><strong>drop_improper_mate_pairs (optional, default False)</strong><span class="classifier">boolean</span></dt><dd><p>Retain only alignments that have mapped mate pairs, where one
+alignment in the pair is on the forward strand and the other
+is on the reverse.</p>
+</dd>
+<dt><strong>min_mapping_quality (optional)</strong><span class="classifier">int</span></dt><dd><p>If specified, retain only alignments with mapping quality &gt;= the
+specified threshold.</p>
+</dd>
+<dt><strong>min_base_quality (optional)</strong><span class="classifier">int</span></dt><dd><p>If specified, retain only pileup elements where the base quality
+for the bases aligning to the pileup’s locus are &gt;= the specified
+threshold.</p>
+</dd>
+<dt><strong>filters (optional)</strong><span class="classifier">list of PileupElement -&gt; bool functions</span></dt><dd><p>User-specified filter functions to apply. This will be called on 
+each PileupElement, and should return True if the element should
+be retained.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>A new PileupCollection that includes the subset of the pileup elements</dt><dd></dd>
+<dt>matching all the specified filters.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.from_bam">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_bam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_samfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loci</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized_contig_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.from_bam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.from_bam" title="Link to this definition"></a></dt>
+<dd><p>Create a PileupCollection for a set of loci from a BAM file.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>pysam_samfile</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">pysam.Samfile</span></code> instance, or filename string</span></dt><dd><p>to a BAM file. The BAM file must be indexed.</p>
+</dd>
+<dt><strong>loci</strong><span class="classifier">list of Locus instances</span></dt><dd><p>Loci to collect pileups for.</p>
+</dd>
+<dt><strong>normalized_contig_names</strong><span class="classifier">bool</span></dt><dd><p>If true, normalize contig names and map aliases to BAM references.
+If false, preserve the supplied Locus contig names exactly.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>PileupCollection instance containing pileups for the specified loci.</dt><dd></dd>
+<dt>All alignments in the BAM file are included (e.g. duplicate reads,</dt><dd></dd>
+<dt>secondary alignments, etc.). See <a class="reference internal" href="#varlens.read_evidence.pileup_collection.PileupCollection.filter" title="varlens.read_evidence.pileup_collection.PileupCollection.filter"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.filter</span></code></a> if these</dt><dd></dd>
+<dt>need to be removed.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.group_by_allele">
+<span class="sig-name descname"><span class="pre">group_by_allele</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.group_by_allele"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.group_by_allele" title="Link to this definition"></a></dt>
+<dd><p>Split the PileupCollection by the alleles suggested by the reads at the
+specified locus.</p>
+<p>If a read has an insertion immediately following the locus, then the
+insertion is included in the allele. For example, if locus is the
+1-base range [5,6), one allele might be “AGA”, indicating that at
+locus 5 some read has an “A” followed by a 2-base insertion (“GA”). If
+a read has a deletion at the specified locus, the allele is the empty
+string.</p>
+<p>The given locus may include any number of bases. If the locus includes
+multiple bases, then the alleles consist of all bases aligning to that
+range in any read. Note that only sequences actually sequenced in a
+particular read are included. For example, if one read has “ATT” at a
+locus and another read has “GCC”, then the alleles are “ATT” and
+“GCC”, but not “GTT”. That is, the bases in each allele are phased. For
+this reason, only reads that overlap the entire locus are included.</p>
+<p>If the locus is an empty interval (e.g. [5,5) ), then the alleles
+consist only of inserted bases. In this example, only bases inserted
+between reference positions 4 and 5 (zero-based) would be included.
+An insertion after position 5 uses [6,6). In the previous example, the allele
+would be “GA”, indicating a 2-base insertion. Reads that have no
+insertion at that position (matches or deletions) would have the empty
+string as their allele.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Locus</span></dt><dd><p>The reference locus, encompassing 0 or more bases.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>A dict of string -&gt; PileupCollection. The keys are nucleotide strings</dt><dd></dd>
+<dt>giving the bases sequenced at the locus, and the values are</dt><dd></dd>
+<dt>PileupCollection instances of the alignments that support that allele.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.group_by_match">
+<span class="sig-name descname"><span class="pre">group_by_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.group_by_match"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.group_by_match" title="Link to this definition"></a></dt>
+<dd><p>Given a variant, split the PileupCollection based on whether it the
+data supports the reference allele, the alternate allele, or neither.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>variant</strong><span class="classifier">Variant</span></dt><dd><p>The variant. Must have fields ‘locus’, ‘ref’, and ‘alt’.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>A MatchingEvidence named tuple with fields (ref, alt, other),</dt><dd></dd>
+<dt>each of which is a string -&gt; PileupCollection dict mapping alleles</dt><dd></dd>
+<dt>to the PileupCollection of evidence supporting them.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.line">
+<span class="sig-name descname"><span class="pre">line</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">'</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.line" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.loci">
+<span class="sig-name descname"><span class="pre">loci</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.loci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.loci" title="Link to this definition"></a></dt>
+<dd><p>Returns the loci included in this instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.match">
+<span class="sig-name descname"><span class="pre">match</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.match" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.match_summary">
+<span class="sig-name descname"><span class="pre">match_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">PileupCollection.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.match_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.match_summary" title="Link to this definition"></a></dt>
+<dd><p>Convenience method to summarize the evidence for and against a variant
+using a user-specified score function.</p>
+<p>See also <a class="reference internal" href="#varlens.read_evidence.pileup_collection.PileupCollection.group_by_match" title="varlens.read_evidence.pileup_collection.PileupCollection.group_by_match"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.group_by_match</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>variant</strong><span class="classifier">Variant</span></dt><dd><p>The variant. Must have fields ‘locus’, ‘ref’, and ‘alt’.</p>
+</dd>
+<dt><strong>score (optional)</strong><span class="classifier">PileupCollection -&gt; object</span></dt><dd><p>Function to apply to summarize the evidence for each allele.
+Default: count number of reads.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>List of (allele, score) pairs. This list will always have at least two</dt><dd></dd>
+<dt>elements. The first pair in the list is the reference allele. The</dt><dd></dd>
+<dt>second pair is the alternate. The subsequent items give the “third”</dt><dd></dd>
+<dt>alleles (neither ref nor alt), if any.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.merge">
+<span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">others</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.merge" title="Link to this definition"></a></dt>
+<dd><p>Return a new PileupCollection that is the union of self and the other
+specified collections.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.num_reads">
+<span class="sig-name descname"><span class="pre">num_reads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.num_reads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.num_reads" title="Link to this definition"></a></dt>
+<dd><p>Returns the number of reads in this PileupCollection.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.pileup">
+<span class="sig-name descname"><span class="pre">pileup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.pileup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.pileup" title="Link to this definition"></a></dt>
+<dd><p>Given a 1-base locus, return the Pileup at that locus.</p>
+<p>Raises a KeyError if this PileupCollection does not have a Pileup at
+the specified locus.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.read_attribute">
+<span class="sig-name descname"><span class="pre">read_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.read_attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.read_attribute" title="Link to this definition"></a></dt>
+<dd><p>Query a read attribute across all reads in this PileupCollection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>attribute</strong><span class="classifier">string</span></dt><dd><p>Attribute to query. See <a class="reference internal" href="#varlens.read_evidence.pileup_collection.PileupCollection.read_attributes" title="varlens.read_evidence.pileup_collection.PileupCollection.read_attributes"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.read_attributes</span></code></a> for
+possible attributes.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>pandas.Series instance giving values for the attribute in each read.</dt><dd></dd>
+<dt>The order of reads is fixed, so multiple calls to this function will</dt><dd></dd>
+<dt>return corresponding values.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.read_attributes">
+<span class="sig-name descname"><span class="pre">read_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.read_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.read_attributes" title="Link to this definition"></a></dt>
+<dd><p>Collect read attributes across reads in this PileupCollection into a
+pandas.DataFrame.</p>
+<p>Valid attributes are the following properties of a pysam.AlignedSegment
+instance. See the <a class="reference external" href="https://pysam.readthedocs.io/en/latest/api.html#pysam.AlignedSegment">pysam API documentation</a>
+for their meanings.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>cigarstring</p></li>
+<li><p>flag</p></li>
+<li><p>inferred_length</p></li>
+<li><p>is_duplicate</p></li>
+<li><p>is_paired</p></li>
+<li><p>is_proper_pair</p></li>
+<li><p>is_qcfail</p></li>
+<li><p>is_read1</p></li>
+<li><p>is_read2</p></li>
+<li><p>is_reverse</p></li>
+<li><p>is_secondary</p></li>
+<li><p>is_unmapped</p></li>
+<li><p>mapping_quality</p></li>
+<li><p>mate_is_reverse</p></li>
+<li><p>mate_is_unmapped</p></li>
+<li><p>next_reference_id</p></li>
+<li><p>next_reference_start</p></li>
+<li><p>query_alignment_end</p></li>
+<li><p>query_alignment_length</p></li>
+<li><p>query_alignment_qualities</p></li>
+<li><p>query_alignment_sequence</p></li>
+<li><p>query_alignment_start</p></li>
+<li><p>query_length</p></li>
+<li><p>query_name</p></li>
+<li><p>reference_end</p></li>
+<li><p>reference_id</p></li>
+<li><p>reference_length</p></li>
+<li><p>reference_start</p></li>
+<li><p>template_length</p></li>
+</ul>
+</div></blockquote>
+<p>(Note: the above list is parsed into the _READ_ATTRIBUTE_NAMES class
+variable, so be careful when modifying it.)</p>
+<p>Additionally, for alignment “tags” (arbitrary key values associated
+with an alignment), a column of the form “TAG_{tag name}” is
+included.</p>
+<p>Finally, the column “pysam_alignment_record” gives the underlying
+<code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>attributes (optional): list of strings</strong></dt><dd><p>List of columns to include. If unspecified, all columns are
+included in the result.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>pandas.DataFrame of read attributes.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.PileupCollection.reads">
+<span class="sig-name descname"><span class="pre">reads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.reads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.PileupCollection.reads" title="Link to this definition"></a></dt>
+<dd><p>The reads in this PileupCollection. All reads will have an alignment
+that overlaps at least one of the included loci.</p>
+<p>Since SAM (and pysam) have no real notion of a “read”, the returned
+instances are actually pysam.AlignedSegment instances, (i.e. 
+alignments). However, only one alignment will be returned by this
+method per read.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>List of pysam.AlignedSegment instances. If a particular read has more</dt><dd></dd>
+<dt>than one alignment in this PileupCollection (e.g. one primary and one</dt><dd></dd>
+<dt>secondary), then the alignment returned is the one with the highest</dt><dd></dd>
+<dt>mapping quality.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_collection.to_locus">
+<span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.pileup_collection.</span></span><span class="sig-name descname"><span class="pre">to_locus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant_or_locus</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#to_locus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_collection.to_locus" title="Link to this definition"></a></dt>
+<dd><p>Return the half-open reference interval for a Variant or Locus.</p>
+<p>Varcode substitutions and deletions use inclusive one-based coordinates.
+Its insertions have an empty reference allele and are anchored at the
+preceding one-based base; their interbase interval is [start, start).</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.read_evidence.pileup_element">
+<span id="varlens-read-evidence-pileup-element-module"></span><h2>varlens.read_evidence.pileup_element module<a class="headerlink" href="#module-varlens.read_evidence.pileup_element" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_element.PileupElement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.pileup_element.</span></span><span class="sig-name descname"><span class="pre">PileupElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alignment</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_element.html#PileupElement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_element.PileupElement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A PileupElement represents the segment of an alignment that aligns to a
+particular base in the reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Varcode.Locus</span></dt><dd><p>The reference locus. Must be length 1, i.e. a single base.</p>
+</dd>
+<dt><strong>offset_start</strong><span class="classifier">int</span></dt><dd><p>0-based start offset into the alignment sequence, inclusive</p>
+</dd>
+<dt><strong>offset_end</strong><span class="classifier">int</span></dt><dd><p>0-based end offset into the alignment sequence, exclusive</p>
+</dd>
+<dt><strong>alignment</strong><span class="classifier">pysam.AlignedSegment</span></dt><dd><p>pysam alignment instance</p>
+</dd>
+<dt><strong>alignment_key</strong><span class="classifier">tuple</span></dt><dd><p>value computed from the alignment instance that uniquely specifies its
+properties. Used for comparisons since pysam.AlignedSegment instances
+do not support a useful notion of equality (they compare using object
+identity). See <a class="reference internal" href="#varlens.read_evidence.alignment_key" title="varlens.read_evidence.alignment_key"><code class="xref any py py-func docutils literal notranslate"><span class="pre">read_evidence.alignment_key</span></code></a> for the implementation of
+this key.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_element.PileupElement.base_qualities">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">base_qualities</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_element.PileupElement.base_qualities" title="Link to this definition"></a></dt>
+<dd><p>The phred-scaled base quality scores corresponding to <code class="docutils literal notranslate"><span class="pre">self.bases</span></code>, as
+a list.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_element.PileupElement.bases">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">bases</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_element.PileupElement.bases" title="Link to this definition"></a></dt>
+<dd><p>The sequenced bases in the alignment that align to this locus in the
+genome, as a string.</p>
+<p>Empty string in the case of a deletion. String of length &gt; 1 if there
+is an insertion here.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_element.PileupElement.fields">
+<span class="sig-name descname"><span class="pre">fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_element.html#PileupElement.fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_element.PileupElement.fields" title="Link to this definition"></a></dt>
+<dd><p>Fields that should be considered for our notion of object equality.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_element.PileupElement.from_pysam_alignment">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_pysam_alignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pileup_read</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_element.html#PileupElement.from_pysam_alignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.pileup_element.PileupElement.from_pysam_alignment" title="Link to this definition"></a></dt>
+<dd><p>Factory function to create a new PileupElement from a pysam
+<code class="docutils literal notranslate"><span class="pre">PileupRead</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">varcode.Locus</span></dt><dd><p>Reference locus for which to construct a PileupElement. Must
+include exactly one base.</p>
+</dd>
+<dt><strong>pileup_read</strong><span class="classifier">pysam.calignmentfile.PileupRead</span></dt><dd><p>pysam PileupRead instance. Its alignment must overlap the locus.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>PileupElement</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.read_evidence.pileup_element.PileupElement.min_base_quality">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">min_base_quality</span></span><a class="headerlink" href="#varlens.read_evidence.pileup_element.PileupElement.min_base_quality" title="Link to this definition"></a></dt>
+<dd><p>The minimum of the base qualities. In the case of a deletion, in which
+case there are no bases in this PileupElement, the minimum is taken
+over the sequenced bases immediately before and after the deletion.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-varlens.read_evidence.util">
+<span id="varlens-read-evidence-util-module"></span><h2>varlens.read_evidence.util module<a class="headerlink" href="#module-varlens.read_evidence.util" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.read_evidence.util.alignment_key">
+<span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.util.</span></span><span class="sig-name descname"><span class="pre">alignment_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_alignment_record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/util.html#alignment_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.util.alignment_key" title="Link to this definition"></a></dt>
+<dd><p>Return the identifying attributes of a <code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instance.
+This is necessary since these objects do not support a useful notion of
+equality (they compare on identify by default).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.read_evidence.util.read_key">
+<span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.util.</span></span><span class="sig-name descname"><span class="pre">read_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_alignment_record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/util.html#read_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.util.read_key" title="Link to this definition"></a></dt>
+<dd><p>Given a <code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instance, return the attributes identifying
+the <em>read</em> it comes from (not the alignment). There may be more than one
+alignment for a read, e.g. chimeric and secondary alignments.</p>
+</dd></dl>
+
+</section>
+<section id="module-varlens.read_evidence">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-varlens.read_evidence" title="Link to this heading"></a></h2>
+<p>This subpackage provides functionality for collecting and filtering aligned
+sequencing reads from a BAM file, determining the alleles they suggest at
+a locus, and assesing the evidence for particular variants.</p>
+<p>In this subpackage, the records stored in the BAM file are referred to as
+“alignments,” whereas the term “read” may be more familiar. We use the term
+“alignment” for consistency with the SAM specification, and since an
+individual read from the sequencer may generate any number of alignments in
+the case of chimeric alignments and secondary alignments.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_evidence.Pileup">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.</span></span><span class="sig-name descname"><span class="pre">Pileup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.Pileup" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A Pileup is a collection of PileupElement instances at a particular locus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Varcode.Locus</span></dt><dd><p>The reference locus. Must be length 1, i.e. a single base.</p>
+</dd>
+<dt><strong>elements</strong><span class="classifier">OrderedDict of PileupElement instances</span></dt><dd><p>This is logically and ordered set, which we implement as an OrderedDict
+with all values mapping to None.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.Pileup.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.Pileup.append" title="Link to this definition"></a></dt>
+<dd><p>Append a PileupElement to this Pileup. If an identical PileupElement is
+already part of this Pileup, do nothing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.Pileup.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.Pileup.filter" title="Link to this definition"></a></dt>
+<dd><p>Apply filters to the pileup elements, and return a new Pileup with the
+filtered elements removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>filters</strong><span class="classifier">list of PileupElement -&gt; bool callables</span></dt><dd><p>A PileupUp element is retained if all filters return True when
+called on it.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.Pileup.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup.html#Pileup.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.Pileup.update" title="Link to this definition"></a></dt>
+<dd><p>Add all pileup elements from other into self.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.</span></span><span class="sig-name descname"><span class="pre">PileupCollection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pileups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized_contig_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A collection of Pileup instances for some loci.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pileups (optional)</strong><span class="classifier">dict of Locus -&gt; Pileup</span></dt><dd><p>A map from 1-base Locus instances to the Pileup at that locus.</p>
+</dd>
+<dt><strong>parent (optional)</strong><span class="classifier">PileupCollection</span></dt><dd><p>For PileupCollection instances that are derived (e.g. by filtering)
+from another instance, this attribute tracks the parent instance.</p>
+</dd>
+<dt><strong>normalized_contig_names (optional)</strong><span class="classifier">bool</span></dt><dd><p>Allow normalized aliases when looking up loci. Derived collections
+inherit this setting from their parent.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.allele_summary">
+<span class="sig-name descname"><span class="pre">allele_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">PileupCollection.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.allele_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.allele_summary" title="Link to this definition"></a></dt>
+<dd><p>Convenience method to summarize the evidence for each of the alleles
+present at a locus. Applies a score function to the PileupCollection
+associated with each allele.</p>
+<p>See also <a class="reference internal" href="#varlens.read_evidence.PileupCollection.group_by_allele" title="varlens.read_evidence.PileupCollection.group_by_allele"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.group_by_allele</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Locus</span></dt><dd><p>The reference locus, encompassing 0 or more bases.</p>
+</dd>
+<dt><strong>score (optional)</strong><span class="classifier">PileupCollection -&gt; object</span></dt><dd><p>Function to apply to summarize the evidence for each allele.
+Default: count number of reads.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>List of (allele, score) pairs.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.at">
+<span class="sig-name descname"><span class="pre">at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">loci</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.at"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.at" title="Link to this definition"></a></dt>
+<dd><p>Return a new PileupCollection instance including only pileups for 
+the specified loci.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drop_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_improper_mate_pairs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_mapping_quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_base_quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.filter" title="Link to this definition"></a></dt>
+<dd><p>Return a new PileupCollection that includes only pileup elements
+satisfying the specified criteria.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>drop_duplicates (optional, default False)</strong><span class="classifier">boolean</span></dt><dd><p>Remove alignments with the is_duplicate flag.</p>
+</dd>
+<dt><strong>drop_improper_mate_pairs (optional, default False)</strong><span class="classifier">boolean</span></dt><dd><p>Retain only alignments that have mapped mate pairs, where one
+alignment in the pair is on the forward strand and the other
+is on the reverse.</p>
+</dd>
+<dt><strong>min_mapping_quality (optional)</strong><span class="classifier">int</span></dt><dd><p>If specified, retain only alignments with mapping quality &gt;= the
+specified threshold.</p>
+</dd>
+<dt><strong>min_base_quality (optional)</strong><span class="classifier">int</span></dt><dd><p>If specified, retain only pileup elements where the base quality
+for the bases aligning to the pileup’s locus are &gt;= the specified
+threshold.</p>
+</dd>
+<dt><strong>filters (optional)</strong><span class="classifier">list of PileupElement -&gt; bool functions</span></dt><dd><p>User-specified filter functions to apply. This will be called on 
+each PileupElement, and should return True if the element should
+be retained.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>A new PileupCollection that includes the subset of the pileup elements</dt><dd></dd>
+<dt>matching all the specified filters.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.from_bam">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_bam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_samfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loci</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized_contig_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.from_bam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.from_bam" title="Link to this definition"></a></dt>
+<dd><p>Create a PileupCollection for a set of loci from a BAM file.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>pysam_samfile</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">pysam.Samfile</span></code> instance, or filename string</span></dt><dd><p>to a BAM file. The BAM file must be indexed.</p>
+</dd>
+<dt><strong>loci</strong><span class="classifier">list of Locus instances</span></dt><dd><p>Loci to collect pileups for.</p>
+</dd>
+<dt><strong>normalized_contig_names</strong><span class="classifier">bool</span></dt><dd><p>If true, normalize contig names and map aliases to BAM references.
+If false, preserve the supplied Locus contig names exactly.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>PileupCollection instance containing pileups for the specified loci.</dt><dd></dd>
+<dt>All alignments in the BAM file are included (e.g. duplicate reads,</dt><dd></dd>
+<dt>secondary alignments, etc.). See <a class="reference internal" href="#varlens.read_evidence.PileupCollection.filter" title="varlens.read_evidence.PileupCollection.filter"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.filter</span></code></a> if these</dt><dd></dd>
+<dt>need to be removed.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.group_by_allele">
+<span class="sig-name descname"><span class="pre">group_by_allele</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.group_by_allele"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.group_by_allele" title="Link to this definition"></a></dt>
+<dd><p>Split the PileupCollection by the alleles suggested by the reads at the
+specified locus.</p>
+<p>If a read has an insertion immediately following the locus, then the
+insertion is included in the allele. For example, if locus is the
+1-base range [5,6), one allele might be “AGA”, indicating that at
+locus 5 some read has an “A” followed by a 2-base insertion (“GA”). If
+a read has a deletion at the specified locus, the allele is the empty
+string.</p>
+<p>The given locus may include any number of bases. If the locus includes
+multiple bases, then the alleles consist of all bases aligning to that
+range in any read. Note that only sequences actually sequenced in a
+particular read are included. For example, if one read has “ATT” at a
+locus and another read has “GCC”, then the alleles are “ATT” and
+“GCC”, but not “GTT”. That is, the bases in each allele are phased. For
+this reason, only reads that overlap the entire locus are included.</p>
+<p>If the locus is an empty interval (e.g. [5,5) ), then the alleles
+consist only of inserted bases. In this example, only bases inserted
+between reference positions 4 and 5 (zero-based) would be included.
+An insertion after position 5 uses [6,6). In the previous example, the allele
+would be “GA”, indicating a 2-base insertion. Reads that have no
+insertion at that position (matches or deletions) would have the empty
+string as their allele.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Locus</span></dt><dd><p>The reference locus, encompassing 0 or more bases.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>A dict of string -&gt; PileupCollection. The keys are nucleotide strings</dt><dd></dd>
+<dt>giving the bases sequenced at the locus, and the values are</dt><dd></dd>
+<dt>PileupCollection instances of the alignments that support that allele.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.group_by_match">
+<span class="sig-name descname"><span class="pre">group_by_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.group_by_match"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.group_by_match" title="Link to this definition"></a></dt>
+<dd><p>Given a variant, split the PileupCollection based on whether it the
+data supports the reference allele, the alternate allele, or neither.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>variant</strong><span class="classifier">Variant</span></dt><dd><p>The variant. Must have fields ‘locus’, ‘ref’, and ‘alt’.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>A MatchingEvidence named tuple with fields (ref, alt, other),</dt><dd></dd>
+<dt>each of which is a string -&gt; PileupCollection dict mapping alleles</dt><dd></dd>
+<dt>to the PileupCollection of evidence supporting them.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.line">
+<span class="sig-name descname"><span class="pre">line</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">'</span></span><a class="headerlink" href="#varlens.read_evidence.PileupCollection.line" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.loci">
+<span class="sig-name descname"><span class="pre">loci</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.loci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.loci" title="Link to this definition"></a></dt>
+<dd><p>Returns the loci included in this instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.match">
+<span class="sig-name descname"><span class="pre">match</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#varlens.read_evidence.PileupCollection.match" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.match_summary">
+<span class="sig-name descname"><span class="pre">match_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">PileupCollection.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.match_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.match_summary" title="Link to this definition"></a></dt>
+<dd><p>Convenience method to summarize the evidence for and against a variant
+using a user-specified score function.</p>
+<p>See also <a class="reference internal" href="#varlens.read_evidence.PileupCollection.group_by_match" title="varlens.read_evidence.PileupCollection.group_by_match"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.group_by_match</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>variant</strong><span class="classifier">Variant</span></dt><dd><p>The variant. Must have fields ‘locus’, ‘ref’, and ‘alt’.</p>
+</dd>
+<dt><strong>score (optional)</strong><span class="classifier">PileupCollection -&gt; object</span></dt><dd><p>Function to apply to summarize the evidence for each allele.
+Default: count number of reads.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>List of (allele, score) pairs. This list will always have at least two</dt><dd></dd>
+<dt>elements. The first pair in the list is the reference allele. The</dt><dd></dd>
+<dt>second pair is the alternate. The subsequent items give the “third”</dt><dd></dd>
+<dt>alleles (neither ref nor alt), if any.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.merge">
+<span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">others</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.merge" title="Link to this definition"></a></dt>
+<dd><p>Return a new PileupCollection that is the union of self and the other
+specified collections.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.num_reads">
+<span class="sig-name descname"><span class="pre">num_reads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.num_reads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.num_reads" title="Link to this definition"></a></dt>
+<dd><p>Returns the number of reads in this PileupCollection.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.pileup">
+<span class="sig-name descname"><span class="pre">pileup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.pileup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.pileup" title="Link to this definition"></a></dt>
+<dd><p>Given a 1-base locus, return the Pileup at that locus.</p>
+<p>Raises a KeyError if this PileupCollection does not have a Pileup at
+the specified locus.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.read_attribute">
+<span class="sig-name descname"><span class="pre">read_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.read_attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.read_attribute" title="Link to this definition"></a></dt>
+<dd><p>Query a read attribute across all reads in this PileupCollection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>attribute</strong><span class="classifier">string</span></dt><dd><p>Attribute to query. See <a class="reference internal" href="#varlens.read_evidence.PileupCollection.read_attributes" title="varlens.read_evidence.PileupCollection.read_attributes"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">PileupCollection.read_attributes</span></code></a> for
+possible attributes.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>pandas.Series instance giving values for the attribute in each read.</dt><dd></dd>
+<dt>The order of reads is fixed, so multiple calls to this function will</dt><dd></dd>
+<dt>return corresponding values.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.read_attributes">
+<span class="sig-name descname"><span class="pre">read_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.read_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.read_attributes" title="Link to this definition"></a></dt>
+<dd><p>Collect read attributes across reads in this PileupCollection into a
+pandas.DataFrame.</p>
+<p>Valid attributes are the following properties of a pysam.AlignedSegment
+instance. See the <a class="reference external" href="https://pysam.readthedocs.io/en/latest/api.html#pysam.AlignedSegment">pysam API documentation</a>
+for their meanings.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>cigarstring</p></li>
+<li><p>flag</p></li>
+<li><p>inferred_length</p></li>
+<li><p>is_duplicate</p></li>
+<li><p>is_paired</p></li>
+<li><p>is_proper_pair</p></li>
+<li><p>is_qcfail</p></li>
+<li><p>is_read1</p></li>
+<li><p>is_read2</p></li>
+<li><p>is_reverse</p></li>
+<li><p>is_secondary</p></li>
+<li><p>is_unmapped</p></li>
+<li><p>mapping_quality</p></li>
+<li><p>mate_is_reverse</p></li>
+<li><p>mate_is_unmapped</p></li>
+<li><p>next_reference_id</p></li>
+<li><p>next_reference_start</p></li>
+<li><p>query_alignment_end</p></li>
+<li><p>query_alignment_length</p></li>
+<li><p>query_alignment_qualities</p></li>
+<li><p>query_alignment_sequence</p></li>
+<li><p>query_alignment_start</p></li>
+<li><p>query_length</p></li>
+<li><p>query_name</p></li>
+<li><p>reference_end</p></li>
+<li><p>reference_id</p></li>
+<li><p>reference_length</p></li>
+<li><p>reference_start</p></li>
+<li><p>template_length</p></li>
+</ul>
+</div></blockquote>
+<p>(Note: the above list is parsed into the _READ_ATTRIBUTE_NAMES class
+variable, so be careful when modifying it.)</p>
+<p>Additionally, for alignment “tags” (arbitrary key values associated
+with an alignment), a column of the form “TAG_{tag name}” is
+included.</p>
+<p>Finally, the column “pysam_alignment_record” gives the underlying
+<code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>attributes (optional): list of strings</strong></dt><dd><p>List of columns to include. If unspecified, all columns are
+included in the result.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>pandas.DataFrame of read attributes.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupCollection.reads">
+<span class="sig-name descname"><span class="pre">reads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_collection.html#PileupCollection.reads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupCollection.reads" title="Link to this definition"></a></dt>
+<dd><p>The reads in this PileupCollection. All reads will have an alignment
+that overlaps at least one of the included loci.</p>
+<p>Since SAM (and pysam) have no real notion of a “read”, the returned
+instances are actually pysam.AlignedSegment instances, (i.e. 
+alignments). However, only one alignment will be returned by this
+method per read.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>List of pysam.AlignedSegment instances. If a particular read has more</dt><dd></dd>
+<dt>than one alignment in this PileupCollection (e.g. one primary and one</dt><dd></dd>
+<dt>secondary), then the alignment returned is the one with the highest</dt><dd></dd>
+<dt>mapping quality.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupElement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.</span></span><span class="sig-name descname"><span class="pre">PileupElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alignment</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_element.html#PileupElement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupElement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A PileupElement represents the segment of an alignment that aligns to a
+particular base in the reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">Varcode.Locus</span></dt><dd><p>The reference locus. Must be length 1, i.e. a single base.</p>
+</dd>
+<dt><strong>offset_start</strong><span class="classifier">int</span></dt><dd><p>0-based start offset into the alignment sequence, inclusive</p>
+</dd>
+<dt><strong>offset_end</strong><span class="classifier">int</span></dt><dd><p>0-based end offset into the alignment sequence, exclusive</p>
+</dd>
+<dt><strong>alignment</strong><span class="classifier">pysam.AlignedSegment</span></dt><dd><p>pysam alignment instance</p>
+</dd>
+<dt><strong>alignment_key</strong><span class="classifier">tuple</span></dt><dd><p>value computed from the alignment instance that uniquely specifies its
+properties. Used for comparisons since pysam.AlignedSegment instances
+do not support a useful notion of equality (they compare using object
+identity). See <a class="reference internal" href="#varlens.read_evidence.alignment_key" title="varlens.read_evidence.alignment_key"><code class="xref any py py-func docutils literal notranslate"><span class="pre">read_evidence.alignment_key</span></code></a> for the implementation of
+this key.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupElement.base_qualities">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">base_qualities</span></span><a class="headerlink" href="#varlens.read_evidence.PileupElement.base_qualities" title="Link to this definition"></a></dt>
+<dd><p>The phred-scaled base quality scores corresponding to <code class="docutils literal notranslate"><span class="pre">self.bases</span></code>, as
+a list.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupElement.bases">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">bases</span></span><a class="headerlink" href="#varlens.read_evidence.PileupElement.bases" title="Link to this definition"></a></dt>
+<dd><p>The sequenced bases in the alignment that align to this locus in the
+genome, as a string.</p>
+<p>Empty string in the case of a deletion. String of length &gt; 1 if there
+is an insertion here.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupElement.fields">
+<span class="sig-name descname"><span class="pre">fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_element.html#PileupElement.fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupElement.fields" title="Link to this definition"></a></dt>
+<dd><p>Fields that should be considered for our notion of object equality.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupElement.from_pysam_alignment">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_pysam_alignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pileup_read</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/pileup_element.html#PileupElement.from_pysam_alignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.PileupElement.from_pysam_alignment" title="Link to this definition"></a></dt>
+<dd><p>Factory function to create a new PileupElement from a pysam
+<code class="docutils literal notranslate"><span class="pre">PileupRead</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>locus</strong><span class="classifier">varcode.Locus</span></dt><dd><p>Reference locus for which to construct a PileupElement. Must
+include exactly one base.</p>
+</dd>
+<dt><strong>pileup_read</strong><span class="classifier">pysam.calignmentfile.PileupRead</span></dt><dd><p>pysam PileupRead instance. Its alignment must overlap the locus.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>PileupElement</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="varlens.read_evidence.PileupElement.min_base_quality">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">min_base_quality</span></span><a class="headerlink" href="#varlens.read_evidence.PileupElement.min_base_quality" title="Link to this definition"></a></dt>
+<dd><p>The minimum of the base qualities. In the case of a deletion, in which
+case there are no bases in this PileupElement, the minimum is taken
+over the sequenced bases immediately before and after the deletion.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.read_evidence.alignment_key">
+<span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.</span></span><span class="sig-name descname"><span class="pre">alignment_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_alignment_record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/util.html#alignment_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.alignment_key" title="Link to this definition"></a></dt>
+<dd><p>Return the identifying attributes of a <code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instance.
+This is necessary since these objects do not support a useful notion of
+equality (they compare on identify by default).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="varlens.read_evidence.read_key">
+<span class="sig-prename descclassname"><span class="pre">varlens.read_evidence.</span></span><span class="sig-name descname"><span class="pre">read_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pysam_alignment_record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/varlens/read_evidence/util.html#read_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#varlens.read_evidence.read_key" title="Link to this definition"></a></dt>
+<dd><p>Given a <code class="docutils literal notranslate"><span class="pre">pysam.AlignedSegment</span></code> instance, return the attributes identifying
+the <em>read</em> it comes from (not the alignment). There may be more than one
+alignment for a read, e.g. chimeric and secondary alignments.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="varlens.html" class="btn btn-neutral float-left" title="varlens package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Tim O&#39;Donnell.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
