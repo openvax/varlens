@@ -1,0 +1,5 @@
+# Integration consumers, installed alongside the current Varlens checkout.
+# Keep these ranges open so CI resolves mutually compatible stable releases.
+vaxrank>=3.45,<4
+mhctools>=4.1.1,<5
+pirl-trufflepig>=1.28,<2

@@ -3,11 +3,54 @@ from io import StringIO
 import pandas
 import pytest
 import mhctools
+from mhctools.base_predictor import BasePredictor
 import topiary
 from varcode import Variant
 
 from varlens.mhc_binding import binding_affinities
 from varlens.variant_includes import MHCBindingAffinity
+
+
+class FixedBindingPredictor(BasePredictor):
+    """Exercise MHCTools 4's native results without an external executable."""
+
+    def predict(self, peptides, n_flanks=None, c_flanks=None):
+        return [
+            mhctools.PeptideResult(
+                preds=tuple(
+                    mhctools.Prediction(
+                        peptide=peptide,
+                        allele=allele,
+                        kind=kind,
+                        score=score,
+                        value=value,
+                        predictor_name="fixed-test",
+                    )
+                    for allele in self.alleles
+                    for kind, value, score in [
+                        ("pMHC_affinity", 50.25, 0.8),
+                        ("pMHC_presentation", None, 0.01),
+                    ]
+                )
+            )
+            for peptide in peptides
+        ]
+
+
+def test_topiary_mhctools4_dataframe_contract():
+    model = FixedBindingPredictor(
+        alleles=["HLA-A*02:01"], default_peptide_lengths=[9]
+    )
+    predictions = topiary.TopiaryPredictor(models=model).predict_from_named_sequences(
+        {"fixture": "ACDEFGHIKLMN"}
+    )
+    assert set(predictions["kind"]) == {"pMHC_affinity", "pMHC_presentation"}
+    affinities = predictions.loc[predictions["kind"].eq("pMHC_affinity")]
+    assert affinities["affinity"].tolist() == [50.25] * 4
+    assert affinities["allele"].tolist() == ["HLA-A*02:01"] * 4
+    assert predictions.loc[
+        predictions["kind"].eq("pMHC_presentation"), "affinity"
+    ].isna().all()
 
 
 @pytest.fixture
@@ -151,11 +194,17 @@ def test_reannotate_integer_affinity_from_csv(
 
 
 @pytest.mark.ensembl
-def test_real_topiary_variant_pipeline(monkeypatch, variants):
+@pytest.mark.parametrize(
+    "predictor_class", [mhctools.RandomBindingPredictor, FixedBindingPredictor]
+)
+def test_real_topiary_variant_pipeline(monkeypatch, variants, predictor_class):
     # Replace only the external executable; exercise current Topiary's real
     # annotation, peptide generation and DataFrame result contract.
-    monkeypatch.setattr(mhctools, "NetMHCpan", mhctools.RandomBindingPredictor)
+    monkeypatch.setattr(mhctools, "NetMHCpan", predictor_class)
     result = binding_affinities(variants, ["HLA-A*02:01"])
     assert result["variant"].tolist() == variants
     assert result["binding_affinity"].notna().all()
     assert result["binding_allele"].tolist() == ["HLA-A*02:01"] * 2
+    if predictor_class is FixedBindingPredictor:
+        # The presentation score must not enter this affinity summary.
+        assert result["binding_affinity"].tolist() == [50.25] * 2
