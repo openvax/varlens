@@ -389,7 +389,7 @@ To run the tests from a git checkout:
 ::
 
     pip install -e '.[test,fusion]'
-    pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+    pyensembl install --release 75 --species human
     ./lint.sh
     ./test.sh
 

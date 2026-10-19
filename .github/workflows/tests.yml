@@ -62,7 +62,8 @@ jobs:
           python -m pip check
       - name: Install Ensembl reference data
         run: |
-          pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+          # Use the same source identity as EnsemblRelease(75) in the tests.
+          pyensembl install --release 75 --species human
           python -c 'from pyensembl import EnsemblRelease; assert EnsemblRelease(75).installed()'
       - name: Test real annotation and Topiary integration
         run: ./test.sh -m 'ensembl and not netmhcpan'
