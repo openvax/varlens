@@ -57,14 +57,14 @@ if __name__ == '__main__':
         ],
         install_requires=[
             'numpy>=2,<3',
-            'pandas>=3,<4',
+            'pandas>=2.3.3,<4',
             'intervaltree>=3.1,<4',
             'pysam>=0.24.1,<0.25',
             'typechecks>=0.1.0',
             'varcode>=10.14.0,<11',
             'pyensembl>=2.27.2,<3',
             'pyfaidx>=0.9,<1',
-            'mhctools>=3.53.5,<4',
+            'mhctools>=4.1.1,<5',
             'topiary>=5.94.4,<6',
         ],
         extras_require={

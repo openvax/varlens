@@ -19,6 +19,7 @@ import logging
 
 import pandas
 import numpy
+from varcode import Variant
 
 from varlens.commands import variants
 
@@ -75,6 +76,10 @@ def test_genes_and_effects():
             "genez",
         ]
     )
+    # Varcode owns the splice-effect description and can add outcomes between
+    # releases. Verify that Varlens forwards its complete current description.
+    splice_effect = Variant("22", 50875933, "A", "C", genome="GRCh37").effects()
+    splice_description = splice_effect.top_priority_effect().short_description
     assert (sorted(cols_concat(result, expected_cols + ["effect", "genez"]))) == (
         sorted(
             {
@@ -82,7 +87,7 @@ def test_genes_and_effects():
                 "GRCh37-22-46931059-46931060-A-C-p.S670A-CELSR1",
                 "GRCh37-22-46931061-46931062-G-A-p.S669F-CELSR1",
                 "GRCh37-22-50636217-50636218-A-C-intronic-TRABD",
-                "GRCh37-22-50875932-50875933-A-C-splice-set:exon-skip ENSE00002203506 (p.A562fs)-PPP6R2",
+                f"GRCh37-22-50875932-50875933-A-C-{splice_description}-PPP6R2",
             }
         )
     )

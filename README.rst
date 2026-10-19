@@ -28,7 +28,9 @@ varlens-allele-support
 Installation
 -------------
 
-Varlens 1.0 requires Python 3.11 or newer and pandas 3 or newer.
+Varlens 1.0 requires Python 3.11 or newer, pandas 2.3.3 or 3, and
+MHCTools 4.1.1 or newer (below 5). The package uses the current Topiary 5
+prediction API.
 
 To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
 
@@ -387,12 +389,37 @@ To run the tests from a git checkout:
 ::
 
     pip install -e '.[test,fusion]'
-    pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+    pyensembl install --release 75 --species human
     ./lint.sh
     ./test.sh
 
 External NetMHCpan tests are opt-in: run ``./test.sh --run-netmhcpan`` with
 NetMHCpan and its model data installed. The other tests do not require it.
+
+CI tests Python 3.11 through 3.14, both supported pandas major versions,
+and reference-dependent annotation in a separate job. A shared-stack job
+also installs Varlens, Vaxrank, MHCTools, and Trufflepig together with normal
+dependency resolution and runs ``pip check``. To reproduce that check in a
+fresh environment:
+
+::
+
+    python -m pip install -e '.[test,fusion]' -r requirements-openvax.txt
+    python -m pip check
+    ./test.sh
+
+Refresh editable metadata from the existing checkout with ``pip install -e .``
+after changing its requirements. The metadata test checks every visible
+Varlens distribution against the source version, including stale editable
+metadata in site-packages.
+
+In a shared environment, resolve all installed OpenVax consumers together
+and preserve existing editable checkouts. Trufflepig 1.28 requires pandas
+below 3, so pandas 2.3.3 is compatible with that release. Vaxrank 3.46.1
+requires Oncoref 1.9.12, while Pirlygenes 6.0.14 requires Oncoref 1.8.210;
+Vaxrank 3.45.0 is compatible with the latter. Do not force these conflicting
+versions into one environment. Repository-local release environments are
+separate from the shared environment and can use pandas 3.
 
 To build the documentation (just this README plus the commandline tool help):
 

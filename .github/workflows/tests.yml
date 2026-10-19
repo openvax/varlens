@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
+        pandas: ["pandas>=3,<4"]
+        include:
+          - python-version: "3.12"
+            pandas: "pandas==2.3.3"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -27,7 +31,7 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install '.[test,fusion]'
+          python -m pip install '.[test,fusion]' '${{ matrix.pandas }}'
           python -m pip check
       - name: Lint
         run: ./lint.sh
@@ -36,6 +40,10 @@ jobs:
 
   annotation:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pandas: ["pandas==2.3.3", "pandas>=3,<4"]
     env:
       PYENSEMBL_CACHE_DIR: ${{ github.workspace }}/.reference-cache
     steps:
@@ -50,14 +58,35 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install '.[test]'
+          python -m pip install '.[test]' '${{ matrix.pandas }}'
           python -m pip check
       - name: Install Ensembl reference data
         run: |
-          pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+          # Use the same source identity as EnsemblRelease(75) in the tests.
+          pyensembl install --release 75 --species human
           python -c 'from pyensembl import EnsemblRelease; assert EnsemblRelease(75).installed()'
       - name: Test real annotation and Topiary integration
         run: ./test.sh -m 'ensembl and not netmhcpan'
+
+  openvax-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            setup.py
+            pyproject.toml
+            requirements-openvax.txt
+      - name: Resolve the editable checkout with the shared OpenVax stack
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test,fusion]' -r requirements-openvax.txt
+          python -m pip check
+      - name: Test metadata and Varlens
+        run: ./test.sh -m 'not ensembl and not netmhcpan'
 
   docs:
     runs-on: ubuntu-latest
