@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Varlens Documentation &mdash; varlens 1.0.0 documentation</title>
+  <title>Varlens Documentation &mdash; varlens 1.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/documentation_options.js?v=292eb321"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -94,7 +94,9 @@ affinity prediction of mutant peptides.</p>
 </dl>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
-<p>Varlens 1.0 requires Python 3.11 or newer and pandas 3 or newer.</p>
+<p>Varlens 1.0 requires Python 3.11 or newer, pandas 2.3.3 or 3, and
+MHCTools 4.1.1 or newer (below 5). The package uses the current Topiary 5
+prediction API.</p>
 <p>To install from <a class="reference external" href="https://pypi.python.org/pypi/varlens">PyPI</a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">varlens</span>
 </pre></div>
@@ -399,13 +401,34 @@ come from the installed Varcode version and may change as its annotations improv
 <h2>Development<a class="headerlink" href="#development" title="Link to this heading"></a></h2>
 <p>To run the tests from a git checkout:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="s1">'.[test,fusion]'</span>
-<span class="n">pyensembl</span> <span class="n">install</span> <span class="o">--</span><span class="n">release</span> <span class="mi">75</span> <span class="o">--</span><span class="n">species</span> <span class="n">human</span> <span class="o">--</span><span class="n">custom</span><span class="o">-</span><span class="n">mirror</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">openvax</span><span class="o">/</span><span class="n">ensembl</span><span class="o">-</span><span class="n">data</span><span class="o">/</span><span class="n">releases</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">GRCh37</span><span class="mf">.75</span><span class="o">/</span>
+<span class="n">pyensembl</span> <span class="n">install</span> <span class="o">--</span><span class="n">release</span> <span class="mi">75</span> <span class="o">--</span><span class="n">species</span> <span class="n">human</span>
 <span class="o">./</span><span class="n">lint</span><span class="o">.</span><span class="n">sh</span>
 <span class="o">./</span><span class="n">test</span><span class="o">.</span><span class="n">sh</span>
 </pre></div>
 </div>
 <p>External NetMHCpan tests are opt-in: run <code class="docutils literal notranslate"><span class="pre">./test.sh</span> <span class="pre">--run-netmhcpan</span></code> with
 NetMHCpan and its model data installed. The other tests do not require it.</p>
+<p>CI tests Python 3.11 through 3.14, both supported pandas major versions,
+and reference-dependent annotation in a separate job. A shared-stack job
+also installs Varlens, Vaxrank, MHCTools, and Trufflepig together with normal
+dependency resolution and runs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">check</span></code>. To reproduce that check in a
+fresh environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="s1">'.[test,fusion]'</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">-</span><span class="n">openvax</span><span class="o">.</span><span class="n">txt</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">check</span>
+<span class="o">./</span><span class="n">test</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+<p>Refresh editable metadata from the existing checkout with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code>
+after changing its requirements. The metadata test checks every visible
+Varlens distribution against the source version, including stale editable
+metadata in site-packages.</p>
+<p>In a shared environment, resolve all installed OpenVax consumers together
+and preserve existing editable checkouts. Trufflepig 1.28 requires pandas
+below 3, so pandas 2.3.3 is compatible with that release. Vaxrank 3.46.1
+requires Oncoref 1.9.12, while Pirlygenes 6.0.14 requires Oncoref 1.8.210;
+Vaxrank 3.45.0 is compatible with the latter. Do not force these conflicting
+versions into one environment. Repository-local release environments are
+separate from the shared environment and can use pandas 3.</p>
 <p>To build the documentation (just this README plus the commandline tool help):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="s1">'.[docs]'</span>
 <span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">sphinx</span> <span class="o">-</span><span class="n">W</span> <span class="o">--</span><span class="n">keep</span><span class="o">-</span><span class="n">going</span> <span class="o">-</span><span class="n">b</span> <span class="n">html</span> <span class="n">docs</span> <span class="n">docs</span><span class="o">/</span><span class="n">_build</span><span class="o">/</span><span class="n">html</span>
