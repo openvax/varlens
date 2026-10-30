@@ -57,7 +57,7 @@ if __name__ == '__main__':
         ],
         install_requires=[
             'numpy>=2,<3',
-            'pandas>=2.3.3,<4',
+            'pandas>=3,<4',
             'intervaltree>=3.1,<4',
             'pysam>=0.24.1,<0.25',
             'typechecks>=0.1.0',
