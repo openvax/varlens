@@ -414,12 +414,13 @@ Varlens distribution against the source version, including stale editable
 metadata in site-packages.
 
 In a shared environment, resolve all installed OpenVax consumers together
-and preserve existing editable checkouts. Trufflepig 1.28 requires pandas
-below 3, so pandas 2.3.3 is compatible with that release. Vaxrank 3.46.1
-requires Oncoref 1.9.12, while Pirlygenes 6.0.14 requires Oncoref 1.8.210;
-Vaxrank 3.45.0 is compatible with the latter. Do not force these conflicting
-versions into one environment. Repository-local release environments are
-separate from the shared environment and can use pandas 3.
+and preserve existing editable checkouts. Varlens 1.1 requires the coordinated
+Varcode 11.1, Isovar 1.78 (for fusions), and Topiary 5.109 stack; installations
+with Vaxrank need its compatible 3.49 release. Trufflepig 1.28 requires pandas
+below 3, so pandas 2.3.3 is compatible with that release. Do not force
+incompatible versions or silently downgrade another consumer. Repository-local
+release environments are separate from the shared environment and can use
+pandas 3.
 
 To build the documentation (just this README plus the commandline tool help):
 
