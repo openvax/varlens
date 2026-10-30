@@ -72,12 +72,12 @@ the files each variant was found in:
     $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf
 
     genome,contig,interbase_start,interbase_end,ref,alt,sources
-    GRCh37,22,21829554,21829555,T,G,1.vcf
-    GRCh37,22,46931059,46931060,A,C,1.vcf
-    GRCh37,22,46931061,46931062,G,A,1.vcf 2.vcf
-    GRCh37,22,50636217,50636218,A,C,1.vcf
-    GRCh37,22,50875932,50875933,A,C,1.vcf
-    GRCh37,22,45309892,45309893,T,G,2.vcf
+    GRCh37,22,21829554,21829555,T,G,1
+    GRCh37,22,45309892,45309893,T,G,2
+    GRCh37,22,46931059,46931060,A,C,1
+    GRCh37,22,46931061,46931062,G,A,1 2
+    GRCh37,22,50636217,50636218,A,C,1
+    GRCh37,22,50875932,50875933,A,C,1
 
 Same as the above but include additional columns giving varcode variant effect
 annotations and the genes the variants overlap, and write to a file:
@@ -91,13 +91,19 @@ annotations and the genes the variants overlap, and write to a file:
 
     Wrote: /tmp/result.csv
 
-    $ head -n 1 /tmp/result.csv
+    $ cat /tmp/result.csv
     genome,contig,interbase_start,interbase_end,ref,alt,sources,effect,effect_candidates,gene
+    GRCh37,22,21829554,21829555,T,G,1,non-coding-transcript,NoncodingTranscript: non-coding-transcript,PI4KAP2
+    GRCh37,22,45309892,45309893,T,G,2,p.T214P,Substitution: p.T214P,PHF21B
+    GRCh37,22,46931059,46931060,A,C,1,p.S670A,Substitution: p.S670A,CELSR1
+    GRCh37,22,46931061,46931062,G,A,1 2,p.S669F,Substitution: p.S669F,CELSR1
+    GRCh37,22,50636217,50636218,A,C,1,intronic,Intronic: intronic,TRABD
+    GRCh37,22,50875932,50875933,A,C,1,p.A562fs,FrameShift: p.A562fs; Unresolved: unresolved-intron-retention; Unresolved: unresolved-cryptic; Intronic: intronic,PPP6R2
 
 ``effect`` is the producer-preferred consequence on the selected transcript.
-``effect_candidates`` lists its concrete alternatives, including unresolved
-outcomes. For example, an intronic primary can retain a protein-changing
-exon-skip deletion. These are predicted alternatives, not observed products or
+``effect_candidates`` lists that consequence and its alternatives in Varcode's
+order, including unresolved outcomes. For example, an intronic primary can
+retain a protein-changing exon-skip deletion. These are predicted alternatives, not observed products or
 calibrated probabilities. MHC predictions use Topiary's shared candidate-aware
 selection and can therefore use a coding alternative to that primary.
 
