@@ -91,15 +91,15 @@ annotations and the genes the variants overlap, and write to a file:
 
     Wrote: /tmp/result.csv
 
-    $ cat /tmp/result.csv
+    $ head -n 1 /tmp/result.csv
+    genome,contig,interbase_start,interbase_end,ref,alt,sources,effect,effect_candidates,gene
 
-    genome,contig,interbase_start,interbase_end,ref,alt,sources,effect,gene
-    GRCh37,22,21829554,21829555,T,G,1.vcf,non-coding-transcript,PI4KAP2
-    GRCh37,22,46931059,46931060,A,C,1.vcf,p.S670A,CELSR1
-    GRCh37,22,46931061,46931062,G,A,1.vcf 2.vcf,p.S669F,CELSR1
-    GRCh37,22,50636217,50636218,A,C,1.vcf,intronic,TRABD
-    GRCh37,22,50875932,50875933,A,C,1.vcf,splice-set:exon-skip ENSE00002203506 (p.A562fs),PPP6R2
-    GRCh37,22,45309892,45309893,T,G,2.vcf,p.T214P,PHF21B
+``effect`` is the producer-preferred consequence on the selected transcript.
+``effect_candidates`` lists its concrete alternatives, including unresolved
+outcomes. For example, an intronic primary can retain a protein-changing
+exon-skip deletion. These are predicted alternatives, not observed products or
+calibrated probabilities. MHC predictions use Topiary's shared candidate-aware
+selection and can therefore use a coding alternative to that primary.
 
 Print counts for number of reads supporting reference/variant/other alleles
 from the specified BAM, counting only reads with mapping quality >= 10:

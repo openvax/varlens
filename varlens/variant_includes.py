@@ -17,6 +17,7 @@ import collections
 import pandas
 import numpy
 import typechecks
+from varcode import iter_candidate_effects
 
 import pyfaidx
 
@@ -85,7 +86,7 @@ class Includeable(object):
 
 class Effect(Includeable):
     name = "variant effect annotations"
-    columns = ["effect"]
+    columns = ["effect", "effect_candidates"]
     string_columns = columns
 
     @staticmethod
@@ -93,17 +94,20 @@ class Effect(Includeable):
         parser = parser.add_argument_group(Effect.name)
         parser.add_argument("--include-effect",
             action="store_true", default=False,
-            help="Include varcode effect annotations")
+            help="Include the primary Varcode annotation and its candidate consequences")
 
     @staticmethod
     def requested(args):
         return args.include_effect
 
     def process_chunk(self, df):
-        df["effect"] = [
-            v.effects().top_priority_effect().short_description
-            for v in df["variant"]
-        ]
+        effects = [v.effects().top_priority_effect() for v in df["variant"]]
+        df["effect"] = [effect.short_description if effect is not None else "unavailable"
+                        for effect in effects]
+        df["effect_candidates"] = ["; ".join(
+            "%s: %s" % (type(candidate).__name__, candidate.short_description)
+            if candidate is not None else "Unresolved: unavailable candidate"
+            for candidate in iter_candidate_effects(effect)) for effect in effects]
         return df
 
 class Gene(Includeable):
