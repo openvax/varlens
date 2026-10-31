@@ -61,7 +61,7 @@ if __name__ == '__main__':
             'intervaltree>=3.1,<4',
             'pysam>=0.24.1,<0.25',
             'typechecks>=0.1.0',
-            'varcode>=11.1.0,<12',
+            'varcode>=11.2.0,<12',
             'pyensembl>=2.27.2,<3',
             'pyfaidx>=0.9,<1',
             'mhctools>=4.1.1,<5',

@@ -421,7 +421,7 @@ metadata in site-packages.
 
 In a shared environment, resolve all installed OpenVax consumers together
 and preserve existing editable checkouts. Varlens 1.1 requires the coordinated
-Varcode 11.1, Isovar 1.78 (for fusions), and Topiary 5.109 stack; installations
+Varcode 11.2, Isovar 1.78 (for fusions), and Topiary 5.109 stack; installations
 with Vaxrank need its compatible 3.49 release. Current Topiary and Trufflepig
 1.30 require pandas 3; the older Trufflepig 1.28 pandas cap is incompatible
 with this stack. Do not force incompatible versions or silently downgrade
