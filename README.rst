@@ -28,7 +28,7 @@ varlens-allele-support
 Installation
 -------------
 
-Varlens 1.0 requires Python 3.11 or newer, pandas 2.3.3 or 3, and
+Varlens 1.1 requires Python 3.11 or newer, pandas 3, and
 MHCTools 4.1.1 or newer (below 5). The package uses the current Topiary 5
 prediction API.
 
@@ -72,12 +72,12 @@ the files each variant was found in:
     $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf
 
     genome,contig,interbase_start,interbase_end,ref,alt,sources
-    GRCh37,22,21829554,21829555,T,G,1.vcf
-    GRCh37,22,46931059,46931060,A,C,1.vcf
-    GRCh37,22,46931061,46931062,G,A,1.vcf 2.vcf
-    GRCh37,22,50636217,50636218,A,C,1.vcf
-    GRCh37,22,50875932,50875933,A,C,1.vcf
-    GRCh37,22,45309892,45309893,T,G,2.vcf
+    GRCh37,22,21829554,21829555,T,G,1
+    GRCh37,22,45309892,45309893,T,G,2
+    GRCh37,22,46931059,46931060,A,C,1
+    GRCh37,22,46931061,46931062,G,A,1 2
+    GRCh37,22,50636217,50636218,A,C,1
+    GRCh37,22,50875932,50875933,A,C,1
 
 Same as the above but include additional columns giving varcode variant effect
 annotations and the genes the variants overlap, and write to a file:
@@ -92,14 +92,20 @@ annotations and the genes the variants overlap, and write to a file:
     Wrote: /tmp/result.csv
 
     $ cat /tmp/result.csv
+    genome,contig,interbase_start,interbase_end,ref,alt,sources,effect,effect_candidates,gene
+    GRCh37,22,21829554,21829555,T,G,1,non-coding-transcript,NoncodingTranscript: non-coding-transcript,PI4KAP2
+    GRCh37,22,45309892,45309893,T,G,2,p.T214P,Substitution: p.T214P,PHF21B
+    GRCh37,22,46931059,46931060,A,C,1,p.S670A,Substitution: p.S670A,CELSR1
+    GRCh37,22,46931061,46931062,G,A,1 2,p.S669F,Substitution: p.S669F,CELSR1
+    GRCh37,22,50636217,50636218,A,C,1,intronic,Intronic: intronic,TRABD
+    GRCh37,22,50875932,50875933,A,C,1,p.A562fs,FrameShift: p.A562fs; Unresolved: unresolved-intron-retention; Unresolved: unresolved-cryptic; Intronic: intronic,PPP6R2
 
-    genome,contig,interbase_start,interbase_end,ref,alt,sources,effect,gene
-    GRCh37,22,21829554,21829555,T,G,1.vcf,non-coding-transcript,PI4KAP2
-    GRCh37,22,46931059,46931060,A,C,1.vcf,p.S670A,CELSR1
-    GRCh37,22,46931061,46931062,G,A,1.vcf 2.vcf,p.S669F,CELSR1
-    GRCh37,22,50636217,50636218,A,C,1.vcf,intronic,TRABD
-    GRCh37,22,50875932,50875933,A,C,1.vcf,splice-set:exon-skip ENSE00002203506 (p.A562fs),PPP6R2
-    GRCh37,22,45309892,45309893,T,G,2.vcf,p.T214P,PHF21B
+``effect`` is the producer-preferred consequence on the selected transcript.
+``effect_candidates`` lists that consequence and its alternatives in Varcode's
+order, including unresolved outcomes. For example, an intronic primary can
+retain a protein-changing exon-skip deletion. These are predicted alternatives, not observed products or
+calibrated probabilities. MHC predictions use Topiary's shared candidate-aware
+selection and can therefore use a coding alternative to that primary.
 
 Print counts for number of reads supporting reference/variant/other alleles
 from the specified BAM, counting only reads with mapping quality >= 10:
@@ -396,7 +402,7 @@ To run the tests from a git checkout:
 External NetMHCpan tests are opt-in: run ``./test.sh --run-netmhcpan`` with
 NetMHCpan and its model data installed. The other tests do not require it.
 
-CI tests Python 3.11 through 3.14, both supported pandas major versions,
+CI tests Python 3.11 through 3.14, the pandas 3.0.0 floor and current 3.x,
 and reference-dependent annotation in a separate job. A shared-stack job
 also installs Varlens, Vaxrank, MHCTools, and Trufflepig together with normal
 dependency resolution and runs ``pip check``. To reproduce that check in a
@@ -414,12 +420,13 @@ Varlens distribution against the source version, including stale editable
 metadata in site-packages.
 
 In a shared environment, resolve all installed OpenVax consumers together
-and preserve existing editable checkouts. Trufflepig 1.28 requires pandas
-below 3, so pandas 2.3.3 is compatible with that release. Vaxrank 3.46.1
-requires Oncoref 1.9.12, while Pirlygenes 6.0.14 requires Oncoref 1.8.210;
-Vaxrank 3.45.0 is compatible with the latter. Do not force these conflicting
-versions into one environment. Repository-local release environments are
-separate from the shared environment and can use pandas 3.
+and preserve existing editable checkouts. Varlens 1.1 requires the coordinated
+Varcode 11.2, Isovar 1.78 (for fusions), and Topiary 5.109 stack; installations
+with Vaxrank need its compatible 3.49 release. Current Topiary and Trufflepig
+1.30 require pandas 3; the older Trufflepig 1.28 pandas cap is incompatible
+with this stack. Do not force incompatible versions or silently downgrade
+another consumer. Repository-local release environments remain separate from
+the shared environment.
 
 To build the documentation (just this README plus the commandline tool help):
 

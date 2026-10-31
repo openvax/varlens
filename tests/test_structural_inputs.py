@@ -28,9 +28,9 @@ BND = 'chr7\t400\tbnd\tN\tN[chr8:500[\t.\tPASS\tSVTYPE=BND\n'
 SINGLE_BND = 'chr7\t600\tsingle\tN\tN.\t.\tPASS\tSVTYPE=BND\n'
 
 
-def vcf(tmp_path, text, name="input.vcf"):
+def vcf(tmp_path, text, name="input.vcf", reference="GRCh38"):
     filename = tmp_path / name
-    filename.write_text(HEADER + text)
+    filename.write_text(HEADER.replace("GRCh38", reference) + text)
     return str(filename)
 
 
@@ -56,9 +56,10 @@ def test_empty_sources_and_empty_csv(tmp_path):
     assert combined.iloc[0].sources == "populated"
 
 
+@pytest.mark.parametrize("reference", ["GRCh38", "hg38"])
 @pytest.mark.parametrize("rows", [DEL + BND + SINGLE_BND, SNV + DEL + BND + SINGLE_BND])
-def test_structural_csv_round_trip(tmp_path, rows):
-    filename = vcf(tmp_path, rows)
+def test_structural_csv_round_trip(tmp_path, rows, reference):
+    filename = vcf(tmp_path, rows, reference=reference)
     original = variants_util.load_as_dataframe(filename)
     result = run_and_parse_csv(variants.run, [filename])
     assert len(result) == len(rows.splitlines())
@@ -69,7 +70,11 @@ def test_structural_csv_round_trip(tmp_path, rows):
     for before, after in zip(original.variant, restored):
         if isinstance(before, varcode.StructuralVariant):
             fields = before.to_dict()
-            fields["genome"] = before.reference_name
+            # A genome object is not a JSON value; its canonical reference
+            # name recreates the same assembly. String labels such as hg38
+            # round-trip unchanged.
+            if fields["original_genome"] is None:
+                fields["original_genome"] = before.reference_name
             assert after.to_dict() == fields
     structural = result[result.structural_variant.notna()]
     assert all(json.loads(value)[0]["source"] == filename for value in structural.vcf_records)

@@ -94,6 +94,19 @@ def test_genes_and_effects():
 
 
 @pytest.mark.ensembl
+def test_primary_intronic_annotation_retains_protein_changing_candidates():
+    from pyensembl import EnsemblRelease
+    from varlens.variant_includes import Effect
+
+    variant = Variant("7", 117171171, "A", "C", EnsemblRelease(75))
+    frame = Effect().process_chunk(pandas.DataFrame({"variant": [variant]}))
+    assert frame.effect.iloc[0] == "intronic"
+    assert "Intronic: intronic" in frame.effect_candidates.iloc[0]
+    assert "Deletion:" in frame.effect_candidates.iloc[0]
+    assert "Unresolved:" in frame.effect_candidates.iloc[0]
+
+
+@pytest.mark.ensembl
 def test_context(tmp_path):
     # pyfaidx writes an index beside the FASTA; keep fixtures read-only.
     reference_fasta = tmp_path / "chr22.fa"

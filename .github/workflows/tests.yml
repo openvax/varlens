@@ -18,7 +18,7 @@ jobs:
         pandas: ["pandas>=3,<4"]
         include:
           - python-version: "3.12"
-            pandas: "pandas==2.3.3"
+            pandas: "pandas==3.0.0"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pandas: ["pandas==2.3.3", "pandas>=3,<4"]
+        pandas: ["pandas==3.0.0", "pandas>=3,<4"]
     env:
       PYENSEMBL_CACHE_DIR: ${{ github.workspace }}/.reference-cache
     steps:
