@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>varlens.variant_includes &mdash; varlens 1.0.1 documentation</title>
+  <title>varlens.variant_includes &mdash; varlens 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=292eb321"></script>
+      <script src="../../_static/documentation_options.js?v=fc837d61"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -87,6 +87,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">typechecks</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">varcode</span><span class="w"> </span><span class="kn">import</span> <span class="n">iter_candidate_effects</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pyfaidx</span>
 
@@ -169,7 +170,7 @@
 <a class="viewcode-back" href="../../varlens.html#varlens.variant_includes.Effect">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Effect</span><span class="p">(</span><span class="n">Includeable</span><span class="p">):</span>
     <span class="n">name</span> <span class="o">=</span> <span class="s2">"variant effect annotations"</span>
-    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"effect"</span><span class="p">]</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"effect"</span><span class="p">,</span> <span class="s2">"effect_candidates"</span><span class="p">]</span>
     <span class="n">string_columns</span> <span class="o">=</span> <span class="n">columns</span>
 
 <div class="viewcode-block" id="Effect.add_args">
@@ -179,7 +180,7 @@
         <span class="n">parser</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">Effect</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--include-effect"</span><span class="p">,</span>
             <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">"Include varcode effect annotations"</span><span class="p">)</span></div>
+            <span class="n">help</span><span class="o">=</span><span class="s2">"Include the primary Varcode annotation and its candidate consequences"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Effect.requested">
@@ -192,10 +193,13 @@
 <div class="viewcode-block" id="Effect.process_chunk">
 <a class="viewcode-back" href="../../varlens.html#varlens.variant_includes.Effect.process_chunk">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-        <span class="n">df</span><span class="p">[</span><span class="s2">"effect"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">v</span><span class="o">.</span><span class="n">effects</span><span class="p">()</span><span class="o">.</span><span class="n">top_priority_effect</span><span class="p">()</span><span class="o">.</span><span class="n">short_description</span>
-            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s2">"variant"</span><span class="p">]</span>
-        <span class="p">]</span>
+        <span class="n">effects</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">effects</span><span class="p">()</span><span class="o">.</span><span class="n">top_priority_effect</span><span class="p">()</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s2">"variant"</span><span class="p">]]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">"effect"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">effect</span><span class="o">.</span><span class="n">short_description</span> <span class="k">if</span> <span class="n">effect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"unavailable"</span>
+                        <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="n">effects</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">"effect_candidates"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="s2">"</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">short_description</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"Unresolved: unavailable candidate"</span>
+            <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">iter_candidate_effects</span><span class="p">(</span><span class="n">effect</span><span class="p">))</span> <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="n">effects</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">df</span></div>
 </div>
 
