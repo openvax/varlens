@@ -148,7 +148,8 @@ def union_with_variant_loci(loci, variants, operation):
     Returns
     -------
     loci_util.Loci
-        A new collection. ``loci`` itself is not modified.
+        A new collection. The loci in ``loci`` are unchanged, although
+        ``Loci.union`` may add empty per-contig entries to ``loci.contigs``.
 
     Raises
     ------
