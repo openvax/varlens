@@ -24,6 +24,8 @@ varlens-reads
 varlens-allele-support
     Count reads supporting each allele at specified sites in BAM files.
 
+Each command prints its options with ``--help`` and the installed Varlens
+version with ``--version``.
 
 Installation
 -------------
