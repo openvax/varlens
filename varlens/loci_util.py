@@ -21,9 +21,6 @@ def add_args(parser):
     parser.add_argument('--locus', nargs="+", default=[],
         help="Genomic locus, like chr1:2342332 or chr1:2342-23423. "
         "Any number of loci may be specified.")
-    # parser.add_argument("--neighbor-offsets",
-    #    nargs="+", type=int, default=[],
-    #    help="")
 
 def load_from_args(args):
     """
@@ -37,23 +34,7 @@ def load_from_args(args):
     if not args.locus:
         return None
 
-    loci_iterator = (Locus.parse(locus) for locus in args.locus)
-
-#   if args.neighbor_offsets:
-#       loci_iterator = expand_with_neighbors(
-#           loci_iterator, args.neighbor_offsets)
-
-    return Loci(loci_iterator)
-
-# def expand_with_neighbors(loci_iterator, neighbor_offsets):
-#    offsets = sorted(set(neighbor_offsets + [0]))
-#    for locus in loci_iterator:
-#        for offset in offsets:
-#            if offset == 0:
-#                yield locus
-#            else:
-#                yield Locus(
-#                    locus.contig, locus.start + offset, locus.end + offset)
+    return Loci(Locus.parse(locus) for locus in args.locus)
 
 class Loci(object):
     def __init__(self, locus_iterator=(), contig_map=None, insertions=()):

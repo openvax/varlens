@@ -10,8 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-
 def alignment_key(pysam_alignment_record):
     '''
     Return the identifying attributes of a ``pysam.AlignedSegment`` instance.

@@ -45,7 +45,6 @@ from the specified BAMs, counting only reads with mapping quality >= 10:
         --min-mapping-quality 10
 
 '''
-from __future__ import absolute_import
 
 import argparse
 import sys
