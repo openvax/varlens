@@ -63,6 +63,40 @@ def drop_prefix(strings):
         return strings
     return result
 
+
+def name_sources(paths, names, arg_name, input_name):
+    """Return the name to show for each input file (e.g. each BAM or VCF).
+
+    Used for ``--read-source-name`` and ``--variant-source-name``.
+
+    Parameters
+    ----------
+    paths : list of str
+        Input file paths.
+    names : list of str or None
+        Names given on the command line. A single name is used for every
+        path; otherwise there must be one name per path. If empty or None,
+        names are derived from the paths with ``drop_prefix``.
+    arg_name : str
+        Option name to show in the error message, e.g. ``"read_source_name"``.
+    input_name : str
+        Kind of input to show in the error message, e.g. ``"read source"``.
+
+    Returns
+    -------
+    list of str
+        One name per path, in the same order.
+
+    Raises
+    ------
+    ValueError
+        If the number of names is neither 1 nor ``len(paths)``.
+    """
+    if names:
+        return expand(names, arg_name, input_name, len(paths))
+    return drop_prefix(paths)
+
+
 class PrefixedArgumentParser(object):
     def __init__(self, wrapped, prefix):
         self.wrapped = wrapped
