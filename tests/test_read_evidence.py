@@ -325,3 +325,19 @@ def test_read_evidence_variant_matching_gatk_mini_bundle_extract_warning():
     assert (evidence.match_summary(Variant(loci[0], "A", ""))) == (
         [("A", 0), ("", 0), ("AT", 3)]
     )
+
+
+def test_read_source_uses_read_evidence_alignment_keys():
+    from varlens import read_evidence, read_source
+
+    assert read_source.alignment_key is read_evidence.alignment_key
+    assert read_source.read_key is read_evidence.read_key
+    with Samfile(data_path("gatk_mini_bundle_extract.bam")) as handle:
+        read = next(handle)
+        assert read_evidence.read_key(read) == (
+            read.query_name, read.is_duplicate, read.is_read1, read.is_read2)
+        assert read_evidence.alignment_key(read) == (
+            read_evidence.read_key(read),
+            read.query_alignment_start,
+            read.query_alignment_end,
+        )
