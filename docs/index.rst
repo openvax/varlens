@@ -4,6 +4,9 @@ Varlens Documentation
 .. include:: ../README.rst
    :end-before: .. end-of-docs-front-page
 
+.. _commandline-tool-help:
+.. _python-api:
+
 Contents
 ==================================
 

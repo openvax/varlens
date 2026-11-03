@@ -36,6 +36,8 @@ varlens-fusions
     Reconstruct a supplied fusion transcript from RNA reads with Isovar, and
     optionally predict MHC binding of junction peptides.
 
+.. _installation:
+
 Install
 -------
 
@@ -76,6 +78,11 @@ it came from (``1 2``). Positions are 0-based half-open (*interbase*), unlike
 the 1-based positions in VCF. ``effect`` is Varcode's preferred consequence and
 ``effect_candidates`` lists it with its alternatives; these are predictions,
 not observed products.
+
+.. _varlens-variants:
+.. _varlens-reads:
+.. _varlens-allele-support:
+.. _varlens-fusions:
 
 Command line
 ------------
@@ -120,6 +127,10 @@ version with ``--version``. One example per command:
     $ varlens-fusions fusion.json.gz --out reconstruction.json
 
 .. end-of-docs-front-page
+
+.. _structural-variants-and-empty-inputs:
+.. _note-on-coordinate-systems:
+.. _python-read-support-api:
 
 Documentation
 -------------
