@@ -51,11 +51,13 @@ import sys
 import logging
 
 from . import configure_logging
+from .arguments import add_verbose_arg, add_version_arg
 from .. import variant_includes
 from .. import variants_util
 from ..errors import input_errors
 
 parser = argparse.ArgumentParser(usage=__doc__)
+add_version_arg(parser)
 variants_util.add_args(parser, positional=True)
 
 group = parser.add_argument_group("variant output")
@@ -87,10 +89,10 @@ group.add_argument('--include-metadata', action="store_true", default=False,
 for includeable in variant_includes.INCLUDEABLES:
     includeable.add_args(parser)
 
-group.add_argument("-v", "--verbose", action="store_true", default=False)
+add_verbose_arg(group)
 
 @input_errors(parser)
-def run(raw_args=sys.argv[1:]):
+def run(raw_args=None):
     args = parser.parse_args(raw_args)
     configure_logging(args)
     if args.chunk_rows is not None and args.chunk_rows <= 0:

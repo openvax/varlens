@@ -128,6 +128,41 @@ def variant_loci(variant):
                 for contig, position in variant.breakpoints]
     return [pileup_collection.to_locus(variant)]
 
+
+def union_with_variant_loci(loci, variants, operation):
+    """Return ``loci`` plus the pileup locus of each small variant.
+
+    ``varlens-reads`` and ``varlens-allele-support`` use this to combine
+    ``--locus`` with the loci of ``--variants``/``--single-variant``.
+
+    Parameters
+    ----------
+    loci : loci_util.Loci or None
+        Loci given explicitly, or None if none were given.
+    variants : iterable of varcode.Variant
+        Variants whose loci to add (see ``pileup_collection.to_locus``).
+    operation : str
+        What the loci are for, e.g. ``"allele support"``. Used in the error
+        message for structural variants.
+
+    Returns
+    -------
+    loci_util.Loci
+        A new collection. The loci in ``loci`` are unchanged, although
+        ``Loci.union`` may add empty per-contig entries to ``loci.contigs``.
+
+    Raises
+    ------
+    InputError
+        If any variant is a structural variant, which has no single locus.
+    """
+    variants = list(variants)
+    require_small_variants(variants, operation)
+    loci_of_variants = loci_util.Loci(
+        pileup_collection.to_locus(variant) for variant in variants)
+    return loci_of_variants if loci is None else loci.union(loci_of_variants)
+
+
 def add_args(parser, positional=False):
     group = parser.add_argument_group("variant loading")
     group.add_argument("variants" if positional else "--variants",
@@ -175,14 +210,9 @@ def load_from_args_as_dataframe(args):
     if not args.variants and not args.single_variant:
         return None
 
-    if args.variant_source_name:
-        variant_source_names = util.expand(
-            args.variant_source_name,
-            'variant_source_name',
-            'variant source',
-            len(args.variants))
-    else:
-        variant_source_names = util.drop_prefix(args.variants)
+    variant_source_names = util.name_sources(
+        args.variants, args.variant_source_name,
+        'variant_source_name', 'variant source')
 
     variant_to_sources = collections.defaultdict(list)
 

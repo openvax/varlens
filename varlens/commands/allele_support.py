@@ -39,32 +39,31 @@ from .. import reads_util
 from .. import variants_util
 
 from . import configure_logging
+from .arguments import add_verbose_arg, add_version_arg
 from .. import support
-from ..read_evidence.pileup_collection import to_locus
 from ..errors import input_errors
 
 parser = argparse.ArgumentParser(usage=__doc__)
+add_version_arg(parser)
 group = parser.add_argument_group("output arguments")
-group.add_argument("--out")
-group.add_argument("-v", "--verbose", action="store_true", default=False)
+group.add_argument("--out",
+    help="Output CSV file. If not specified, the CSV is written to stdout.")
+add_verbose_arg(group)
 loci_util.add_args(parser.add_argument_group("loci specification"))
 variants_util.add_args(parser)
 reads_util.add_args(parser)
 
 @input_errors(parser)
-def run(raw_args=sys.argv[1:]):
+def run(raw_args=None):
     args = parser.parse_args(raw_args)
     configure_logging(args)
 
     loci = loci_util.load_from_args(args)  # may be None
     variants_df = variants_util.load_from_args_as_dataframe(args)
     if variants_df is not None:
-        variants_util.require_small_variants(variants_df.variant, "allele support")
-        variant_loci = loci_util.Loci(
-            to_locus(variant)
-            for variant in variants_df["variant"])
-        loci = variant_loci if loci is None else loci.union(variant_loci)
-    
+        loci = variants_util.union_with_variant_loci(
+            loci, variants_df.variant, "allele support")
+
     if not loci:
         if variants_df is not None:
             parser.error("No loci: variants specified but none remained "
