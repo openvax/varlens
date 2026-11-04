@@ -2,35 +2,22 @@ Varlens Documentation
 ==================================
 
 .. include:: ../README.rst
+   :end-before: .. end-of-docs-front-page
 
-Commandline tool help
+.. _commandline-tool-help:
+.. _python-api:
+
+Contents
 ==================================
-
-varlens-variants
-----------------------------------
-
-.. command-output:: varlens-variants -h
-
-varlens-reads
-----------------------------------
-
-.. command-output:: varlens-reads -h
-
-varlens-allele-support
-----------------------------------
-
-.. command-output:: varlens-allele-support -h
-
-varlens-fusions
-----------------------------------
-
-.. command-output:: varlens-fusions -h
-
-Python API
-----------------------------------
 
 .. toctree::
    :maxdepth: 2
 
-   varlens
-
+   commands
+   structural_variants
+   fusions
+   python
+   coordinates
+   cli
+   API reference <varlens>
+   development
