@@ -150,14 +150,15 @@ Development
 
 ::
 
-    pip install -e '.[test,fusion]'
+    ./develop.sh    # pip install -e '.[test,fusion]'
     pyensembl install --release 75 --species human
     ./lint.sh
     ./test.sh
 
 NetMHCpan tests are opt-in (``./test.sh --run-netmhcpan``). The
 `development guide <https://openvax.github.io/varlens/docs/html/development.html>`_
-covers the shared OpenVax dependency check and building the docs.
+covers the shared OpenVax dependency check, building the docs and releasing
+with ``./deploy.sh``.
 
 License
 -------

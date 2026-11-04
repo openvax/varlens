@@ -1,8 +1,9 @@
 Development
 ===========
 
-How to run the tests, check the shared OpenVax dependency stack, and build and
-publish these docs. This page is for contributors and maintainers.
+How to run the tests, check the shared OpenVax dependency stack, build and
+publish these docs, and release to PyPI. This page is for contributors and
+maintainers.
 
 Tests
 -----
@@ -11,10 +12,13 @@ To run the tests from a git checkout:
 
 ::
 
-    pip install -e '.[test,fusion]'
+    ./develop.sh    # pip install -e '.[test,fusion]'
     pyensembl install --release 75 --species human
     ./lint.sh
     ./test.sh
+
+``develop.sh`` and ``deploy.sh`` use ``python`` from ``PATH``; set ``PYTHON``
+to use another interpreter.
 
 External NetMHCpan tests are opt-in: run ``./test.sh --run-netmhcpan`` with
 NetMHCpan and its model data installed. The other tests do not require it.
@@ -64,3 +68,23 @@ The docs will be written to ``docs/_build/html``. Maintainers with push access
 can publish them using ``./deploy-gh-pages.sh``; it builds in a temporary
 directory and updates the existing GitHub Pages branch without rewriting its
 history. Set ``PYTHON`` to select a particular environment's Python executable.
+
+Releases
+--------
+
+Every pull request bumps ``__version__`` in ``varlens/version.py``. Once a pull
+request has merged, a maintainer releases that version from a clean
+``master`` that matches ``origin/master``:
+
+::
+
+    pip install build twine
+    ./deploy.sh --dry-run
+    ./deploy.sh
+
+``deploy.sh`` refuses to run if the working tree is dirty, ``master`` differs
+from ``origin/master``, or the version's ``v<version>`` tag already exists. It
+then runs ``./lint.sh`` and ``./test.sh``, builds the wheel and sdist into a new
+directory under ``dist/``, and checks them with ``twine check --strict``.
+``--dry-run`` stops there. Otherwise it uploads both files to PyPI, which needs
+an account with upload rights to the varlens project, and pushes the tag.
