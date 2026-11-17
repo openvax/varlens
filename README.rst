@@ -32,11 +32,17 @@ Varlens 1.1 requires Python 3.11 or newer, pandas 3, and
 MHCTools 4.1.1 or newer (below 5). The package uses the current Topiary 5
 prediction API.
 
-To install from `PyPI <https://pypi.python.org/pypi/varlens>`_:
+Install the validated wheel from the `Varlens 1.1.0 GitHub release
+<https://github.com/openvax/varlens/releases/tag/v1.1.0>`_:
 
 ::
 
-    pip install varlens
+    python -m pip install https://github.com/openvax/varlens/releases/download/v1.1.0/varlens-1.1.0-py3-none-any.whl
+
+PyPI currently serves the older 0.0.2 release. Publishing the current version
+there is blocked by account permissions, tracked in `issue 55
+<https://github.com/openvax/varlens/issues/55>`_. Use the GitHub wheel above
+for the current Python and OpenVax stack.
 
 Or from a git checkout:
 
@@ -287,7 +293,7 @@ varlens-fusions
 
 Install the optional Isovar adapter and reconstruct supplied fusion RNA::
 
-    pip install 'varlens[fusion]'
+    python -m pip install 'varlens[fusion] @ https://github.com/openvax/varlens/releases/download/v1.1.0/varlens-1.1.0-py3-none-any.whl'
     varlens-fusions fusion.json.gz --out reconstruction.json
 
 Optionally predict junction-overlapping peptides with Topiary and mhctools::
