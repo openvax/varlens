@@ -45,13 +45,33 @@ def expand(value, arg_name, input_name, length):
                 actual=len(value)))
 
 
+def strip_extensions(path):
+    """Return ``path`` without the file extensions of its last component.
+
+    Only the file name is shortened, so a ``.`` in a directory name (as in
+    ``./x.vcf`` or ``/data/run.1/x.vcf``) is left alone.
+
+    Parameters
+    ----------
+    path : str
+        A file path, e.g. ``"/data/run.1/x.vcf.gz"``.
+
+    Returns
+    -------
+    str
+        The path with everything from the first ``.`` of the file name
+        removed, e.g. ``"/data/run.1/x"``. A file name that starts with ``.``
+        (e.g. ``".hidden"``) is returned unchanged.
+    """
+    (directory, filename) = os.path.split(path)
+    return os.path.join(directory, filename.split(".")[0] or filename)
+
+
 def drop_prefix(strings):
     """
-    Removes common prefix from a collection of strings
+    Removes file extensions and the common prefix from a collection of paths
     """
-    strings_without_extensions = [
-        s.split(".", 2)[0] for s in strings
-    ]
+    strings_without_extensions = [strip_extensions(s) for s in strings]
 
     if len(strings_without_extensions) == 1:
         return [os.path.basename(strings_without_extensions[0])]
