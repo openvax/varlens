@@ -109,7 +109,7 @@ class Locus(namedtuple("Locus", "contig start end")):
             raise ValueError("Couldn't parse locus: %s. "
                 "Expected format is: chr5:3332 or chr5:3332-5555 for "
                 "inclusive 1-based coordinates and chr5/3331 or "
-                "chr5/3331-5554 for half-open 0-based coordinates.")
+                "chr5/3331-5554 for half-open 0-based coordinates." % string)
 
         (contig, symbol, start, _, maybe_end) = match.groups()
         start = int(start)

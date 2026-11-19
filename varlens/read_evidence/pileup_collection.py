@@ -498,8 +498,7 @@ class PileupCollection(object):
         matching all the specified filters.
         '''
 
-        if filters is None:
-            filters = []
+        filters = list(filters or [])
         if drop_duplicates:
             filters.append(lambda e: not e.alignment.is_duplicate)
         if drop_improper_mate_pairs:
