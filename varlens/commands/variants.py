@@ -100,6 +100,10 @@ def run(raw_args=sys.argv[1:]):
     df = variants_util.load_from_args_as_dataframe(args)
     if df is None:
         parser.error("No variants specified.")
+    if args.limit is not None:
+        if args.limit < 0:
+            parser.error("--limit must not be negative")
+        df = df.iloc[:args.limit].copy()
 
     logging.info("Loaded %d variants." % df.shape[0])
     for includeable in variant_includes.INCLUDEABLES:

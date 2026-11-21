@@ -81,7 +81,7 @@ class Includeable(object):
                 start = time.time()
                 df.loc[this_chunk_rows, self.columns] = self.process_chunk(
                     df.loc[this_chunk_rows].copy())[self.columns]
-                logging.info("Processed in %f0.2 sec" % (time.time() - start))
+                logging.info("Processed in %0.2f sec" % (time.time() - start))
             yield this_chunk_rows.sum()
 
 class Effect(Includeable):
