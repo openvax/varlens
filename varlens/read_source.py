@@ -17,6 +17,9 @@ import pysam
 
 from . import read_evidence
 from .locus import chromosome_name_map
+# alignment_key and read_key are defined in read_evidence.util; importing them
+# here keeps varlens.read_source.alignment_key/read_key working.
+from .read_evidence import alignment_key, read_key  # noqa: F401
 
 class ReadSource(object):
     def __init__(self, name, filename, read_filters=[]):
@@ -108,31 +111,3 @@ class ReadSource(object):
                     [lambda element:
                         self.read_passes_filters(element.alignment)])
         return collection
-
-def alignment_key(pysam_alignment_record):
-    '''
-    Return the identifying attributes of a ``pysam.AlignedSegment`` instance.
-    This is necessary since these objects do not support a useful notion of
-    equality (they compare on identify by default).
-    '''
-    return (
-        read_key(pysam_alignment_record),
-        pysam_alignment_record.query_alignment_start,
-        pysam_alignment_record.query_alignment_end,
-    )
-
-
-def read_key(pysam_alignment_record):
-    '''
-    Given a ``pysam.AlignedSegment`` instance, return the attributes identifying
-    the *read* it comes from (not the alignment). There may be more than one
-    alignment for a read, e.g. chimeric and secondary alignments.
-    '''
-    return (
-        pysam_alignment_record.query_name,
-        pysam_alignment_record.is_duplicate,
-        pysam_alignment_record.is_read1,
-        pysam_alignment_record.is_read2,
-    )
-
-

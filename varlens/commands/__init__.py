@@ -12,10 +12,6 @@
 
 import sys
 import logging
-import warnings
-
-# Biopython (used by varcode) throws a warning when sequences are compared.
-warnings.filterwarnings("ignore", message="Biopython Seq objects")
 
 def configure_logging(args=None):
     if args is not None and args.verbose:

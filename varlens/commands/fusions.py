@@ -6,11 +6,13 @@ import json
 from pathlib import Path
 import sys
 
+from .arguments import add_version_arg
 from ..errors import InputError, input_errors
 from ..fusions import analyze_fusion
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_version_arg(parser)
 parser.add_argument("inputs", nargs="+", help="Isovar supplied-fusion JSON or JSON.gz files")
 parser.add_argument("--out", help="JSON/JSON.gz report; defaults to stdout")
 parser.add_argument("--hla", nargs="+", default=[],

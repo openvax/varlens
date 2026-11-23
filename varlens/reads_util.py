@@ -145,14 +145,8 @@ def load_from_args(args):
     if not args.reads:
         return None
 
-    if args.read_source_name:
-        read_source_names = util.expand(
-            args.read_source_name,
-            'read_source_name',
-            'read source',
-            len(args.reads))
-    else:
-        read_source_names = util.drop_prefix(args.reads)
+    read_source_names = util.name_sources(
+        args.reads, args.read_source_name, 'read_source_name', 'read source')
 
     filters = []
     for (name, info) in READ_FILTERS.items():
