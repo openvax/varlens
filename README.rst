@@ -41,12 +41,12 @@ varlens-fusions
 Install
 -------
 
-Install the validated wheel from the `Varlens 1.1.0 GitHub release
-<https://github.com/openvax/varlens/releases/tag/v1.1.0>`_:
+Install the validated wheel from the `Varlens 1.1.5 GitHub release
+<https://github.com/openvax/varlens/releases/tag/v1.1.5>`_:
 
 ::
 
-    python -m pip install https://github.com/openvax/varlens/releases/download/v1.1.0/varlens-1.1.0-py3-none-any.whl
+    python -m pip install https://github.com/openvax/varlens/releases/download/v1.1.5/varlens-1.1.5-py3-none-any.whl
 
 PyPI currently serves the older 0.0.2 release. Publishing the current version
 there is blocked by account permissions, tracked in `issue 55
