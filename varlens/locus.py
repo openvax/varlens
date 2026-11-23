@@ -13,20 +13,24 @@
 import re
 from collections import namedtuple
 
-import pyensembl
 import typechecks
-
-def normalize_contig(contig):
-    """Use Ensembl-style names, preserving alternate and unplaced contigs."""
-    contig = pyensembl.locus.normalize_chromosome(contig)
-    if contig.startswith("chr") and "_" not in contig:
-        contig = contig[3:]
-    return "MT" if contig == "M" else contig
+from varcode.contigs import ContigResolver, annotation_contig_name
 
 
-def chromosome_name_map(references):
-    """Resolve aliases to BAM references, giving exact names priority."""
-    result = {normalize_contig(name): name for name in references}
+def normalize_contig(contig, reference_name=None):
+    """Use Varcode's contig normalization (including UCSC accessions and GRCh37 chrM)."""
+    return annotation_contig_name(contig, reference_name)
+
+
+def chromosome_name_map(references, reference_name=None):
+    """Resolve aliases to BAM references via Varcode's ContigResolver, giving exact names priority."""
+    resolver = ContigResolver(references, reference_name=reference_name)
+    result = {}
+    for name in references:
+        normalized = normalize_contig(name, reference_name=reference_name)
+        resolution = resolver.resolve(normalized)
+        if resolution.resolved_name is not None:
+            result[normalized] = resolution.resolved_name
     result.update((name, name) for name in references)
     return result
 

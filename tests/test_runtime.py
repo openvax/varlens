@@ -126,11 +126,31 @@ def test_support_dataframe():
 
 
 def test_chromosome_aliases():
+    from varlens.locus import normalize_contig
+
     assert Locus.parse("chr22:42") == Locus("22", 41, 42)
     assert Locus.parse("chrM:42") == Locus("MT", 41, 42)
-    assert Locus.from_inclusive_coordinates("chrUn_KI270438v1", 42).contig == "chrUn_KI270438v1"
+    assert Locus.from_inclusive_coordinates("chrUn_KI270438v1", 42).contig == "KI270438.1"
+    assert normalize_contig("chr1_KI270706v1_random") == "KI270706.1"
+    assert normalize_contig("chrM", reference_name="GRCh37") == "chrM"
     assert chromosome_name_map(["chr22", "chrM"])["22"] == "chr22"
     assert chromosome_name_map(["22", "chr22"])["22"] == "22"
+    acc_map = chromosome_name_map(["chr1_KI270706v1_random"])
+    assert acc_map["KI270706.1"] == "chr1_KI270706v1_random"
+    assert acc_map["chr1_KI270706v1_random"] == "chr1_KI270706v1_random"
+
+
+def test_confidence_info_for_alt_slices_multi_alt_cipos_ciend():
+    from varlens.variants_util import _confidence_info_for_alt
+
+    info = {"CIPOS": [-10, 10, -5, 5], "CIEND": [-2, 2, -8, 8], "END": 2000}
+    first = _confidence_info_for_alt(info, 0, 2)
+    second = _confidence_info_for_alt(info, 1, 2)
+    assert first["CIPOS"] == [-10, 10]
+    assert first["CIEND"] == [-2, 2]
+    assert second["CIPOS"] == [-5, 5]
+    assert second["CIEND"] == [-8, 8]
+    assert info["CIPOS"] == [-10, 10, -5, 5]
 
 
 def test_resume_empty_csv_annotation_column():

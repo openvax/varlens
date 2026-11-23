@@ -40,6 +40,18 @@ STRUCTURAL_COLUMN = "structural_variant"
 STRUCTURAL_SCHEMA = "varlens.structural_variant.v1"
 
 
+def _confidence_info_for_alt(info, alt_index, num_alts):
+    """Slice multi-ALT CIPOS/CIEND pairs to the selected ALT, matching varcode.vcf."""
+    if num_alts <= 1 or not info:
+        return info
+    sliced = dict(info)
+    for key in ("CIPOS", "CIEND"):
+        values = sliced.get(key)
+        if isinstance(values, (list, tuple)) and len(values) == 2 * num_alts:
+            sliced[key] = values[2 * alt_index:2 * (alt_index + 1)]
+    return sliced
+
+
 def _structural_vcf_records(filename, variants, only_passing, max_variants):
     """Retain each source record before Varcode's per-event metadata deduplicates.
 
@@ -68,25 +80,31 @@ def _structural_vcf_records(filename, variants, only_passing, max_variants):
                     break
             header = VCFHeader.from_lines(header_lines)
             loaded = 0
+            limit_reached = max_variants == 0
             for line in stream:
+                if limit_reached:
+                    break
                 if not line.strip() or line.startswith("#"):
                     continue
                 fields = line.rstrip("\r\n").split("\t")
                 chrom, pos, record_id, ref, alts, qual, filters = fields[:7]
                 if only_passing and filters not in ("PASS", "."):
                     continue
-                for index, alt in enumerate(alts.split(",")):
-                    if alt in (".", "*"):
+                alt_list = alts.split(",")
+                for index, alt in enumerate(alt_list):
+                    if alt in (".", "*") or alt.upper() == ref.upper():
                         continue
                     if max_variants is not None and loaded >= max_variants:
-                        return records
+                        limit_reached = True
+                        break
                     loaded += 1
                     example = keys.get((chrom, int(pos), ref, alt))
                     if example is None:
                         continue
                     info = header.parse_info(fields[7])
+                    alt_info = _confidence_info_for_alt(info, index, len(alt_list))
                     variant = parse_symbolic_alt(
-                        chrom, int(pos), ref, alt, info=info,
+                        chrom, int(pos), ref, alt, info=alt_info,
                         genome=example.original_genome,
                         normalize_contig_names=example.normalize_contig_names,
                         convert_ucsc_contig_names=example.convert_ucsc_contig_names)
@@ -103,7 +121,7 @@ def _structural_vcf_records(filename, variants, only_passing, max_variants):
                                 "sample_info": header.parse_samples(fields[9:], fields[8])
                                 if header.samples else None,
                                 "alt_allele_index": index,
-                                "vcf_alt_alleles": alts.split(","),
+                                "vcf_alt_alleles": alt_list,
                             },
                         })
     if set(records) != structural:
