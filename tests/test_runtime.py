@@ -166,3 +166,27 @@ def test_resume_empty_csv_annotation_column():
     frame = pd.DataFrame({"annotation": [float("nan"), float("nan")], "variant": [None, None]})
     assert list(Annotation().compute(frame, chunk_rows=1)) == [1, 1]
     assert frame.annotation.tolist() == ["example", "example"]
+
+
+def test_locus_and_pileup_type_validation_without_typechecks():
+    from pathlib import Path
+    from . import data_path
+    from varlens.read_evidence import PileupCollection
+
+    with pytest.raises(TypeError, match="contig must be a str"):
+        Locus.from_inclusive_coordinates(22, 100)
+    with pytest.raises(TypeError, match="start must be an int"):
+        Locus.from_inclusive_coordinates("22", "100")
+    with pytest.raises(TypeError, match="end must be an int"):
+        Locus.from_inclusive_coordinates("22", 100, "101")
+    with pytest.raises(TypeError, match="contig must be a str"):
+        Locus.from_interbase_coordinates(None, 100)
+    with pytest.raises(TypeError, match="start must be an int"):
+        Locus.from_interbase_coordinates("22", 100.5)
+    with pytest.raises(TypeError, match="end must be an int"):
+        Locus.from_interbase_coordinates("22", 100, 101.5)
+
+    bam_path = Path(data_path("gatk_mini_bundle_extract.bam"))
+    locus = Locus.from_inclusive_coordinates("20", 10008951)
+    evidence = PileupCollection.from_bam(bam_path, [locus])
+    assert evidence.num_reads() > 0

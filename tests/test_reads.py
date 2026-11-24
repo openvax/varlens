@@ -174,3 +174,11 @@ def test_round_trip_sam():
         assert (sorted(cols_concat(result1, expected_cols[1:]))) == (
             sorted(cols_concat(result2, expected_cols[1:]))
         )
+
+
+def test_reads_flag_matches_positional():
+    bam = data_path("CELSR1/bams/bam_0.bam")
+    positional = run([bam])
+    flagged = run(["--reads", bam])
+    assert positional.shape == flagged.shape
+    assert cols_concat(positional, expected_cols) == cols_concat(flagged, expected_cols)

@@ -10,13 +10,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
+import argparse
+import collections
+from collections.abc import Callable, Iterable, Mapping, Sequence
 import logging
 import time
-import collections
+from typing import Any
 
 import pandas
 import numpy
-import typechecks
 from varcode import iter_candidate_effects
 
 import pyfaidx
@@ -26,12 +30,13 @@ from . import mhc_binding
 from . import reads_util
 from . import support
 from . import read_evidence
+from .errors import InputError
 from .variants_util import require_small_variants
 
 class Includeable(object):
-    columns = None
-    string_columns = ()
-    float_columns = ()
+    columns: list[str] | None = None
+    string_columns: Sequence[str] = ()
+    float_columns: Sequence[str] = ()
 
     @classmethod
     def from_args(cls, args):
@@ -204,57 +209,137 @@ class MHCBindingAffinity(Includeable):
     ])
     
     @staticmethod
-    def add_args(parser):
-        parser = parser.add_argument_group(MHCBindingAffinity.name)
-        parser.add_argument("--include-mhc-binding",
-            action="store_true", default=False,
-            help="Include MHC binding (tightest affinity and allele)")
-        parser.add_argument("--hla",
-            help="Space separated list of MHC alleles, e.g. 'A:02:01 A:02:02'")
-        parser.add_argument('--hla-file',
-            help="Load HLA types from the specified CSV file. It must have "
-            "columns: 'donor' and 'hla'")
+    def add_args(parser: argparse.ArgumentParser) -> None:
+        group = parser.add_argument_group(MHCBindingAffinity.name)
+        group.add_argument(
+            "--include-mhc-binding",
+            action="store_true",
+            default=False,
+            help="Include MHC binding (tightest affinity and allele)",
+        )
+        group.add_argument(
+            "--hla-file",
+            help=(
+                "Load per-donor HLA types from the specified CSV file. It must "
+                "have columns: 'donor' and 'hla'"
+            ),
+        )
+        mhc_binding.add_mhc_cli_args(parser)
 
     @classmethod
-    def from_args(cls, args):
-        if bool(args.hla) + bool(args.hla_file) != 1:
-            raise ValueError("Must specify exactly one of --hla or --hla-file")
-        return cls(
-            hla=args.hla,
-            hla_dataframe=(
-                pandas.read_csv(args.hla_file) if args.hla_file else None))
+    def from_args(cls, args: argparse.Namespace) -> MHCBindingAffinity:
+        has_global_alleles = bool(
+            getattr(args, "mhc_alleles", "")
+            or getattr(args, "mhc_alleles_file", None)
+            or getattr(args, "hla", None)
+        )
+        if args.hla_file and has_global_alleles:
+            raise InputError(
+                "Specify either --hla-file or global MHC alleles "
+                "(--mhc-alleles / --mhc-alleles-file / --hla), not both"
+            )
+        if args.hla_file:
+            predictor_names = mhc_binding.mhc_predictor_names_from_args(args)
+            if not predictor_names:
+                raise InputError("MHC predictor required (use --mhc-predictor)")
+            if len(predictor_names) != 1:
+                raise InputError(
+                    "Expected exactly one MHC predictor, got %d: %s"
+                    % (len(predictor_names), ", ".join(predictor_names))
+                )
+            try:
+                mhc_binding.peptide_lengths_from_args(args)
+            except ValueError as error:
+                raise InputError(str(error)) from error
+            return cls(
+                hla_dataframe=pandas.read_csv(args.hla_file),
+                predictor_factory=lambda alleles: mhc_binding.mhc_predictor_from_args(
+                    args, alleles_override=alleles
+                ),
+            )
+        try:
+            predictor = mhc_binding.mhc_predictor_from_args(args)
+        except ValueError as error:
+            raise InputError(str(error)) from error
+        return cls(predictor=predictor)
 
     @staticmethod
-    def string_to_hla_alleles(s):
-        return s.replace("'", "").split()
+    def string_to_hla_alleles(s: str) -> list[str]:
+        return mhc_binding.parse_hla_alleles(s)
 
-    def __init__(self, hla=None, hla_dataframe=None, donor_to_hla=None):
+    def __init__(
+        self,
+        hla: str | Iterable[str] | None = None,
+        hla_dataframe: pandas.DataFrame | None = None,
+        donor_to_hla: Mapping[Any, Iterable[str] | None] | None = None,
+        *,
+        predictor: Any = None,
+        mhc_predictor: str | Callable[..., Any] | None = None,
+        epitope_lengths: Iterable[int] = mhc_binding.DEFAULT_EPITOPE_LENGTHS,
+        predictor_factory: Callable[[Iterable[str]], Any] | None = None,
+    ) -> None:
         """
-        Specify exactly one of hla, hla_dataframe, or donor_to_hla.
+        Specify exactly one of hla, hla_dataframe, donor_to_hla, or predictor.
 
         Parameters
         -----------
-        hla : list of string
+        hla : str or iterable of str
             HLA alleles to use for all donors
 
         hla_dataframe : pandas.DataFrame with columns 'donor' and 'hla'
             DataFrame giving HLA alleles for each donor. The 'hla' column
-            should be a space separated list of alleles for that donor.
+            should be a space- or comma-separated list of alleles for that donor.
 
-        donor_to_hla : dict of string -> string list
+        donor_to_hla : mapping of donor -> allele list
             Map from donor to HLA alleles for that donor.
+
+        predictor : topiary.TopiaryPredictor or mhctools predictor, optional
+            Pre-configured predictor instance to use for all donors.
+
+        mhc_predictor : str or callable, optional
+            Predictor name (from ``mhctools.cli.mhc_predictors``) or factory
+            used when constructing predictors from alleles.
+
+        epitope_lengths : iterable of int, optional
+            Peptide lengths to predict when constructing predictors from alleles.
+
+        predictor_factory : callable, optional
+            Factory receiving a donor's allele list and returning a predictor
+            instance (used for per-donor CLI ``--hla-file`` runs).
         """
-        if bool(hla) + (hla_dataframe is not None) + bool(donor_to_hla) != 1:
+        if (
+            bool(hla)
+            + (hla_dataframe is not None)
+            + bool(donor_to_hla)
+            + (predictor is not None)
+            != 1
+        ):
             raise TypeError(
-                "Must specify exactly one of hla, hla_dataframe, donor_to_hla")
-        
-        self.hla = (
-            self.string_to_hla_alleles(hla) if typechecks.is_string(hla)
-            else hla)
-        self.donor_to_hla = donor_to_hla
+                "Must specify exactly one of hla, hla_dataframe, donor_to_hla, or predictor"
+            )
+        if predictor is not None and (
+            mhc_predictor is not None or predictor_factory is not None
+        ):
+            raise ValueError(
+                "Pass either predictor or mhc_predictor/predictor_factory, not both"
+            )
+
+        self.hla: list[str] | None = (
+            self.string_to_hla_alleles(hla)
+            if isinstance(hla, str)
+            else (list(hla) if hla is not None else None)
+        )
+        self.donor_to_hla: dict[Any, list[str] | None] | None = (
+            {
+                donor: (list(alleles) if alleles is not None else None)
+                for donor, alleles in donor_to_hla.items()
+            }
+            if donor_to_hla is not None
+            else None
+        )
         if hla_dataframe is not None:
             self.donor_to_hla = {}
-            for (i, row) in hla_dataframe.iterrows():
+            for (_i, row) in hla_dataframe.iterrows():
                 if row.donor in self.donor_to_hla:
                     raise ValueError("Multiple rows for donor: %s" % row.donor)
                 if pandas.isnull(row.hla):
@@ -262,13 +347,40 @@ class MHCBindingAffinity(Includeable):
                 else:
                     self.donor_to_hla[row.donor] = self.string_to_hla_alleles(
                         row.hla)
-        assert self.hla is not None or self.donor_to_hla is not None
+        self.predictor = predictor
+        self.mhc_predictor = mhc_predictor
+        self.epitope_lengths = tuple(epitope_lengths)
+        self.predictor_factory = predictor_factory
+        assert (
+            self.hla is not None
+            or self.donor_to_hla is not None
+            or self.predictor is not None
+        )
 
     @staticmethod
-    def requested(args):
+    def requested(args: argparse.Namespace) -> bool:
         return args.include_mhc_binding
 
-    def process_chunk(self, df):
+    def process_chunk(self, df: pandas.DataFrame) -> pandas.DataFrame:
+        if self.predictor is not None:
+            rows = (
+                ~df.effect.isin(self.noncoding_effects)
+                if "effect" in df
+                else pandas.Series(True, index=df.index)
+            )
+            sub_df = df.loc[rows]
+            if sub_df.shape[0] > 0:
+                result = mhc_binding.binding_affinities(
+                    sub_df.variant, predictor=self.predictor
+                )
+                df.loc[rows, "binding_affinity"] = (
+                    result["binding_affinity"].values
+                )
+                df.loc[rows, "binding_allele"] = (
+                    result["binding_allele"].values
+                )
+            return df
+
         drop_donor = False
         if 'donor' not in df:
             df["donor"] = "DONOR1"
@@ -278,10 +390,24 @@ class MHCBindingAffinity(Includeable):
             if 'effect' in df:
                 rows = rows & (~df.effect.isin(self.noncoding_effects))
             sub_df = df.loc[rows]
-            alleles = self.hla if self.hla else self.donor_to_hla.get(donor)
+            alleles = (
+                self.hla
+                if self.hla
+                else (self.donor_to_hla.get(donor) if self.donor_to_hla else None)
+            )
             if alleles and sub_df.shape[0] > 0:
-                result = mhc_binding.binding_affinities(
-                    sub_df.variant, alleles)
+                if self.predictor_factory is not None:
+                    donor_predictor = self.predictor_factory(alleles)
+                    result = mhc_binding.binding_affinities(
+                        sub_df.variant, predictor=donor_predictor
+                    )
+                else:
+                    result = mhc_binding.binding_affinities(
+                        sub_df.variant,
+                        alleles,
+                        epitope_lengths=self.epitope_lengths,
+                        mhc_predictor=self.mhc_predictor,
+                    )
                 df.loc[rows, "binding_affinity"] = (
                     result["binding_affinity"].values)
                 df.loc[rows, "binding_allele"] = (

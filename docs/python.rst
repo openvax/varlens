@@ -25,7 +25,9 @@ alternate and unplaced contig names are preserved.
 MHC binding
 -----------
 
-MHC binding uses the current Topiary API with a local NetMHCpan installation.
+MHC binding uses the current Topiary API with any configured ``mhctools``
+predictor (via ``predictor=`` or ``mhc_predictor=`` on ``binding_affinities``,
+``fragment_predictions``, and ``analyze_fusion``).
 It reports the lowest affinity in nM among peptides overlapping the mutation,
 and the corresponding input allele. Variants without predictions have missing
 values. Prediction caches distinguish peptide-length requests. Effect labels

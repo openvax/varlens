@@ -115,7 +115,7 @@ def run(raw_args=None):
 
     read_sources = reads_util.load_from_args(args)
     if not read_sources:
-        parser.error("No read sources specified.")
+        parser.error("No read sources specified (pass BAM path(s) or --reads).")
 
     loci = loci_util.load_from_args(args)  # may be None
     variants_df = variants_util.load_from_args_as_dataframe(args)

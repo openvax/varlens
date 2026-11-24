@@ -7,7 +7,13 @@ from mhctools.base_predictor import BasePredictor
 import topiary
 from varcode import Variant
 
-from varlens.mhc_binding import binding_affinities
+from varlens.commands import variants as variants_cmd
+from varlens.mhc_binding import (
+    binding_affinities,
+    fragment_predictions,
+    mhc_predictor_from_args,
+    parse_hla_alleles,
+)
 from varlens.variant_includes import MHCBindingAffinity
 
 
@@ -222,3 +228,203 @@ def test_intronic_primary_uses_coding_candidate(monkeypatch):
     result = binding_affinities([variant], ["HLA-A*02:01"])
     assert result["binding_affinity"].tolist() == [50.25]
     assert result["binding_allele"].tolist() == ["HLA-A*02:01"]
+
+
+@pytest.mark.ensembl
+def test_binding_affinities_accepts_predictor_and_mhc_predictor(variants):
+    model = FixedBindingPredictor(
+        alleles=["HLA-A*02:01"], default_peptide_lengths=[9]
+    )
+    from_model = binding_affinities(variants, predictor=model)
+    assert from_model["binding_affinity"].tolist() == [50.25, 50.25]
+    assert from_model["binding_allele"].tolist() == ["HLA-A*02:01", "HLA-A*02:01"]
+
+    topiary_predictor = topiary.TopiaryPredictor(
+        models=model, only_novel_epitopes=True
+    )
+    from_topiary = binding_affinities(variants, predictor=topiary_predictor)
+    pandas.testing.assert_frame_equal(from_model, from_topiary)
+
+    from_name = binding_affinities(
+        variants, ["HLA-A*02:01"], epitope_lengths=[9], mhc_predictor="random"
+    )
+    assert from_name["binding_affinity"].notna().all()
+    assert from_name["binding_allele"].tolist() == ["HLA-A*02:01", "HLA-A*02:01"]
+
+    from_class = binding_affinities(
+        variants,
+        ["HLA-A*02:01"],
+        epitope_lengths=[9],
+        mhc_predictor=FixedBindingPredictor,
+    )
+    assert from_class["binding_affinity"].tolist() == [50.25, 50.25]
+
+
+def test_binding_affinities_argument_validation(variants):
+    model = FixedBindingPredictor(
+        alleles=["HLA-A*02:01"], default_peptide_lengths=[9]
+    )
+    with pytest.raises(ValueError, match="not both"):
+        binding_affinities(variants, ["HLA-A*02:01"], predictor=model)
+    with pytest.raises(ValueError, match="not both"):
+        binding_affinities(variants, predictor=model, mhc_predictor="random")
+    with pytest.raises(ValueError, match="Unknown MHC predictor"):
+        binding_affinities(variants, ["HLA-A*02:01"], mhc_predictor="no-such-model")
+    with pytest.raises(TypeError, match="mhc_predictor"):
+        binding_affinities(variants, ["HLA-A*02:01"], mhc_predictor=123)
+    with pytest.raises(ValueError, match="positive integers"):
+        binding_affinities(variants, ["HLA-A*02:01"], epitope_lengths=[True])
+    with pytest.raises(ValueError, match="Specify at least one MHC allele"):
+        binding_affinities(variants, [])
+
+
+def test_fragment_predictions_accepts_mhc_predictor_and_mhctools_model():
+    fragment = topiary.ProteinFragment(
+        fragment_id="frag-1",
+        source_type="sv:fusion",
+        sequence="ACDEFGHIKLMN",
+        target_intervals=[(4, 6)],
+    )
+    by_name = fragment_predictions(
+        [fragment], ["HLA-A*02:01"], epitope_lengths=[9], mhc_predictor="random"
+    )
+    assert not by_name.empty
+    assert set(by_name["allele"]) == {"HLA-A*02:01"}
+
+    model = FixedBindingPredictor(
+        alleles=["HLA-A*02:01"], default_peptide_lengths=[9]
+    )
+    by_model = fragment_predictions([fragment], predictor=model)
+    assert not by_model.empty
+    affinities = by_model.loc[by_model["kind"].eq("pMHC_affinity"), "affinity"]
+    assert (affinities == 50.25).all()
+
+
+def test_parse_hla_alleles_unifies_string_and_sequence_inputs():
+    assert parse_hla_alleles("'A:02:01 A:02:02'") == ["A:02:01", "A:02:02"]
+    assert parse_hla_alleles(["HLA-A*02:01 HLA-A*02:02"]) == [
+        "HLA-A*02:01",
+        "HLA-A*02:02",
+    ]
+    assert parse_hla_alleles(["HLA-A*02:01", "HLA-A*02:02", "HLA-A*02:01"]) == [
+        "HLA-A*02:01",
+        "HLA-A*02:02",
+    ]
+    assert parse_hla_alleles(["HLA-A*02:01,HLA-B*07:02"]) == [
+        "HLA-A*02:01",
+        "HLA-B*07:02",
+    ]
+
+
+def test_variants_mhc_cli_args_support_mhctools_and_deprecated_hla(tmp_path):
+    alleles_file = tmp_path / "alleles.txt"
+    alleles_file.write_text("HLA-A*02:01\nHLA-B*07:02\n")
+
+    args = variants_cmd.parser.parse_args(
+        [
+            "--include-mhc-binding",
+            "--mhc-predictor",
+            "random",
+            "--mhc-alleles",
+            "HLA-A*02:01",
+            "HLA-B*07:02",
+            "--mhc-peptide-lengths",
+            "8-9",
+        ]
+    )
+    includeable = MHCBindingAffinity.from_args(args)
+    assert isinstance(includeable.predictor, mhctools.RandomBindingPredictor)
+    assert set(includeable.predictor.alleles) == {"HLA-A*02:01", "HLA-B*07:02"}
+    assert includeable.predictor.default_peptide_lengths == [8, 9]
+
+    file_args = variants_cmd.parser.parse_args(
+        [
+            "--include-mhc-binding",
+            "--mhc-predictor",
+            "random",
+            "--mhc-alleles-file",
+            str(alleles_file),
+        ]
+    )
+    file_includeable = MHCBindingAffinity.from_args(file_args)
+    assert set(file_includeable.predictor.alleles) == {"HLA-A*02:01", "HLA-B*07:02"}
+
+    # Deprecated --hla accepts both quoted space-separated and multi-arg forms.
+    for hla_argv in (
+        ["--hla", "HLA-A*02:01 HLA-B*07:02"],
+        ["--hla", "HLA-A*02:01", "HLA-B*07:02"],
+    ):
+        legacy_args = variants_cmd.parser.parse_args(
+            ["--include-mhc-binding", "--mhc-predictor", "random"] + hla_argv
+        )
+        with pytest.warns(DeprecationWarning, match="--hla is deprecated"):
+            predictor = mhc_predictor_from_args(legacy_args)
+        assert isinstance(predictor, mhctools.RandomBindingPredictor)
+        assert set(predictor.alleles) == {"HLA-A*02:01", "HLA-B*07:02"}
+
+    # --mhc-alleles without --mhc-predictor requires an explicit predictor.
+    missing_predictor = variants_cmd.parser.parse_args(
+        ["--include-mhc-binding", "--mhc-alleles", "HLA-A*02:01"]
+    )
+    with pytest.raises(ValueError, match="--mhc-predictor"):
+        MHCBindingAffinity.from_args(missing_predictor)
+
+    # Combining --hla and --mhc-alleles is rejected.
+    conflict_args = variants_cmd.parser.parse_args(
+        [
+            "--include-mhc-binding",
+            "--mhc-predictor",
+            "random",
+            "--mhc-alleles",
+            "HLA-A*02:01",
+            "--hla",
+            "HLA-B*07:02",
+        ]
+    )
+    with pytest.raises(ValueError, match="Cannot combine deprecated --hla"):
+        MHCBindingAffinity.from_args(conflict_args)
+
+
+@pytest.mark.ensembl
+def test_variants_mhc_cli_per_donor_hla_file_with_random_predictor(tmp_path, variants):
+    hla_csv = tmp_path / "donors.csv"
+    hla_csv.write_text("donor,hla\nD1,HLA-A*02:01\nD2,HLA-B*07:02\n")
+
+    args = variants_cmd.parser.parse_args(
+        [
+            "--include-mhc-binding",
+            "--mhc-predictor",
+            "random",
+            "--hla-file",
+            str(hla_csv),
+            "--mhc-peptide-lengths",
+            "9",
+        ]
+    )
+    includeable = MHCBindingAffinity.from_args(args)
+    frame = pandas.DataFrame({"variant": variants, "donor": ["D1", "D2"]})
+    list(includeable.compute(frame))
+    assert frame["binding_allele"].tolist() == ["HLA-A*02:01", "HLA-B*07:02"]
+    assert frame["binding_affinity"].notna().all()
+
+    # --hla-file without --mhc-predictor is rejected.
+    missing_pred = variants_cmd.parser.parse_args(
+        ["--include-mhc-binding", "--hla-file", str(hla_csv)]
+    )
+    with pytest.raises(ValueError, match="--mhc-predictor"):
+        MHCBindingAffinity.from_args(missing_pred)
+
+    # --hla-file combined with --mhc-alleles is rejected.
+    both_args = variants_cmd.parser.parse_args(
+        [
+            "--include-mhc-binding",
+            "--mhc-predictor",
+            "random",
+            "--hla-file",
+            str(hla_csv),
+            "--mhc-alleles",
+            "HLA-A*02:01",
+        ]
+    )
+    with pytest.raises(ValueError, match="--hla-file"):
+        MHCBindingAffinity.from_args(both_args)

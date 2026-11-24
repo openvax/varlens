@@ -24,8 +24,10 @@ the one-based inclusive coordinates used in VCF files).
 Example:
 
 %(prog)s \\
-    --reads tests/data/CELSR1/bams/bam_1.bam \\
+    tests/data/CELSR1/bams/bam_1.bam \\
     --locus 22:46931061 22:46931063
+
+(BAM paths may also be passed via ``--reads``.)
 
 '''
 
@@ -51,7 +53,7 @@ group.add_argument("--out",
 add_verbose_arg(group)
 loci_util.add_args(parser.add_argument_group("loci specification"))
 variants_util.add_args(parser)
-reads_util.add_args(parser)
+reads_util.add_args(parser, positional=True)
 
 @input_errors(parser)
 def run(raw_args=None):
@@ -76,7 +78,7 @@ def run(raw_args=None):
     read_sources = reads_util.load_from_args(args)
 
     if read_sources is None:
-        parser.error("No read sources (--reads argument) specified.")
+        parser.error("No read sources specified (pass BAM path(s) or --reads).")
 
     out_fd = open(args.out, "w") if args.out else sys.stdout
     writer = csv.writer(out_fd)

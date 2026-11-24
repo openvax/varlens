@@ -104,6 +104,89 @@ def test_fusion_cli_retains_all_outcomes(tmp_path):
     assert all(r["prediction_status"] == "not_requested" for r in result["events"])
 
 
+def test_fusion_cli_supports_mhctools_predictor_and_unified_hla_alias(tmp_path, capsys):
+    pytest.importorskip("isovar.fusion")
+    out = tmp_path / "predicted.json"
+    fusions.run([
+        str(CODING), str(UNRESOLVED),
+        "--mhc-predictor", "random",
+        "--mhc-alleles", "HLA-A*02:01", "HLA-B*07:02",
+        "--mhc-peptide-lengths", "8-9",
+        "--out", str(out),
+    ])
+    result = json.loads(out.read_text())
+    coding_event, unresolved_event = result["events"]
+    assert coding_event["prediction_status"] == "completed"
+    assert coding_event["predictions"]
+    assert {row["allele"] for row in coding_event["predictions"]} == {
+        "HLA-A*02:01", "HLA-B*07:02"
+    }
+    assert {len(row["peptide"]) for row in coding_event["predictions"]} <= {8, 9}
+    assert unresolved_event["prediction_status"] == "no_coding_products"
+    assert unresolved_event["predictions"] == []
+
+    # Deprecated --hla accepts both quoted space-separated and multi-arg forms,
+    # matching varlens-variants.
+    for hla_argv in (
+        ["--hla", "HLA-A*02:01 HLA-B*07:02"],
+        ["--hla", "HLA-A*02:01", "HLA-B*07:02"],
+    ):
+        legacy_out = tmp_path / "legacy.json"
+        with pytest.warns(DeprecationWarning, match="--hla is deprecated"):
+            fusions.run([
+                str(CODING),
+                "--mhc-predictor", "random",
+                *hla_argv,
+                "--out", str(legacy_out),
+            ])
+        legacy_result = json.loads(legacy_out.read_text())
+        assert legacy_result["events"][0]["prediction_status"] == "completed"
+        assert {row["allele"] for row in legacy_result["events"][0]["predictions"]} == {
+            "HLA-A*02:01", "HLA-B*07:02"
+        }
+
+    # Deprecated --peptide-lengths still works with a warning.
+    lengths_out = tmp_path / "lengths.json"
+    with pytest.warns(DeprecationWarning, match="--peptide-lengths is deprecated"):
+        fusions.run([
+            str(CODING),
+            "--mhc-predictor", "random",
+            "--mhc-alleles", "HLA-A*02:01",
+            "--peptide-lengths", "8", "9",
+            "--out", str(lengths_out),
+        ])
+    lengths_result = json.loads(lengths_out.read_text())
+    assert {len(row["peptide"]) for row in lengths_result["events"][0]["predictions"]} <= {8, 9}
+
+    # --mhc-alleles without --mhc-predictor exits cleanly with code 2.
+    with pytest.raises(SystemExit) as error:
+        fusions.run([str(CODING), "--mhc-alleles", "HLA-A*02:01"])
+    assert error.value.code == 2
+    assert "--mhc-predictor" in capsys.readouterr().err
+
+
+def test_analyze_fusion_accepts_mhc_predictor_name_and_mhctools_instance():
+    pytest.importorskip("isovar.fusion")
+    from mhctools import RandomBindingPredictor
+
+    supplied = payload(CODING)
+    by_name = analyze_fusion(
+        supplied,
+        alleles=["HLA-A*02:01"],
+        epitope_lengths=[8, 9],
+        mhc_predictor="random",
+    )
+    assert by_name["prediction_status"] == "completed"
+    assert by_name["predictions"]
+
+    model = RandomBindingPredictor(
+        alleles=["HLA-A*02:01"], default_peptide_lengths=[8, 9]
+    )
+    by_model = analyze_fusion(supplied, epitope_lengths=[8, 9], predictor=model)
+    assert by_model["prediction_status"] == "completed"
+    assert by_model["predictions"]
+
+
 @pytest.mark.parametrize("bad_input", [[], {"fusion": {}}, {"unknown_key": True}])
 def test_bad_fusion_input_is_actionable_and_does_not_write_partial_report(tmp_path, capsys, bad_input):
     pytest.importorskip("isovar.fusion")

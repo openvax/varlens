@@ -157,8 +157,13 @@ def test_mhc_binding_affinity():
                 "--genome",
                 "b37",
                 "--include-mhc-binding",
-                "--hla",
-                "HLA-A*02:01 HLA-A*02:02",
+                "--mhc-predictor",
+                "netmhcpan",
+                "--mhc-alleles",
+                "HLA-A*02:01",
+                "HLA-A*02:02",
+                "--mhc-peptide-lengths",
+                "8-11",
                 "--out",
                 out_csv,
             ]
@@ -169,6 +174,40 @@ def test_mhc_binding_affinity():
         )
         assert numpy.isnan(
             results.loc[("GRCh37", 22, 21829554, 21829555, "T", "G")].binding_allele
+        )
+        for start, end, ref, alt in [
+            (46931059, 46931060, "A", "C"),
+            (46931061, 46931062, "G", "A"),
+        ]:
+            row = results.loc[("GRCh37", 22, start, end, ref, alt)]
+            assert row.binding_allele in {"HLA-A*02:01", "HLA-A*02:02"}
+            assert numpy.isfinite(row.binding_affinity)
+            assert row.binding_affinity > 0
+
+
+@pytest.mark.ensembl
+def test_mhc_binding_affinity_with_random_predictor():
+    with temp_file(".csv") as out_csv:
+        run(
+            [
+                data_path("CELSR1/vcfs/vcf_1.vcf"),
+                "--genome",
+                "b37",
+                "--include-mhc-binding",
+                "--mhc-predictor",
+                "random",
+                "--mhc-alleles",
+                "HLA-A*02:01",
+                "HLA-A*02:02",
+                "--mhc-peptide-lengths",
+                "8-9",
+                "--out",
+                out_csv,
+            ]
+        )
+        results = pandas.read_csv(out_csv).set_index(expected_cols)
+        assert numpy.isnan(
+            results.loc[("GRCh37", 22, 21829554, 21829555, "T", "G")].binding_affinity
         )
         for start, end, ref, alt in [
             (46931059, 46931060, "A", "C"),

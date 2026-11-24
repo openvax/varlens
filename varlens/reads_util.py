@@ -10,8 +10,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
+import argparse
 import collections
+from collections.abc import Callable
 import functools
+from typing import Any
 
 from .read_source import ReadSource
 from . import util
@@ -31,7 +36,9 @@ query_length reference_length reference_start template_length
 """.split()
 
 # name -> (type, help, filter function)
-READ_FILTERS = collections.OrderedDict()
+READ_FILTERS: collections.OrderedDict[str, tuple[type[Any], str, Callable[..., bool]]] = (
+    collections.OrderedDict()
+)
 
 for prop in BOOLEAN_PROPERTIES:
     READ_FILTERS[prop] = (
@@ -99,15 +106,41 @@ for prop in INT_PROPERTIES:
             prop)
     )
 
-def add_args(parser, positional=False):
+def add_args(parser: argparse.ArgumentParser, positional: bool = False) -> None:
     """
     Extends a commandline argument parser with arguments for specifying
     read sources.
+
+    When ``positional`` is True, both optional positional BAM paths and
+    ``--reads`` are accepted and combined in order.
     """
     group = parser.add_argument_group("read loading")
-    group.add_argument("reads" if positional else "--reads",
-        nargs="+", default=[],
-        help="Paths to bam files. Any number of paths may be specified.")
+    if positional:
+        group.add_argument(
+            "reads",
+            nargs="*",
+            default=[],
+            metavar="BAM",
+            help="Paths to BAM/SAM files. Any number of paths may be specified.",
+        )
+        group.add_argument(
+            "--reads",
+            nargs="+",
+            action="extend",
+            default=[],
+            dest="optional_reads",
+            metavar="BAM",
+            help="Paths to BAM/SAM files (alternative to positional paths).",
+        )
+    else:
+        group.add_argument(
+            "--reads",
+            nargs="+",
+            action="extend",
+            default=[],
+            metavar="BAM",
+            help="Paths to BAM/SAM files. Any number of paths may be specified.",
+        )
 
     group.add_argument(
         "--read-source-name",
@@ -125,7 +158,7 @@ def add_args(parser, positional=False):
         "options are specified, reads must match *all* filters.")
 
     for (name, (kind, message, function)) in READ_FILTERS.items():
-        extra = {}
+        extra: dict[str, Any] = {}
         if kind is bool:
             extra["action"] = "store_true"
             extra["default"] = None
@@ -138,15 +171,24 @@ def add_args(parser, positional=False):
             help=message,
             **extra)
 
-def load_from_args(args):
+
+def read_paths_from_args(args: argparse.Namespace) -> list[str]:
+    """Return all BAM/SAM paths given via positional ``reads`` and/or ``--reads``."""
+    positional_reads = list(getattr(args, "reads", None) or [])
+    optional_reads = list(getattr(args, "optional_reads", None) or [])
+    return positional_reads + optional_reads
+
+
+def load_from_args(args: argparse.Namespace) -> list[ReadSource] | None:
     """
     Given parsed commandline arguments, returns a list of ReadSource objects
     """
-    if not args.reads:
+    read_paths = read_paths_from_args(args)
+    if not read_paths:
         return None
 
     read_source_names = util.name_sources(
-        args.reads, args.read_source_name, 'read_source_name', 'read source')
+        read_paths, args.read_source_name, 'read_source_name', 'read source')
 
     filters = []
     for (name, info) in READ_FILTERS.items():
@@ -157,7 +199,7 @@ def load_from_args(args):
     return [
         load_bam(filename, name, filters)
         for (filename, name)
-        in zip(args.reads, read_source_names)
+        in zip(read_paths, read_source_names)
     ]
 
 def load_bam(filename, name=None, filters=[]):

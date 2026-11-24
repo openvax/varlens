@@ -10,20 +10,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-from collections import namedtuple
+from __future__ import annotations
 
-import typechecks
+from collections import namedtuple
+from collections.abc import Iterable
+import re
+
 from varcode.contigs import ContigResolver, annotation_contig_name
 
 
-def normalize_contig(contig, reference_name=None):
+def normalize_contig(contig: str, reference_name: str | None = None) -> str:
     """Use Varcode's contig normalization (including UCSC accessions and GRCh37 chrM)."""
     return annotation_contig_name(contig, reference_name)
 
 
-def chromosome_name_map(references, reference_name=None):
+def chromosome_name_map(
+    references: Iterable[str], reference_name: str | None = None
+) -> dict[str, str]:
     """Resolve aliases to BAM references via Varcode's ContigResolver, giving exact names priority."""
+    references = list(references)
     resolver = ContigResolver(references, reference_name=reference_name)
     result = {}
     for name in references:
@@ -78,36 +83,58 @@ class Locus(namedtuple("Locus", "contig start end")):
 
     # Factory functions.
     @staticmethod
-    def from_inclusive_coordinates(contig, start, end=None):
+    def from_inclusive_coordinates(
+        contig: str, start: int, end: int | None = None
+    ) -> Locus:
         '''
         Given coordinates in 1-based coordinates that are inclusive on start
         and end, return a Locus instance. Locus instances are always 0-based
         "interbase" coordinates.
         '''
-        typechecks.require_string(contig)
-        typechecks.require_integer(start)
+        if not isinstance(contig, str):
+            raise TypeError(
+                f"contig must be a str, got {type(contig).__name__}: {contig!r}"
+            )
+        if not isinstance(start, int):
+            raise TypeError(
+                f"start must be an int, got {type(start).__name__}: {start!r}"
+            )
         if end is None:
             end = start
-        typechecks.require_integer(end)
+        if not isinstance(end, int):
+            raise TypeError(
+                f"end must be an int, got {type(end).__name__}: {end!r}"
+            )
         contig = normalize_contig(contig)
         return Locus(contig, start - 1, end)
 
     @staticmethod
-    def from_interbase_coordinates(contig, start, end=None):
+    def from_interbase_coordinates(
+        contig: str, start: int, end: int | None = None
+    ) -> Locus:
         '''
         Given coordinates in 0-based interbase coordinates, return a Locus
         instance.
         '''
-        typechecks.require_string(contig)
-        typechecks.require_integer(start)
+        if not isinstance(contig, str):
+            raise TypeError(
+                f"contig must be a str, got {type(contig).__name__}: {contig!r}"
+            )
+        if not isinstance(start, int):
+            raise TypeError(
+                f"start must be an int, got {type(start).__name__}: {start!r}"
+            )
         if end is None:
             end = start + 1
-        typechecks.require_integer(end)
+        if not isinstance(end, int):
+            raise TypeError(
+                f"end must be an int, got {type(end).__name__}: {end!r}"
+            )
         contig = normalize_contig(contig)
         return Locus(contig, start, end)
 
     @staticmethod
-    def parse(string):
+    def parse(string: str) -> Locus:
         match = re.match(r'(\w+)([:/])(\d+)(-(\d+))?', string)
         if match is None:
             raise ValueError("Couldn't parse locus: %s. "
