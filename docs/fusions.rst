@@ -11,15 +11,19 @@ Install the optional Isovar adapter and reconstruct supplied fusion RNA::
     pip install 'varlens[fusion]'
     varlens-fusions fusion.json.gz --out reconstruction.json
 
-Optionally predict junction-overlapping peptides with Topiary and mhctools::
+Optionally predict junction-overlapping peptides with Topiary and any mhctools
+predictor::
 
-    varlens-fusions fusion.json.gz --hla 'HLA-A*02:01' 'HLA-B*07:02' \
-        --peptide-lengths 8 9 10 11 --out predictions.json
+    varlens-fusions fusion.json.gz --mhc-predictor mhcflurry \
+        --mhc-alleles 'HLA-A*02:01' 'HLA-B*07:02' \
+        --mhc-peptide-lengths 8-11 --out predictions.json
 
-NetMHCpan and its model data must be installed for the second command. The
-reconstruction-only command does not invoke it. Multiple JSON/JSON.gz input
-files can be supplied, and ``--out`` also accepts JSON.gz; omitted output goes
-to stdout. A failed input or prediction prevents writing a partial report.
+Any predictor supported by ``mhctools`` (such as ``mhcflurry`` or
+``netmhcpan``) can be selected with ``--mhc-predictor``; its runtime/model
+dependencies must be installed for prediction runs. The reconstruction-only
+command does not invoke any predictor. Multiple JSON/JSON.gz input files can
+be supplied, and ``--out`` also accepts JSON.gz; omitted output goes to stdout.
+A failed input or prediction prevents writing a partial report.
 
 Each input is an `Isovar supplied-fusion input
 <https://github.com/openvax/isovar/blob/master/docs/fusion.md#input>`_: a JSON object
@@ -53,10 +57,11 @@ structural VCFs, or establish whole-sample expression from selected reads.
 Python callers can use the same workflow::
 
     from varlens.fusions import analyze_fusion
-    result = analyze_fusion(payload, alleles=["HLA-A*02:01"])
+    result = analyze_fusion(payload, alleles=["HLA-A*02:01"], mhc_predictor="mhcflurry")
 
 ``analyze_fusion(payload)`` performs reconstruction only. A configured
-``topiary.TopiaryPredictor`` can be passed as ``predictor=`` instead of alleles.
+``topiary.TopiaryPredictor`` or ``mhctools`` predictor can be passed as
+``predictor=`` instead of ``alleles`` / ``mhc_predictor``.
 ``varlens.mhc_binding.fragment_predictions`` also accepts existing
 ``topiary.ProteinFragment`` objects and returns target-overlapping prediction
 rows with source, sample and evidence metadata intact.

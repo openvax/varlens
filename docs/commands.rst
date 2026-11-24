@@ -189,8 +189,10 @@ single-base insertion intervals; CSV input still accepts that older encoding.
 ::
 
     $ varlens-allele-support \
-        --reads tests/data/CELSR1/bams/bam_1.bam \
+        tests/data/CELSR1/bams/bam_1.bam \
         --locus 22:46931061 22:46931063
+
+(BAM paths may also be passed with ``--reads``.)
 
     source,contig,interbase_start,interbase_end,allele,count
     bam_1,22,46931060,46931061,G,329

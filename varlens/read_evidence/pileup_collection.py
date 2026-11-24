@@ -10,14 +10,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from collections import namedtuple, defaultdict, OrderedDict
+from collections.abc import Iterable
 import logging
 import itertools
+import os
 import re
+from typing import Any
 
 import pandas
 from pysam import Samfile
-import typechecks
 
 from ..locus import Locus, normalize_contig, chromosome_name_map
 from . import Pileup, PileupElement, alignment_key, read_key
@@ -252,7 +256,7 @@ class PileupCollection(object):
 
     # Parse the bulleted list of attributes in the previous method's docstring.
     _READ_ATTRIBUTE_NAMES = []
-    for line in read_attributes.__doc__.split("\n"):
+    for line in (read_attributes.__doc__ or "").split("\n"):
         match = re.match(r"\s+\*\s*(\w+)\s*", line)
         if match:
             _READ_ATTRIBUTE_NAMES.append(match.groups()[0])
@@ -530,7 +534,11 @@ class PileupCollection(object):
         return PileupCollection(new_pileups, parent=self)
 
     @staticmethod
-    def from_bam(pysam_samfile, loci, normalized_contig_names=True):
+    def from_bam(
+        pysam_samfile: Samfile | str | os.PathLike[str],
+        loci: Iterable[Any],
+        normalized_contig_names: bool = True,
+    ) -> PileupCollection:
         '''
         Create a PileupCollection for a set of loci from a BAM file.
 
@@ -557,9 +565,9 @@ class PileupCollection(object):
         loci = [to_locus(obj) for obj in loci]
 
         close_on_completion = False
-        if typechecks.is_string(pysam_samfile):
-            pysam_samfile = Samfile(pysam_samfile)
-            close_on_completion = True        
+        if isinstance(pysam_samfile, (str, os.PathLike)):
+            pysam_samfile = Samfile(os.fspath(pysam_samfile))
+            close_on_completion = True
 
         try:
             # Map from pyensembl normalized chromosome names used in Variant to
@@ -582,7 +590,7 @@ class PileupCollection(object):
                 for locus_interval in sorted(loci))
             for locus in locus_iterator:
                 result.pileups[locus] = Pileup(locus, [])
-                if normalized_contig_names:
+                if name_map is not None:
                     try:
                         chromosome = name_map[locus.contig]
                     except KeyError:

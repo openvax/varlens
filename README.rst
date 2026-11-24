@@ -41,22 +41,24 @@ varlens-fusions
 Install
 -------
 
-Install the validated wheel from the `Varlens 1.1.5 GitHub release
-<https://github.com/openvax/varlens/releases/tag/v1.1.5>`_:
+Install the validated wheel from the `Varlens 1.2.0 GitHub release
+<https://github.com/openvax/varlens/releases/tag/v1.2.0>`_:
 
 ::
 
-    python -m pip install https://github.com/openvax/varlens/releases/download/v1.1.5/varlens-1.1.5-py3-none-any.whl
+    python -m pip install https://github.com/openvax/varlens/releases/download/v1.2.0/varlens-1.2.0-py3-none-any.whl
 
 PyPI currently serves the older 0.0.2 release. Publishing the current version
 there is blocked by account permissions, tracked in `issue 55
 <https://github.com/openvax/varlens/issues/55>`_. Use the GitHub wheel above
 for the current Python and OpenVax stack.
 
-Varlens 1.1 requires Python 3.11 or newer, pandas 3, and
+Varlens 1.2 requires Python 3.11 or newer, pandas 3, and
 MHCTools 4.1.1 or newer (below 5). The package uses the current Topiary 5
-prediction API; MHC binding predictions also need a local NetMHCpan
-installation. ``pip install 'varlens[fusion]'`` adds Isovar for
+prediction API; MHC binding predictions work with any MHCtools predictor via
+``--mhc-predictor`` (for example ``mhcflurry`` or ``netmhcpan``), sharing
+``--mhc-alleles``, ``--mhc-alleles-file``, and ``--mhc-peptide-lengths`` with
+Topiary and Vaxrank. ``pip install 'varlens[fusion]'`` adds Isovar for
 ``varlens-fusions``. Effect and gene annotations need a PyEnsembl release
 matching your variants' genome build; the examples below use GRCh37
 (``pyensembl install --release 75 --species human``).
@@ -119,9 +121,9 @@ version with ``--version``. One example per command:
         --locus 22:46932040-46932050 \
         --out /tmp/result.bam
 
-    # Count the reads supporting each allele at two sites
+    # Count the reads supporting each allele at two sites (positional BAM or --reads)
     $ varlens-allele-support \
-        --reads tests/data/CELSR1/bams/bam_1.bam \
+        tests/data/CELSR1/bams/bam_1.bam \
         --locus 22:46931061 22:46931063
 
     source,contig,interbase_start,interbase_end,allele,count

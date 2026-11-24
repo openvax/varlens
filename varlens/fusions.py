@@ -5,15 +5,27 @@ gene names. Isovar validates the supplied sequence, mappings, references and
 read observations, retaining every supported frame and unresolved outcome.
 """
 
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable
 from hashlib import sha256
 import json
+from typing import Any
 
 from .errors import InputError
+from .mhc_binding import DEFAULT_EPITOPE_LENGTHS
 from .version import __version__
 
 
-def analyze_fusion(payload, *, alleles=(), epitope_lengths=(8, 9, 10, 11),
-                   min_fragments=2, predictor=None):
+def analyze_fusion(
+    payload: dict[str, Any],
+    *,
+    alleles: str | Iterable[str] = (),
+    epitope_lengths: Iterable[int] = DEFAULT_EPITOPE_LENGTHS,
+    min_fragments: int = 2,
+    predictor: Any = None,
+    mhc_predictor: str | Callable[..., Any] | None = None,
+) -> dict[str, Any]:
     """Return a JSON-serializable reconstruction, fragments and predictions.
 
     ``payload`` follows Isovar's supplied-fusion input contract (``fusion``,
@@ -24,8 +36,11 @@ def analyze_fusion(payload, *, alleles=(), epitope_lengths=(8, 9, 10, 11),
     All coding hypotheses, including ambiguous/partial-CDS hypotheses, become
     separately identified fragments. Their status is carried onto prediction
     rows; no hypothesis is selected as the true protein. No alleles/predictor
-    means reconstruction only. ``predictor`` may be a configured TopiaryPredictor
-    for a Python caller; otherwise supplied alleles select mhctools.NetMHCpan.
+    means reconstruction only. ``predictor`` may be a configured
+    ``TopiaryPredictor`` or ``mhctools`` predictor instance; otherwise
+    ``alleles`` are passed to ``mhc_predictor`` (any predictor name registered
+    in ``mhctools.cli.mhc_predictors`` or predictor callable, defaulting to
+    ``mhctools.NetMHCpan`` when omitted).
     """
     try:
         import isovar
@@ -38,6 +53,8 @@ def analyze_fusion(payload, *, alleles=(), epitope_lengths=(8, 9, 10, 11),
         raise InputError("Expected one supplied-fusion JSON object")
     if predictor is not None and alleles:
         raise InputError("Configure alleles on the predictor or pass alleles, not both")
+    if predictor is not None and mhc_predictor is not None:
+        raise InputError("Pass either predictor or mhc_predictor, not both")
     # Copy so caller mutations cannot change the recorded provenance.
     supplied = json.loads(json.dumps(payload, allow_nan=False))
     native = {k: v for k, v in supplied.items() if k not in ("note", "original_records")}
@@ -68,7 +85,7 @@ def analyze_fusion(payload, *, alleles=(), epitope_lengths=(8, 9, 10, 11),
             from .mhc_binding import fragment_predictions
             predictions = fragment_predictions(
                 fragments, alleles=alleles, epitope_lengths=epitope_lengths,
-                predictor=predictor)
+                predictor=predictor, mhc_predictor=mhc_predictor)
             # pandas encodes missing predictions as JSON null, never NaN or 0.
             result["predictions"] = json.loads(predictions.to_json(orient="records"))
             result["prediction_status"] = "completed"
