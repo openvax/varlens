@@ -1,41 +1,58 @@
+# PYTHON_ARGCOMPLETE_OK
 """Reconstruct supplied fusion RNA and optionally predict junction peptides."""
 
 from __future__ import annotations
 
-import argparse
-import gzip
-import json
-from pathlib import Path
 import sys
 
-from .arguments import add_version_arg
+import argcomplete
+
+from .arguments import add_mhc_args, add_version_arg
+from .help import HelpArgumentParser
 from ..errors import InputError, input_errors
-from ..fusions import analyze_fusion
-from ..mhc_binding import (
-    DEFAULT_EPITOPE_LENGTHS,
-    add_mhc_cli_args,
-    has_mhc_cli_args,
-    mhc_predictor_from_args,
-    peptide_lengths_from_args,
-)
 
 
-parser = argparse.ArgumentParser(description=__doc__)
-add_version_arg(parser)
-parser.add_argument("inputs", nargs="+", help="Isovar supplied-fusion JSON or JSON.gz files")
-parser.add_argument("--out", help="JSON/JSON.gz report; defaults to stdout")
-parser.add_argument("--min-fragments", type=int, default=2,
-                    help="Minimum direct junction fragments required by Isovar (default: 2)")
-add_mhc_cli_args(parser, include_peptide_lengths_alias=True)
+def make_parser() -> HelpArgumentParser:
+    """Build the command-line argument parser for ``varlens-fusions``."""
+    parser = HelpArgumentParser(description=__doc__)
+    add_version_arg(parser)
+    parser.add_argument(
+        "inputs", nargs="+", help="Isovar supplied-fusion JSON or JSON.gz files"
+    )
+    parser.add_argument("--out", help="JSON/JSON.gz report; defaults to stdout")
+    parser.add_argument(
+        "--min-fragments",
+        type=int,
+        default=2,
+        help="Minimum direct junction fragments required by Isovar (default: 2)",
+    )
+    add_mhc_args(parser, include_peptide_lengths_alias=True)
+    return parser
+
+
+parser = make_parser()
 
 
 @input_errors(parser)
 def run(raw_args: list[str] | None = None) -> None:
+    argcomplete.autocomplete(parser)
     args = parser.parse_args(raw_args)
     if args.min_fragments < 1:
         parser.error("--min-fragments must be positive")
     if args.out and not args.out.endswith((".json", ".json.gz")):
         parser.error("--out must end in .json or .json.gz")
+
+    import gzip
+    import json
+    from pathlib import Path
+
+    from ..fusions import analyze_fusion
+    from ..mhc_binding import (
+        DEFAULT_EPITOPE_LENGTHS,
+        has_mhc_cli_args,
+        mhc_predictor_from_args,
+        peptide_lengths_from_args,
+    )
     try:
         requested_lengths = peptide_lengths_from_args(args)
         predictor = mhc_predictor_from_args(args) if has_mhc_cli_args(args) else None

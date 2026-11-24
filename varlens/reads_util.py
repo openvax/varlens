@@ -18,22 +18,20 @@ from collections.abc import Callable
 import functools
 from typing import Any
 
+from .commands.arguments import (
+    READ_BOOLEAN_PROPERTIES,
+    READ_INT_PROPERTIES,
+    READ_STRING_PROPERTIES,
+    add_read_args,
+)
 from .read_source import ReadSource
 from . import util
 
-BOOLEAN_PROPERTIES = """
-is_paired is_proper_pair is_qcfail is_read1 is_read2 is_reverse is_secondary
-is_unmapped mate_is_reverse mate_is_unmapped is_duplicate
-""".split()
+BOOLEAN_PROPERTIES = list(READ_BOOLEAN_PROPERTIES)
 
-STRING_PROPERTIES = """
-cigarstring query_alignment_sequence query_name
-""".split()
+STRING_PROPERTIES = list(READ_STRING_PROPERTIES)
 
-INT_PROPERTIES = """
-inferred_length mapping_quality query_alignment_length query_alignment_start
-query_length reference_length reference_start template_length
-""".split()
+INT_PROPERTIES = list(READ_INT_PROPERTIES)
 
 # name -> (type, help, filter function)
 READ_FILTERS: collections.OrderedDict[str, tuple[type[Any], str, Callable[..., bool]]] = (
@@ -114,62 +112,7 @@ def add_args(parser: argparse.ArgumentParser, positional: bool = False) -> None:
     When ``positional`` is True, both optional positional BAM paths and
     ``--reads`` are accepted and combined in order.
     """
-    group = parser.add_argument_group("read loading")
-    if positional:
-        group.add_argument(
-            "reads",
-            nargs="*",
-            default=[],
-            metavar="BAM",
-            help="Paths to BAM/SAM files. Any number of paths may be specified.",
-        )
-        group.add_argument(
-            "--reads",
-            nargs="+",
-            action="extend",
-            default=[],
-            dest="optional_reads",
-            metavar="BAM",
-            help="Paths to BAM/SAM files (alternative to positional paths).",
-        )
-    else:
-        group.add_argument(
-            "--reads",
-            nargs="+",
-            action="extend",
-            default=[],
-            metavar="BAM",
-            help="Paths to BAM/SAM files. Any number of paths may be specified.",
-        )
-
-    group.add_argument(
-        "--read-source-name",
-        nargs="+",
-        help="Names for each read source. The number of names specified "
-        "must match the number of bam files. If not specified, filenames are "
-        "used for names.")
-
-    # Add filters
-    group = parser.add_argument_group(
-        "read filtering",
-        "A number of read filters are available. See the pysam "
-        "documentation (http://pysam.readthedocs.org/en/latest/api.html) "
-        "for details on what these fields mean. When multiple filter "
-        "options are specified, reads must match *all* filters.")
-
-    for (name, (kind, message, function)) in READ_FILTERS.items():
-        extra: dict[str, Any] = {}
-        if kind is bool:
-            extra["action"] = "store_true"
-            extra["default"] = None
-        elif kind is int:
-            extra["type"] = int
-            extra["metavar"] = "N"
-        elif kind is str:
-            extra["metavar"] = "STRING"
-        group.add_argument("--" + name.replace("_", "-"),
-            help=message,
-            **extra)
+    add_read_args(parser, positional=positional)
 
 
 def read_paths_from_args(args: argparse.Namespace) -> list[str]:

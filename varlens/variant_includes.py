@@ -30,6 +30,13 @@ from . import mhc_binding
 from . import reads_util
 from . import support
 from . import read_evidence
+from .commands.arguments import (
+    add_context_include_args,
+    add_effect_include_args,
+    add_gene_include_args,
+    add_mhc_binding_include_args,
+    add_read_evidence_include_args,
+)
 from .errors import InputError
 from .variants_util import require_small_variants
 
@@ -96,10 +103,7 @@ class Effect(Includeable):
 
     @staticmethod
     def add_args(parser):
-        parser = parser.add_argument_group(Effect.name)
-        parser.add_argument("--include-effect",
-            action="store_true", default=False,
-            help="Include the primary Varcode annotation and its candidate consequences")
+        add_effect_include_args(parser)
 
     @staticmethod
     def requested(args):
@@ -122,10 +126,7 @@ class Gene(Includeable):
     
     @staticmethod
     def add_args(parser):
-        parser = parser.add_argument_group(Gene.name)
-        parser.add_argument("--include-gene",
-            action="store_true", default=False,
-            help="Include gene names")
+        add_gene_include_args(parser)
 
     @staticmethod
     def requested(args):
@@ -145,15 +146,7 @@ class Context(Includeable):
     
     @staticmethod
     def add_args(parser):
-        parser = parser.add_argument_group(Context.name)
-        parser.add_argument("--include-context",
-            action="store_true", default=False,
-            help="Include variant sequence context")
-        parser.add_argument("--reference",
-            help="Path to reference fasta (required for sequence context)")
-        parser.add_argument("--context-num-bases", type=int, default=15,
-            metavar="N",
-            help="Num bases of context to include on each side of the variant")
+        add_context_include_args(parser)
 
     @classmethod
     def from_args(cls, args):
@@ -210,21 +203,7 @@ class MHCBindingAffinity(Includeable):
     
     @staticmethod
     def add_args(parser: argparse.ArgumentParser) -> None:
-        group = parser.add_argument_group(MHCBindingAffinity.name)
-        group.add_argument(
-            "--include-mhc-binding",
-            action="store_true",
-            default=False,
-            help="Include MHC binding (tightest affinity and allele)",
-        )
-        group.add_argument(
-            "--hla-file",
-            help=(
-                "Load per-donor HLA types from the specified CSV file. It must "
-                "have columns: 'donor' and 'hla'"
-            ),
-        )
-        mhc_binding.add_mhc_cli_args(parser)
+        add_mhc_binding_include_args(parser)
 
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> MHCBindingAffinity:
@@ -422,30 +401,7 @@ class ReadEvidence(Includeable):
     
     @classmethod
     def add_args(cls, parser):
-        group = parser.add_argument_group(cls.name)
-        group.add_argument("--include-read-evidence",
-            action="store_true", default=False,
-            help="Include counts of supporting / contradicting reads")
-        group.add_argument("--read-sources-file",
-            help="Load paths to BAMs from the given csv file.")
-        group.add_argument("--read-sources-id-column",
-            default="source_id",
-            help="Column to use to join read sources with the variants "
-            "dataframe.")
-        group.add_argument("--read-sources-column", action="append",
-            default=[],
-            help="Column containing path to reads (e.g. path to a BAM). Can "
-            "be specified any number of times. If not specified, all "
-            "columns are used.")
-        group.add_argument("--always-prefix-column", action="store_true",
-            default=False,
-            help="Always prefix the column names with the source name and "
-            "count group, even when there is only one of each.")
-        group.add_argument("--survive-errors", action="store_true",
-            default=False,
-            help="If an error is encountered log it and try to continue.")
-        
-        reads_util.add_args(parser)
+        add_read_evidence_include_args(parser)
 
     @classmethod
     def from_args(cls, args):

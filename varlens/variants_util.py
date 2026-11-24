@@ -182,42 +182,9 @@ def union_with_variant_loci(loci, variants, operation):
 
 
 def add_args(parser, positional=False):
-    group = parser.add_argument_group("variant loading")
-    group.add_argument("variants" if positional else "--variants",
-        nargs=("*" if positional else "+"), default=[],
-        help="Path to VCF file. Any number of VCF files may be specified. "
-        "CSV files in the format outputted by the varlens-variants tool are "
-        "also supported.")
-    group.add_argument("--genome",
-        help="Genome for the variants (e.g. b37). Required when the genome "
-        "cannot be guessed from the metadata in the VCF.")
-    group.add_argument("--include-failing-variants",
-        action="store_true",
-        default=False,
-        help="Include variants with a non-PASS filter field.")
-    group.add_argument("--variant-source-name", nargs="+",
-        help="Names for variant sources. Must specify one name per variant "
-        "source. If not specified, the filenames are used.")
-    group.add_argument("--max-variants-per-source", type=int,
-        metavar="N",
-        help="Load at most N variants from each source.")
-    group.add_argument("--single-variant", nargs=3, action="append",
-        default=[], metavar="X",
-        help="Literal variant specified as three arguments: LOCUS REF ALT. "
-        "Can be specified any number of times by repeating the "
-        "--single-variant option.")
+    from .commands.arguments import add_variant_args
 
-    # Filters
-    group = parser.add_argument_group("variant filtering",
-        "If multiple filters are specified, the variants must pass *all* "
-        "filters. For filtering by loci, any variants that overlap "
-        "the specified loci are included. Structural variants match known "
-        "breakpoint bases (including remote mates), not the full SV span.")
-    group.add_argument("--ref", nargs="+",
-        help="Include only variants where ref is one of the given values.")
-    group.add_argument("--alt", nargs="+",
-        help="Include only variants where alt is one of the given values.")
-    loci_util.add_args(util.PrefixedArgumentParser(group, "variant"))
+    add_variant_args(parser, positional=positional)
 
 def load_from_args_as_dataframe(args):
     '''

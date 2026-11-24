@@ -13,14 +13,13 @@
 import collections
 import intervaltree
 
+from .commands.arguments import add_loci_args
 from .locus import Locus
 
 def add_args(parser):
     # TODO:
     # - Load intervals_list files
-    parser.add_argument('--locus', nargs="+", default=[],
-        help="Genomic locus, like chr1:2342332 or chr1:2342-23423. "
-        "Any number of loci may be specified.")
+    add_loci_args(parser)
 
 def load_from_args(args):
     """

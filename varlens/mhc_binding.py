@@ -132,35 +132,18 @@ def add_mhc_cli_args(
 ) -> argparse._ArgumentGroup:
     """Add shared MHCtools CLI options and deprecated Varlens aliases.
 
-    Uses ``mhctools.cli.add_mhc_args(parser, predictor_required=False)`` so
+    Delegates to :func:`varlens.commands.arguments.add_mhc_args` so
     ``varlens-variants`` and ``varlens-fusions`` accept the same
     ``--mhc-predictor``, ``--mhc-alleles``, ``--mhc-alleles-file``, and
-    ``--mhc-peptide-lengths`` options as Topiary and Vaxrank. Also registers
-    a unified deprecated ``--hla`` alias across both commands.
+    ``--mhc-peptide-lengths`` options as Topiary and Vaxrank, plus the
+    unified deprecated ``--hla`` alias, without importing ``mhctools`` during
+    parser construction.
     """
-    from mhctools.cli import add_mhc_args
+    from .commands.arguments import add_mhc_args
 
-    group = add_mhc_args(parser, predictor_required=False)
-    group.add_argument(
-        "--hla",
-        nargs="+",
-        default=[],
-        metavar="ALLELE",
-        help=(
-            "Deprecated alias for --mhc-alleles. Accepts one or more MHC "
-            "alleles as separate arguments or space/comma-separated lists."
-        ),
+    return add_mhc_args(
+        parser, include_peptide_lengths_alias=include_peptide_lengths_alias
     )
-    if include_peptide_lengths_alias:
-        group.add_argument(
-            "--peptide-lengths",
-            nargs="+",
-            type=int,
-            default=None,
-            metavar="N",
-            help="Deprecated alias for --mhc-peptide-lengths.",
-        )
-    return group
 
 
 def mhc_predictor_names_from_args(args: argparse.Namespace) -> list[str]:
