@@ -1,3 +1,4 @@
+# PYTHON_ARGCOMPLETE_OK
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -27,38 +28,54 @@ Example:
     tests/data/CELSR1/bams/bam_1.bam \\
     --locus 22:46931061 22:46931063
 
-(BAM paths may also be passed via ``--reads``.)
+(BAM paths may also be passed via --reads.)
 
 '''
 
-import argparse
 import csv
-import sys
 import logging
+import sys
 
-from .. import loci_util
-from .. import reads_util
-from .. import variants_util
+import argcomplete
 
 from . import configure_logging
-from .arguments import add_verbose_arg, add_version_arg
-from .. import support
+from .arguments import (
+    add_loci_args,
+    add_read_args,
+    add_variant_args,
+    add_verbose_arg,
+    add_version_arg,
+)
+from .help import HelpArgumentParser
 from ..errors import input_errors
 
-parser = argparse.ArgumentParser(usage=__doc__)
-add_version_arg(parser)
-group = parser.add_argument_group("output arguments")
-group.add_argument("--out",
-    help="Output CSV file. If not specified, the CSV is written to stdout.")
-add_verbose_arg(group)
-loci_util.add_args(parser.add_argument_group("loci specification"))
-variants_util.add_args(parser)
-reads_util.add_args(parser, positional=True)
+
+def make_parser():
+    """Build the command-line argument parser for ``varlens-allele-support``."""
+    parser = HelpArgumentParser(usage=__doc__)
+    add_version_arg(parser)
+    group = parser.add_argument_group("output arguments")
+    group.add_argument(
+        "--out",
+        help="Output CSV file. If not specified, the CSV is written to stdout.",
+    )
+    add_verbose_arg(group)
+    add_loci_args(parser.add_argument_group("loci specification"))
+    add_variant_args(parser)
+    add_read_args(parser, positional=True)
+    return parser
+
+
+parser = make_parser()
+
 
 @input_errors(parser)
 def run(raw_args=None):
+    argcomplete.autocomplete(parser)
     args = parser.parse_args(raw_args)
     configure_logging(args)
+
+    from .. import loci_util, reads_util, support, variants_util
 
     loci = loci_util.load_from_args(args)  # may be None
     variants_df = variants_util.load_from_args_as_dataframe(args)

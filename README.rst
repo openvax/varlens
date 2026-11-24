@@ -41,19 +41,19 @@ varlens-fusions
 Install
 -------
 
-Install the validated wheel from the `Varlens 1.2.0 GitHub release
-<https://github.com/openvax/varlens/releases/tag/v1.2.0>`_:
+Install the validated wheel from the `Varlens 1.3.0 GitHub release
+<https://github.com/openvax/varlens/releases/tag/v1.3.0>`_:
 
 ::
 
-    python -m pip install https://github.com/openvax/varlens/releases/download/v1.2.0/varlens-1.2.0-py3-none-any.whl
+    python -m pip install https://github.com/openvax/varlens/releases/download/v1.3.0/varlens-1.3.0-py3-none-any.whl
 
 PyPI currently serves the older 0.0.2 release. Publishing the current version
 there is blocked by account permissions, tracked in `issue 55
 <https://github.com/openvax/varlens/issues/55>`_. Use the GitHub wheel above
 for the current Python and OpenVax stack.
 
-Varlens 1.2 requires Python 3.11 or newer, pandas 3, and
+Varlens 1.3 requires Python 3.11 or newer, pandas 3, and
 MHCTools 4.1.1 or newer (below 5). The package uses the current Topiary 5
 prediction API; MHC binding predictions work with any MHCtools predictor via
 ``--mhc-predictor`` (for example ``mhcflurry`` or ``netmhcpan``), sharing
@@ -135,6 +135,23 @@ version with ``--version``. One example per command:
 
     # Reconstruct a supplied fusion transcript (needs varlens[fusion])
     $ varlens-fusions fusion.json.gz --out reconstruction.json
+
+Tab completion is provided via `argcomplete
+<https://kislyuk.github.io/argcomplete/>`_. Enable it once for every OpenVax
+command-line tool:
+
+::
+
+    activate-global-python-argcomplete
+
+Or register individual commands in your shell startup file:
+
+::
+
+    eval "$(register-python-argcomplete varlens-variants)"
+    eval "$(register-python-argcomplete varlens-reads)"
+    eval "$(register-python-argcomplete varlens-allele-support)"
+    eval "$(register-python-argcomplete varlens-fusions)"
 
 .. end-of-docs-front-page
 

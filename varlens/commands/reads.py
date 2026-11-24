@@ -1,3 +1,4 @@
+# PYTHON_ARGCOMPLETE_OK
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -51,18 +52,21 @@ Print just the header for a BAM in csv format:
 
 '''
 
-import argparse
-import sys
 import csv
+import sys
 
-import pysam
+import argcomplete
 
 from . import configure_logging
-from .arguments import add_verbose_arg, add_version_arg
-from .. import loci_util
-from .. import reads_util
-from .. import variants_util
-from ..read_evidence.pileup_collection import PileupCollection
+from .arguments import (
+    READ_ATTRIBUTE_NAMES,
+    add_loci_args,
+    add_read_args,
+    add_variant_args,
+    add_verbose_arg,
+    add_version_arg,
+)
+from .help import HelpArgumentParser
 from ..errors import input_errors
 
 STANDARD_FIELDS = [
@@ -73,45 +77,73 @@ STANDARD_FIELDS = [
     "cigarstring",
 ]
 
-parser = argparse.ArgumentParser(usage=__doc__)
-add_version_arg(parser)
-group = parser.add_argument_group("output")
-group.add_argument("--out",
-    help="Output file. Format is guessed from file extension: must be csv or "
-    "bam. If not specified, csv is written to stdout.")
-group.add_argument("--field", nargs="+", default=[],
-    help="Additional read fields to output as columns in the csv. See pysam "
-    "documentation (http://pysam.readthedocs.org/en/latest/api.html) for the "
-    "meaning of these fields. Valid fields include: %s" % (
-        " ".join(PileupCollection._READ_ATTRIBUTE_NAMES)))
 
-group.add_argument("--no-standard-fields", action="store_true", default=False,
-    help="Do not include the standard fields (%s) in csv output."
-    % ', '.join(STANDARD_FIELDS))
-group.add_argument("--no-sort", action="store_true", default=False,
-    help="When outputting a bam, do not call samtools sort.")
-group.add_argument(
-    "--header",
-    action="store_true",
-    default=False,
-    help="Output BAM/SAM header only.")
-group.add_argument(
-    "--header-set",
-    nargs=4,
-    action="append",
-    help="When outputting a bam, set a particular header field to the given "
-    "value. Example: --header-set RG . SM my_sample")
+def make_parser():
+    """Build the command-line argument parser for ``varlens-reads``."""
+    parser = HelpArgumentParser(usage=__doc__)
+    add_version_arg(parser)
+    group = parser.add_argument_group("output")
+    group.add_argument(
+        "--out",
+        help="Output file. Format is guessed from file extension: must be csv or "
+        "bam. If not specified, csv is written to stdout.",
+    )
+    group.add_argument(
+        "--field",
+        nargs="+",
+        default=[],
+        help="Additional read fields to output as columns in the csv. See pysam "
+        "documentation (http://pysam.readthedocs.org/en/latest/api.html) for the "
+        "meaning of these fields. Valid fields include: %s"
+        % (" ".join(READ_ATTRIBUTE_NAMES)),
+    )
 
-add_verbose_arg(group)
+    group.add_argument(
+        "--no-standard-fields",
+        action="store_true",
+        default=False,
+        help="Do not include the standard fields (%s) in csv output."
+        % ", ".join(STANDARD_FIELDS),
+    )
+    group.add_argument(
+        "--no-sort",
+        action="store_true",
+        default=False,
+        help="When outputting a bam, do not call samtools sort.",
+    )
+    group.add_argument(
+        "--header",
+        action="store_true",
+        default=False,
+        help="Output BAM/SAM header only.",
+    )
+    group.add_argument(
+        "--header-set",
+        nargs=4,
+        action="append",
+        help="When outputting a bam, set a particular header field to the given "
+        "value. Example: --header-set RG . SM my_sample",
+    )
 
-reads_util.add_args(parser, positional=True)
-loci_util.add_args(parser.add_argument_group("loci specification"))
-variants_util.add_args(parser)
+    add_verbose_arg(group)
+
+    add_read_args(parser, positional=True)
+    add_loci_args(parser.add_argument_group("loci specification"))
+    add_variant_args(parser)
+    return parser
+
+
+parser = make_parser()
+
 
 @input_errors(parser)
 def run(raw_args=None):
+    argcomplete.autocomplete(parser)
     args = parser.parse_args(raw_args)
     configure_logging(args)
+
+    import pysam
+    from .. import loci_util, reads_util, variants_util
 
     read_sources = reads_util.load_from_args(args)
     if not read_sources:

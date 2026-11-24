@@ -1,3 +1,4 @@
+# PYTHON_ARGCOMPLETE_OK
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -46,57 +47,96 @@ from the specified BAMs, counting only reads with mapping quality >= 10:
 
 '''
 
-import argparse
-import sys
 import logging
+import sys
+
+import argcomplete
 
 from . import configure_logging
-from .arguments import add_verbose_arg, add_version_arg
-from .. import variant_includes
-from .. import variants_util
+from .arguments import (
+    add_variant_args,
+    add_variant_include_args,
+    add_verbose_arg,
+    add_version_arg,
+)
+from .help import HelpArgumentParser
 from ..errors import input_errors
 
-parser = argparse.ArgumentParser(usage=__doc__)
-add_version_arg(parser)
-variants_util.add_args(parser, positional=True)
 
-group = parser.add_argument_group("variant output")
+def make_parser():
+    """Build the command-line argument parser for ``varlens-variants``."""
+    parser = HelpArgumentParser(usage=__doc__)
+    add_version_arg(parser)
+    add_variant_args(parser, positional=True)
 
-group.add_argument("--no-standard-columns",
-    action="store_true", default=False,
-    help="Don't write standard columns (genome, contig, start, end, ref, alt)")
+    group = parser.add_argument_group("variant output")
 
-group.add_argument("--chunk-rows", metavar="N", type=int,
-    help="Write out current results after processing N rows.")
+    group.add_argument(
+        "--no-standard-columns",
+        action="store_true",
+        default=False,
+        help="Don't write standard columns (genome, contig, start, end, ref, alt)",
+    )
 
-group.add_argument("--limit", metavar="N", type=int,
-    help="Process only the first N variants (useful for testing)")
+    group.add_argument(
+        "--chunk-rows",
+        metavar="N",
+        type=int,
+        help="Write out current results after processing N rows.",
+    )
 
-group.add_argument("--columns",
-    help="Column separated list of columns to output")
+    group.add_argument(
+        "--limit",
+        metavar="N",
+        type=int,
+        help="Process only the first N variants (useful for testing)",
+    )
 
-group.add_argument("--rename-column", nargs=2, action="append", default=[],
-    metavar="COL",
-    help="Rename output column first argument to second. Can be specified "
-    "multiple times by repeating the --rename-column option.")
+    group.add_argument(
+        "--columns",
+        help="Column separated list of columns to output",
+    )
 
-group.add_argument("--out",
-    help="Output file. If not specified the CSV is written to stdout.")
+    group.add_argument(
+        "--rename-column",
+        nargs=2,
+        action="append",
+        default=[],
+        metavar="COL",
+        help="Rename output column first argument to second. Can be specified "
+        "multiple times by repeating the --rename-column option.",
+    )
 
-group.add_argument('--include-metadata', action="store_true", default=False,
-    help="Output variant metadata when loading from VCF (info column, etc).")
+    group.add_argument(
+        "--out",
+        help="Output file. If not specified the CSV is written to stdout.",
+    )
 
-for includeable in variant_includes.INCLUDEABLES:
-    includeable.add_args(parser)
+    group.add_argument(
+        "--include-metadata",
+        action="store_true",
+        default=False,
+        help="Output variant metadata when loading from VCF (info column, etc).",
+    )
 
-add_verbose_arg(group)
+    add_variant_include_args(parser)
+
+    add_verbose_arg(group)
+    return parser
+
+
+parser = make_parser()
+
 
 @input_errors(parser)
 def run(raw_args=None):
+    argcomplete.autocomplete(parser)
     args = parser.parse_args(raw_args)
     configure_logging(args)
     if args.chunk_rows is not None and args.chunk_rows <= 0:
         parser.error("--chunk-rows must be positive")
+
+    from .. import variant_includes, variants_util
 
     df = variants_util.load_from_args_as_dataframe(args)
     if df is None:
