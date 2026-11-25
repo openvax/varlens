@@ -55,8 +55,6 @@ Print just the header for a BAM in csv format:
 import csv
 import sys
 
-import argcomplete
-
 from . import configure_logging
 from .arguments import (
     READ_ATTRIBUTE_NAMES,
@@ -66,7 +64,7 @@ from .arguments import (
     add_verbose_arg,
     add_version_arg,
 )
-from .help import HelpArgumentParser
+from .help import HelpArgumentParser, enable_argcomplete
 from ..errors import input_errors
 
 STANDARD_FIELDS = [
@@ -78,9 +76,8 @@ STANDARD_FIELDS = [
 ]
 
 
-def make_parser():
-    """Build the command-line argument parser for ``varlens-reads``."""
-    parser = HelpArgumentParser(usage=__doc__)
+def configure_parser(parser):
+    """Add ``reads`` arguments to ``parser``."""
     add_version_arg(parser)
     group = parser.add_argument_group("output")
     group.add_argument(
@@ -133,13 +130,17 @@ def make_parser():
     return parser
 
 
+def make_parser(prog=None):
+    """Build the command-line argument parser for ``varlens-reads``."""
+    parser = HelpArgumentParser(prog=prog, usage=__doc__.lstrip())
+    return configure_parser(parser)
+
+
 parser = make_parser()
 
 
-@input_errors(parser)
-def run(raw_args=None):
-    argcomplete.autocomplete(parser)
-    args = parser.parse_args(raw_args)
+def run_parsed(args, active_parser=parser):
+    """Execute ``reads`` using pre-parsed arguments."""
     configure_logging(args)
 
     import pysam
@@ -147,7 +148,7 @@ def run(raw_args=None):
 
     read_sources = reads_util.load_from_args(args)
     if not read_sources:
-        parser.error("No read sources specified (pass BAM path(s) or --reads).")
+        active_parser.error("No read sources specified (pass BAM path(s) or --reads).")
 
     loci = loci_util.load_from_args(args)  # may be None
     variants_df = variants_util.load_from_args_as_dataframe(args)
@@ -157,15 +158,15 @@ def run(raw_args=None):
 
     if args.header:
         if loci is not None:
-            parser.error("If specifying --header don't specify loci.")
+            active_parser.error("If specifying --header don't specify loci.")
         if args.field:
-            parser.error("If specifying --header don't specify fields.")
+            active_parser.error("If specifying --header don't specify fields.")
 
     out_pysam_handle = None
     out_csv_writer = out_csv_fd = None
     if args.out and (args.out.endswith(".bam") or args.out.endswith(".sam")):
         if args.field:
-            parser.error("Don't specify fields when outputting to bam or sam.")
+            active_parser.error("Don't specify fields when outputting to bam or sam.")
 
         header = update_header(args, read_sources[0].handle.header)
         out_pysam_handle = pysam.AlignmentFile(
@@ -179,7 +180,7 @@ def run(raw_args=None):
 
         if args.header:
             if args.field:
-                parser.error("Don't specify fields when outputting header.")
+                active_parser.error("Don't specify fields when outputting header.")
             out_csv_writer.writerow([
                 "read_source", "group", "index", "key", "value",
             ])
@@ -189,7 +190,7 @@ def run(raw_args=None):
                 args.field)
             out_csv_writer.writerow(columns)
     else:
-        parser.error(
+        active_parser.error(
             "Don't know how to write to file with output extension: %s. "
             "Supported extensions: csv, bam, sam." % args.out)
 
@@ -225,6 +226,13 @@ def run(raw_args=None):
     if out_csv_fd is not None and out_csv_fd is not sys.stdout:
         out_csv_fd.close()
         print("Wrote: %s" % args.out)
+
+
+@input_errors(parser)
+def run(raw_args=None):
+    enable_argcomplete(parser)
+    args = parser.parse_args(raw_args)
+    run_parsed(args, parser)
 
 
 def read_field(read_source, read, field_name):

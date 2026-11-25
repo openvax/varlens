@@ -36,8 +36,6 @@ import csv
 import logging
 import sys
 
-import argcomplete
-
 from . import configure_logging
 from .arguments import (
     add_loci_args,
@@ -46,13 +44,12 @@ from .arguments import (
     add_verbose_arg,
     add_version_arg,
 )
-from .help import HelpArgumentParser
+from .help import HelpArgumentParser, enable_argcomplete
 from ..errors import input_errors
 
 
-def make_parser():
-    """Build the command-line argument parser for ``varlens-allele-support``."""
-    parser = HelpArgumentParser(usage=__doc__)
+def configure_parser(parser):
+    """Add ``allele-support`` arguments to ``parser``."""
     add_version_arg(parser)
     group = parser.add_argument_group("output arguments")
     group.add_argument(
@@ -66,13 +63,17 @@ def make_parser():
     return parser
 
 
+def make_parser(prog=None):
+    """Build the command-line argument parser for ``varlens-allele-support``."""
+    parser = HelpArgumentParser(prog=prog, usage=__doc__.lstrip())
+    return configure_parser(parser)
+
+
 parser = make_parser()
 
 
-@input_errors(parser)
-def run(raw_args=None):
-    argcomplete.autocomplete(parser)
-    args = parser.parse_args(raw_args)
+def run_parsed(args, active_parser=parser):
+    """Execute ``allele-support`` using pre-parsed arguments."""
     configure_logging(args)
 
     from .. import loci_util, reads_util, support, variants_util
@@ -85,17 +86,17 @@ def run(raw_args=None):
 
     if not loci:
         if variants_df is not None:
-            parser.error("No loci: variants specified but none remained "
+            active_parser.error("No loci: variants specified but none remained "
                 "after filtering")
         else:
-            parser.error("No genomic loci or variants specified.")
+            active_parser.error("No genomic loci or variants specified.")
 
     logging.info("Loaded %d genomic loci." % len(loci))
 
     read_sources = reads_util.load_from_args(args)
 
     if read_sources is None:
-        parser.error("No read sources specified (pass BAM path(s) or --reads).")
+        active_parser.error("No read sources specified (pass BAM path(s) or --reads).")
 
     out_fd = open(args.out, "w") if args.out else sys.stdout
     writer = csv.writer(out_fd)
@@ -109,3 +110,10 @@ def run(raw_args=None):
     if out_fd is not sys.stdout:
         out_fd.close()
         print("Wrote: %s" % args.out)
+
+
+@input_errors(parser)
+def run(raw_args=None):
+    enable_argcomplete(parser)
+    args = parser.parse_args(raw_args)
+    run_parsed(args, parser)

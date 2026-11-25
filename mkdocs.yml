@@ -1,0 +1,59 @@
+site_name: varlens
+site_description: Command-line manipulation of genomic variants, NGS reads, and fusion RNA
+site_url: https://openvax.github.io/varlens/
+repo_url: https://github.com/openvax/varlens
+repo_name: openvax/varlens
+edit_uri: edit/master/docs/
+strict: true
+
+exclude_docs: |
+  *.rst
+  conf.py
+  Makefile
+
+theme:
+  name: material
+  font: false
+  palette:
+    primary: white
+    accent: blue
+  features:
+    - navigation.indexes
+    - navigation.expand
+    - content.code.copy
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    unrecognized_links: warn
+    anchors: warn
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["."]
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_root_full_path: false
+            separate_signature: true
+            heading_level: 3
+            docstring_section_style: list
+            show_source: false
+            members_order: source
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Reference: reference.md
