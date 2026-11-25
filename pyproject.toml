@@ -26,11 +26,12 @@ classifiers = [
 ]
 dependencies = [
     "argcomplete>=3",
+    "datacache>=1.38.0,<2.0.0",
     "numpy>=2,<3",
     "pandas>=3,<4",
     "intervaltree>=3.1,<4",
-    "pysam>=0.24.1,<0.25",
-    "varcode>=11.2.0,<12",
+    "pysam>=0.24.1,<1.0.0",
+    "varcode>=11.2.0,<13.0.0",
     "pyensembl>=2.27.2,<3",
     "pyfaidx>=0.9,<1",
     "mhctools>=4.1.1,<5",
@@ -41,17 +42,16 @@ dependencies = [
 fusion = ["isovar>=1.78.0,<2"]
 test = ["pytest>=8,<10", "pytest-cov>=5", "ruff>=0.15"]
 docs = [
-    "sphinx>=8,<10",
-    "sphinx-rtd-theme>=3,<4",
-    "sphinxcontrib-autoprogram>=0.1.9",
-    "sphinxcontrib-programoutput>=0.20",
-    "numpydoc>=1.10",
+    "mkdocs>=1.6,<2.0",
+    "mkdocs-material>=9.5,<10.0",
+    "mkdocstrings[python]>=0.27,<2.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/openvax/varlens"
 
 [project.scripts]
+varlens = "varlens.commands.main:run"
 varlens-allele-support = "varlens.commands.allele_support:run"
 varlens-variants = "varlens.commands.variants:run"
 varlens-fusions = "varlens.commands.fusions:run"

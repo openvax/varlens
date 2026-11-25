@@ -50,8 +50,6 @@ from the specified BAMs, counting only reads with mapping quality >= 10:
 import logging
 import sys
 
-import argcomplete
-
 from . import configure_logging
 from .arguments import (
     add_variant_args,
@@ -59,13 +57,12 @@ from .arguments import (
     add_verbose_arg,
     add_version_arg,
 )
-from .help import HelpArgumentParser
+from .help import HelpArgumentParser, enable_argcomplete
 from ..errors import input_errors
 
 
-def make_parser():
-    """Build the command-line argument parser for ``varlens-variants``."""
-    parser = HelpArgumentParser(usage=__doc__)
+def configure_parser(parser):
+    """Add ``variants`` arguments to ``parser``."""
     add_version_arg(parser)
     add_variant_args(parser, positional=True)
 
@@ -125,25 +122,29 @@ def make_parser():
     return parser
 
 
+def make_parser(prog=None):
+    """Build the command-line argument parser for ``varlens-variants``."""
+    parser = HelpArgumentParser(prog=prog, usage=__doc__.lstrip())
+    return configure_parser(parser)
+
+
 parser = make_parser()
 
 
-@input_errors(parser)
-def run(raw_args=None):
-    argcomplete.autocomplete(parser)
-    args = parser.parse_args(raw_args)
+def run_parsed(args, active_parser=parser):
+    """Execute ``variants`` using pre-parsed arguments."""
     configure_logging(args)
     if args.chunk_rows is not None and args.chunk_rows <= 0:
-        parser.error("--chunk-rows must be positive")
+        active_parser.error("--chunk-rows must be positive")
 
     from .. import variant_includes, variants_util
 
     df = variants_util.load_from_args_as_dataframe(args)
     if df is None:
-        parser.error("No variants specified.")
+        active_parser.error("No variants specified.")
     if args.limit is not None:
         if args.limit < 0:
-            parser.error("--limit must not be negative")
+            active_parser.error("--limit must not be negative")
         df = df.iloc[:args.limit].copy()
 
     logging.info("Loaded %d variants." % df.shape[0])
@@ -196,7 +197,7 @@ def run(raw_args=None):
             df_save.to_csv(args.out, index=False)
             print("Wrote: %s" % args.out)
         else:
-            parser.error("Unsupported output file extension: %s" % args.out)
+            active_parser.error("Unsupported output file extension: %s" % args.out)
 
     saved = False
     for includeable in variant_includes.INCLUDEABLES:
@@ -210,4 +211,11 @@ def run(raw_args=None):
 
     if args.chunk_rows is None or not saved:
         save(df)
+
+
+@input_errors(parser)
+def run(raw_args=None):
+    enable_argcomplete(parser)
+    args = parser.parse_args(raw_args)
+    run_parsed(args, parser)
  

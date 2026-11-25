@@ -3,18 +3,16 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 
-import argcomplete
-
 from .arguments import add_mhc_args, add_version_arg
-from .help import HelpArgumentParser
+from .help import HelpArgumentParser, enable_argcomplete
 from ..errors import InputError, input_errors
 
 
-def make_parser() -> HelpArgumentParser:
-    """Build the command-line argument parser for ``varlens-fusions``."""
-    parser = HelpArgumentParser(description=__doc__)
+def configure_parser(parser: HelpArgumentParser) -> HelpArgumentParser:
+    """Add ``fusions`` arguments to ``parser``."""
     add_version_arg(parser)
     parser.add_argument(
         "inputs", nargs="+", help="Isovar supplied-fusion JSON or JSON.gz files"
@@ -30,17 +28,23 @@ def make_parser() -> HelpArgumentParser:
     return parser
 
 
+def make_parser(prog: str | None = None) -> HelpArgumentParser:
+    """Build the command-line argument parser for ``varlens-fusions``."""
+    parser = HelpArgumentParser(prog=prog, description=__doc__)
+    return configure_parser(parser)
+
+
 parser = make_parser()
 
 
-@input_errors(parser)
-def run(raw_args: list[str] | None = None) -> None:
-    argcomplete.autocomplete(parser)
-    args = parser.parse_args(raw_args)
+def run_parsed(
+    args: argparse.Namespace, active_parser: HelpArgumentParser = parser
+) -> None:
+    """Execute ``fusions`` using pre-parsed arguments."""
     if args.min_fragments < 1:
-        parser.error("--min-fragments must be positive")
+        active_parser.error("--min-fragments must be positive")
     if args.out and not args.out.endswith((".json", ".json.gz")):
-        parser.error("--out must end in .json or .json.gz")
+        active_parser.error("--out must end in .json or .json.gz")
 
     import gzip
     import json
@@ -91,6 +95,13 @@ def run(raw_args: list[str] | None = None) -> None:
             Path(args.out).write_text(report)
     else:
         sys.stdout.write(report)
+
+
+@input_errors(parser)
+def run(raw_args: list[str] | None = None) -> None:
+    enable_argcomplete(parser)
+    args = parser.parse_args(raw_args)
+    run_parsed(args, parser)
 
 
 if __name__ == "__main__":

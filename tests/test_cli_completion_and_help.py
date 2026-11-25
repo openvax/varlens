@@ -13,7 +13,8 @@ import tomllib
 
 import pytest
 
-from varlens.commands import allele_support, fusions, reads, variants
+from datacache import cli_help as datacache_cli_help
+from varlens.commands import allele_support, fusions, main, reads, variants
 from varlens.commands.arguments import (
     READ_ATTRIBUTE_NAMES,
     iter_read_filter_specs,
@@ -22,7 +23,10 @@ from varlens.commands.arguments import (
 )
 from varlens.commands.help import (
     HelpArgumentParser,
+    HelpFormatter,
+    classify_status,
     color_enabled,
+    enable_argcomplete,
     style_help,
     style_status,
     style_table_header,
@@ -110,6 +114,62 @@ def run_completion_subprocess(
 @pytest.mark.parametrize(
     "entry_module,comp_line,expected_flags",
     [
+        (
+            "varlens.commands.main",
+            "varlens ",
+            {"variants", "reads", "allele-support", "fusions"},
+        ),
+        (
+            "varlens.commands.main",
+            "varlens variants --include-",
+            {
+                "--include-effect",
+                "--include-gene",
+                "--include-context",
+                "--include-mhc-binding",
+                "--include-read-evidence",
+                "--include-metadata",
+                "--include-failing-variants",
+            },
+        ),
+        (
+            "varlens.commands.main",
+            "varlens reads --",
+            {
+                "--out",
+                "--field",
+                "--header",
+                "--locus",
+                "--variants",
+                "--min-mapping-quality",
+                "--version",
+                "--verbose",
+            },
+        ),
+        (
+            "varlens.commands.main",
+            "varlens allele-support --",
+            {
+                "--out",
+                "--locus",
+                "--variants",
+                "--reads",
+                "--min-mapping-quality",
+                "--version",
+                "--verbose",
+            },
+        ),
+        (
+            "varlens.commands.main",
+            "varlens fusions --",
+            {
+                "--out",
+                "--min-fragments",
+                "--mhc-predictor",
+                "--mhc-alleles",
+                "--version",
+            },
+        ),
         (
             "varlens.commands.variants",
             "varlens-variants --include-",
@@ -199,6 +259,7 @@ def test_argcomplete_returns_expected_flags_without_heavy_imports(
         "varlens.commands",
         "varlens.commands.help",
         "varlens.commands.arguments",
+        "varlens.commands.main",
         "varlens.commands.variants",
         "varlens.commands.reads",
         "varlens.commands.allele_support",
@@ -224,21 +285,31 @@ def test_package_and_parser_imports_avoid_heavy_dependencies(module_name: str) -
 
 
 @pytest.mark.parametrize(
-    "entry_module",
+    "entry_module,argv_cases",
     [
-        "varlens.commands.variants",
-        "varlens.commands.reads",
-        "varlens.commands.allele_support",
-        "varlens.commands.fusions",
+        ("varlens.commands.main", (["--help"], ["--version"])),
+        ("varlens.commands.main", (["variants", "--help"], ["variants", "--version"])),
+        ("varlens.commands.main", (["reads", "--help"], ["reads", "--version"])),
+        (
+            "varlens.commands.main",
+            (["allele-support", "--help"], ["allele-support", "--version"]),
+        ),
+        ("varlens.commands.main", (["fusions", "--help"], ["fusions", "--version"])),
+        ("varlens.commands.variants", (["--help"], ["--version"])),
+        ("varlens.commands.reads", (["--help"], ["--version"])),
+        ("varlens.commands.allele_support", (["--help"], ["--version"])),
+        ("varlens.commands.fusions", (["--help"], ["--version"])),
     ],
 )
-def test_help_and_version_avoid_heavy_dependencies(entry_module: str) -> None:
+def test_help_and_version_avoid_heavy_dependencies(
+    entry_module: str, argv_cases: tuple[list[str], ...]
+) -> None:
     code = (
         "import importlib, sys\n"
         f"mod = importlib.import_module({entry_module!r})\n"
-        "for flag in ('--help', '--version'):\n"
+        f"for argv in {argv_cases!r}:\n"
         "    try:\n"
-        "        mod.run([flag])\n"
+        "        mod.run(argv)\n"
         "    except SystemExit as exc:\n"
         "        assert exc.code == 0\n"
         f"loaded = [m for m in {HEAVY_MODULES!r} if m in sys.modules]\n"
@@ -292,7 +363,18 @@ def test_all_console_script_entry_modules_carry_argcomplete_marker() -> None:
         )
 
 
-@pytest.mark.parametrize("command", [variants, reads, allele_support, fusions])
+def test_help_module_reexports_datacache_cli_help() -> None:
+    assert HelpArgumentParser is datacache_cli_help.HelpArgumentParser
+    assert HelpFormatter is datacache_cli_help.HelpFormatter
+    assert color_enabled is datacache_cli_help.color_enabled
+    assert style_help is datacache_cli_help.style_help
+    assert style_table_header is datacache_cli_help.style_table_header
+    assert classify_status is datacache_cli_help.classify_status
+    assert style_status is datacache_cli_help.style_status
+    assert enable_argcomplete is datacache_cli_help.enable_argcomplete
+
+
+@pytest.mark.parametrize("command", [main, variants, reads, allele_support, fusions])
 def test_every_command_uses_help_argument_parser_with_plain_format_help(
     command, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -322,7 +404,7 @@ def test_every_command_uses_help_argument_parser_with_plain_format_help(
 
 @pytest.mark.parametrize(
     "env_name,env_value",
-    [("NO_COLOR", ""), ("NO_COLOR", "1"), ("TERM", "dumb")],
+    [("NO_COLOR", "1"), ("TERM", "dumb")],
 )
 def test_help_and_table_styling_respect_no_color_and_dumb_term(
     monkeypatch: pytest.MonkeyPatch, env_name: str, env_value: str
@@ -339,8 +421,8 @@ def test_help_and_table_styling_respect_no_color_and_dumb_term(
     assert "\033[" not in tty.getvalue()
     assert "\033[" not in style_help(parser.format_help(), tty)
     assert "\033[" not in style_table_header("COL1  COL2\nval1  val2\n", tty)
-    assert "\033[" not in style_status("missing", tty, kind="warning")
-    assert "\033[" not in style_status("-", tty, kind="absent")
+    assert "\033[" not in style_status("missing", tty, level="warning")
+    assert "\033[" not in style_status("-", tty, level="absent")
 
 
 def test_table_header_and_status_styling(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -355,14 +437,18 @@ def test_table_header_and_status_styling(monkeypatch: pytest.MonkeyPatch) -> Non
     assert styled_table == "\033[1;36mCONTIG  STATUS\033[0m\n22      OK\n"
     assert style_table_header(table, non_tty) == table
 
-    assert style_status("OK", tty, kind="normal") == "OK"
-    assert style_status("-", tty, kind="absent") == "\033[2m-\033[0m"
-    assert style_status("missing", tty, kind="warning") == "\033[33mmissing\033[0m"
-    assert style_status("-", non_tty, kind="absent") == "-"
-    assert style_status("missing", non_tty, kind="warning") == "missing"
+    assert classify_status("OK") == "plain"
+    assert classify_status("-") == "dim"
+    assert classify_status("missing") == "warning"
 
-    with pytest.raises(ValueError, match="Unsupported status kind"):
-        style_status("OK", tty, kind="green")
+    assert style_status("OK", tty, level="normal") == "OK"
+    assert style_status("-", tty, level="absent") == "\033[2m-\033[0m"
+    assert style_status("missing", tty, level="warning") == "\033[33mmissing\033[0m"
+    assert style_status("-", non_tty, level="absent") == "-"
+    assert style_status("missing", non_tty, level="warning") == "missing"
+
+    with pytest.raises(ValueError, match="Unknown status level"):
+        style_status("OK", tty, level="green")
 
 
 def test_help_argument_parser_disables_stdlib_color_on_python_314() -> None:

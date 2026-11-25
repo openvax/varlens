@@ -4,7 +4,7 @@ import pytest
 import varcode
 
 from varlens import util, variants_util
-from varlens.commands import allele_support, fusions, reads, variants
+from varlens.commands import allele_support, fusions, main, reads, variants
 from varlens.commands.arguments import add_verbose_arg, add_version_arg
 from varlens.errors import InputError
 from varlens.loci_util import Loci
@@ -27,12 +27,65 @@ def test_version_and_verbose_args(capsys):
     assert capsys.readouterr().out == "example %s\n" % __version__
 
 
-@pytest.mark.parametrize("command", [allele_support, fusions, reads, variants])
+@pytest.mark.parametrize("command", [main, allele_support, fusions, reads, variants])
 def test_every_command_prints_its_version(command, capsys):
     with pytest.raises(SystemExit) as exit_info:
         command.run(["--version"])
     assert exit_info.value.code == 0
     assert capsys.readouterr().out.rstrip("\n").endswith(" " + __version__)
+
+
+@pytest.mark.parametrize("subcommand", ["variants", "reads", "allele-support", "fusions"])
+def test_unified_cli_subcommand_version(subcommand, capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main.run([subcommand, "--version"])
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"varlens {subcommand} {__version__}"
+
+
+def test_unified_cli_requires_subcommand(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main.run([])
+    assert exit_info.value.code == 2
+    assert "COMMAND" in capsys.readouterr().err
+
+
+def test_unified_cli_dispatches_variants_reads_and_allele_support(capsys):
+    vcf = data_path("CELSR1/vcfs/vcf_1.vcf")
+    bam = data_path("CELSR1/bams/bam_1.bam")
+
+    variants.run([vcf])
+    legacy_variants = capsys.readouterr().out
+    main.run(["variants", vcf])
+    assert capsys.readouterr().out == legacy_variants
+
+    reads.run([bam, "--header"])
+    legacy_reads = capsys.readouterr().out
+    main.run(["reads", bam, "--header"])
+    assert capsys.readouterr().out == legacy_reads
+
+    allele_support.run([bam, "--locus", "22:46931061"])
+    legacy_support = capsys.readouterr().out
+    main.run(["allele-support", bam, "--locus", "22:46931061"])
+    assert capsys.readouterr().out == legacy_support
+
+
+def test_unified_cli_dispatches_fusions(capsys):
+    pytest.importorskip("isovar.fusion")
+    fusion_input = data_path("fusions/ATP5MG--KMT2A.input.json.gz")
+    fusions.run([fusion_input])
+    legacy_report = capsys.readouterr().out
+    main.run(["fusions", fusion_input])
+    assert capsys.readouterr().out == legacy_report
+
+
+def test_unified_cli_handles_input_error_cleanly(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main.run(["fusions", "not-a-fusion.txt"])
+    assert exit_info.value.code == 2
+    err = capsys.readouterr().err
+    assert "varlens fusions: error:" in err
+    assert ".json or .json.gz" in err
 
 
 @pytest.mark.parametrize("command, arguments", [
