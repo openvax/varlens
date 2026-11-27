@@ -240,7 +240,7 @@ def add_variant_args(parser: argparse.ArgumentParser, positional: bool = False) 
         nargs=("*" if positional else "+"),
         default=[],
         help="Path to VCF file. Any number of VCF files may be specified. "
-        "CSV files in the format outputted by the varlens-variants tool are "
+        "CSV files in the format outputted by the varlens variants tool are "
         "also supported.",
     )
     group.add_argument(
@@ -546,7 +546,7 @@ def add_read_evidence_include_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_variant_include_args(parser: argparse.ArgumentParser) -> None:
-    """Add all ``--include-*`` annotation option groups for ``varlens-variants``."""
+    """Add all ``--include-*`` annotation option groups for ``varlens variants``."""
     add_effect_include_args(parser)
     add_gene_include_args(parser)
     add_context_include_args(parser)

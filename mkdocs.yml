@@ -6,11 +6,6 @@ repo_name: openvax/varlens
 edit_uri: edit/master/docs/
 strict: true
 
-exclude_docs: |
-  *.rst
-  conf.py
-  Makefile
-
 theme:
   name: material
   font: false
@@ -56,4 +51,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Command guide: commands.md
+  - Structural variants: structural_variants.md
+  - Fusion RNA: fusions.md
   - Reference: reference.md

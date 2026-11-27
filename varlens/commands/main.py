@@ -55,11 +55,7 @@ def make_parser(prog: str = "varlens") -> HelpArgumentParser:
     root = HelpArgumentParser(
         prog=prog,
         description=__doc__,
-        epilog=(
-            "Run 'varlens COMMAND --help' for command-specific options.\n"
-            "Legacy entry points (varlens-variants, varlens-reads, "
-            "varlens-allele-support, varlens-fusions) remain available."
-        ),
+        epilog="Run 'varlens COMMAND --help' for command-specific options.",
     )
     add_version_arg(root)
     subparsers = root.add_subparsers(

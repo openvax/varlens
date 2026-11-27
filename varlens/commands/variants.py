@@ -123,7 +123,7 @@ def configure_parser(parser):
 
 
 def make_parser(prog=None):
-    """Build the command-line argument parser for ``varlens-variants``."""
+    """Build the command-line argument parser for ``varlens variants``."""
     parser = HelpArgumentParser(prog=prog, usage=__doc__.lstrip())
     return configure_parser(parser)
 

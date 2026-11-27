@@ -65,7 +65,7 @@ def variant_support(variants, allele_support_df, ignore_missing=False):
     variants : iterable of varcode.Variant
 
     allele_support_df : dataframe
-        Allele support dataframe, as output by the varlens-allele-support tool.
+        Allele support dataframe, as output by the varlens allele-support tool.
         It should have columns: source, contig, interbase_start, interbase_end,
         allele, and count (the number of supporting reads).
 

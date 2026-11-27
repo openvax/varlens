@@ -131,7 +131,7 @@ def configure_parser(parser):
 
 
 def make_parser(prog=None):
-    """Build the command-line argument parser for ``varlens-reads``."""
+    """Build the command-line argument parser for ``varlens reads``."""
     parser = HelpArgumentParser(prog=prog, usage=__doc__.lstrip())
     return configure_parser(parser)
 
