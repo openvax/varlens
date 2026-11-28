@@ -7,12 +7,12 @@
     :alt: PyPI
 
 varlens
-======================
+=======
 
-Varlens is a set of command-line tools that pull what you need out of VCF and
-BAM files into CSV tables for further analysis: combine and annotate variants,
-export or filter reads, and count the reads supporting each allele. It is not
-particularly fast for large datasets.
+Varlens is a command-line tool that pulls what you need out of VCF and BAM
+files into CSV tables for further analysis: combine and annotate variants,
+export or filter reads, count the reads supporting each allele, and reconstruct
+supplied fusion RNA transcripts. It is not particularly fast for large datasets.
 
 It is built on `Varcode <https://github.com/openvax/varcode>`_ (variants and
 effects) and `pysam <https://github.com/pysam-developers/pysam>`_ (reads), with
@@ -20,19 +20,19 @@ effects) and `pysam <https://github.com/pysam-developers/pysam>`_ (reads), with
 `MHCtools <https://github.com/openvax/mhctools>`_ for MHC binding and
 `Isovar <https://github.com/openvax/isovar>`_ for fusion RNA.
 
-varlens-variants
+``varlens variants``
     Combine, annotate, and filter variants from VCF or CSV files. Available
     annotations include genes, variant effects, surrounding sequence context,
     counts of supporting reads from specified BAM files, and MHC I binding
     affinity prediction of mutant peptides.
 
-varlens-reads
+``varlens reads``
     Display, filter, and copy reads from a SAM/BAM file. Partial replacement for ``samtools view``.
 
-varlens-allele-support
+``varlens allele-support``
     Count reads supporting each allele at specified sites in BAM files.
 
-varlens-fusions
+``varlens fusions``
     Reconstruct a supplied fusion transcript from RNA reads with Isovar, and
     optionally predict MHC binding of junction peptides.
 
@@ -41,25 +41,17 @@ varlens-fusions
 Install
 -------
 
-Install the validated wheel from the `Varlens 1.3.0 GitHub release
-<https://github.com/openvax/varlens/releases/tag/v1.3.0>`_:
-
 ::
 
-    python -m pip install https://github.com/openvax/varlens/releases/download/v1.3.0/varlens-1.3.0-py3-none-any.whl
+    python -m pip install varlens
 
-PyPI currently serves the older 0.0.2 release. Publishing the current version
-there is blocked by account permissions, tracked in `issue 55
-<https://github.com/openvax/varlens/issues/55>`_. Use the GitHub wheel above
-for the current Python and OpenVax stack.
-
-Varlens 1.3 requires Python 3.11 or newer, pandas 3, and
+Varlens requires Python 3.11 or newer, pandas 3, and
 MHCTools 4.1.1 or newer (below 5). The package uses the current Topiary 5
 prediction API; MHC binding predictions work with any MHCtools predictor via
 ``--mhc-predictor`` (for example ``mhcflurry`` or ``netmhcpan``), sharing
 ``--mhc-alleles``, ``--mhc-alleles-file``, and ``--mhc-peptide-lengths`` with
 Topiary and Vaxrank. ``pip install 'varlens[fusion]'`` adds Isovar for
-``varlens-fusions``. Effect and gene annotations need a PyEnsembl release
+``varlens fusions``. Effect and gene annotations need a PyEnsembl release
 matching your variants' genome build; the examples below use GRCh37
 (``pyensembl install --release 75 --species human``).
 
@@ -71,7 +63,7 @@ its predicted effect and the genes it overlaps, and print a CSV:
 
 ::
 
-    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf \
+    $ varlens variants tests/data/CELSR1/vcfs/vcf_1.vcf tests/data/CELSR1/vcfs/vcf_2.vcf \
         --include-effect \
         --include-gene
 
@@ -89,21 +81,16 @@ the 1-based positions in VCF. ``effect`` is Varcode's preferred consequence and
 ``effect_candidates`` lists it with its alternatives; these are predictions,
 not observed products.
 
-.. _varlens-variants:
-.. _varlens-reads:
-.. _varlens-allele-support:
-.. _varlens-fusions:
-
 Command line
 ------------
 
-Each command prints its options with ``--help`` and the installed Varlens
-version with ``--version``. One example per command:
+Each subcommand prints its options with ``--help`` and the installed Varlens
+version with ``--version``. One example per subcommand:
 
 ::
 
     # Count reads supporting each variant's ref and alt alleles in a BAM
-    $ varlens-variants tests/data/CELSR1/vcfs/vcf_1.vcf \
+    $ varlens variants tests/data/CELSR1/vcfs/vcf_1.vcf \
         --include-read-evidence \
         --reads tests/data/CELSR1/bams/bam_1.bam \
         --min-mapping-quality 10
@@ -116,13 +103,13 @@ version with ``--version``. One example per command:
     GRCh37,22,50875932,50875933,A,C,vcf_1,0.0,0.0,0.0
 
     # Write the reads overlapping a locus (1-based, inclusive) to a new BAM
-    $ varlens-reads tests/data/CELSR1/bams/bam_0.bam \
+    $ varlens reads tests/data/CELSR1/bams/bam_0.bam \
         --min-mapping-quality 30 \
         --locus 22:46932040-46932050 \
         --out /tmp/result.bam
 
     # Count the reads supporting each allele at two sites (positional BAM or --reads)
-    $ varlens-allele-support \
+    $ varlens allele-support \
         tests/data/CELSR1/bams/bam_1.bam \
         --locus 22:46931061 22:46931063
 
@@ -134,7 +121,7 @@ version with ``--version``. One example per command:
     bam_1,22,46931062,46931063,AC,1
 
     # Reconstruct a supplied fusion transcript (needs varlens[fusion])
-    $ varlens-fusions fusion.json.gz --out reconstruction.json
+    $ varlens fusions fusion.json.gz --out reconstruction.json
 
 Tab completion is provided via `argcomplete
 <https://kislyuk.github.io/argcomplete/>`_. Enable it once for every OpenVax
@@ -144,33 +131,22 @@ command-line tool:
 
     activate-global-python-argcomplete
 
-Or register individual commands in your shell startup file:
+Or register ``varlens`` in your shell startup file:
 
 ::
 
-    eval "$(register-python-argcomplete varlens-variants)"
-    eval "$(register-python-argcomplete varlens-reads)"
-    eval "$(register-python-argcomplete varlens-allele-support)"
-    eval "$(register-python-argcomplete varlens-fusions)"
-
-.. end-of-docs-front-page
-
-.. _structural-variants-and-empty-inputs:
-.. _note-on-coordinate-systems:
-.. _python-read-support-api:
+    eval "$(register-python-argcomplete varlens)"
 
 Documentation
 -------------
 
 Full documentation: `openvax.github.io/varlens <https://openvax.github.io/varlens/>`_.
 
-- `Command guide <https://openvax.github.io/varlens/docs/html/commands.html>`_:
-  more examples for each command, with their output
-- `Structural variants and empty inputs <https://openvax.github.io/varlens/docs/html/structural_variants.html>`_
-- `Fusion RNA with varlens-fusions <https://openvax.github.io/varlens/docs/html/fusions.html>`_
-- `Using varlens from Python <https://openvax.github.io/varlens/docs/html/python.html>`_
-- `Coordinate systems <https://openvax.github.io/varlens/docs/html/coordinates.html>`_
-- `Command-line reference <https://openvax.github.io/varlens/docs/html/cli.html>`_
+- `Command guide <https://openvax.github.io/varlens/commands/>`_:
+  more examples for each subcommand, with their output
+- `Structural variants and empty inputs <https://openvax.github.io/varlens/structural_variants/>`_
+- `Fusion RNA with varlens fusions <https://openvax.github.io/varlens/fusions/>`_
+- `API reference <https://openvax.github.io/varlens/reference/>`_
 
 Development
 -----------
@@ -181,11 +157,9 @@ Development
     pyensembl install --release 75 --species human
     ./lint.sh
     ./test.sh
+    mkdocs build --strict
 
-NetMHCpan tests are opt-in (``./test.sh --run-netmhcpan``). The
-`development guide <https://openvax.github.io/varlens/docs/html/development.html>`_
-covers the shared OpenVax dependency check, building the docs and releasing
-with ``./deploy.sh``.
+NetMHCpan tests are opt-in (``./test.sh --run-netmhcpan``).
 
 License
 -------

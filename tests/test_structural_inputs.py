@@ -174,7 +174,7 @@ def test_unsupported_format_has_actionable_diagnostic(tmp_path, capsys):
     with pytest.raises(SystemExit) as error:
         variants.run([str(filename)])
     assert error.value.code == 2
-    assert "varlens-fusions" in capsys.readouterr().err
+    assert "varlens fusions" in capsys.readouterr().err
 
 
 def test_chunked_unannotated_output_and_column_selection(tmp_path):

@@ -129,7 +129,7 @@ def test_fusion_cli_supports_mhctools_predictor_and_unified_hla_alias(tmp_path, 
     assert unresolved_event["predictions"] == []
 
     # Deprecated --hla accepts both quoted space-separated and multi-arg forms,
-    # matching varlens-variants.
+    # matching varlens variants.
     for hla_argv in (
         ["--hla", "HLA-A*02:01 HLA-B*07:02"],
         ["--hla", "HLA-A*02:01", "HLA-B*07:02"],

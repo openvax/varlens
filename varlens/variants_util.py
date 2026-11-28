@@ -134,7 +134,7 @@ def require_small_variants(variants, operation):
         if isinstance(variant, varcode.StructuralVariant):
             raise InputError(
                 "%s does not support structural variants (%s). Export/filter "
-                "the calls with varlens-variants, or use varlens-fusions for "
+                "the calls with varlens variants, or use varlens fusions for "
                 "supplied fusion RNA; interval allele counts are not junction "
                 "support." % (operation, variant.short_description))
 
@@ -150,7 +150,7 @@ def variant_loci(variant):
 def union_with_variant_loci(loci, variants, operation):
     """Return ``loci`` plus the pileup locus of each small variant.
 
-    ``varlens-reads`` and ``varlens-allele-support`` use this to combine
+    ``varlens reads`` and ``varlens allele-support`` use this to combine
     ``--locus`` with the loci of ``--variants``/``--single-variant``.
 
     Parameters
@@ -365,7 +365,7 @@ def load_as_dataframe(
         else:
             raise InputError(
                 "Unsupported variant input: %s. Use VCF or Varlens CSV; "
-                "for supplied fusion RNA JSON use varlens-fusions." % filename)
+                "for supplied fusion RNA JSON use varlens fusions." % filename)
 
     try:
         df = loader(filename)

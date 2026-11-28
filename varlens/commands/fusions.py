@@ -29,7 +29,7 @@ def configure_parser(parser: HelpArgumentParser) -> HelpArgumentParser:
 
 
 def make_parser(prog: str | None = None) -> HelpArgumentParser:
-    """Build the command-line argument parser for ``varlens-fusions``."""
+    """Build the command-line argument parser for ``varlens fusions``."""
     parser = HelpArgumentParser(prog=prog, description=__doc__)
     return configure_parser(parser)
 

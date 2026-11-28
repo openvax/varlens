@@ -13,15 +13,14 @@ effects) and [pysam](https://github.com/pysam-developers/pysam) (reads), with
 
 ## Installation
 
-Varlens requires Python 3.11 or newer, pandas 3, Varcode 11.2 or 12.x,
+Varlens requires Python 3.11 or newer, pandas 3, Varcode 11.2+ (<14),
 DataCache 1.38+, MHCtools 4.1.1+, and Topiary 5.109+:
 
 ```bash
 python -m pip install varlens
 ```
 
-Install the optional `fusion` extra to enable `varlens fusions` (and
-`varlens-fusions`) with Isovar:
+Install the optional `fusion` extra to enable `varlens fusions` with Isovar:
 
 ```bash
 python -m pip install 'varlens[fusion]'
@@ -32,15 +31,18 @@ build (for example `pyensembl install --release 75 --species human` for GRCh37).
 
 ## Command-line interface
 
-Varlens ships a unified `varlens` command with four subcommands, while keeping
-all four legacy `varlens-*` console scripts for backward compatibility:
+Varlens ships a unified `varlens` command with four subcommands:
 
-| Unified subcommand | Legacy script | Summary |
-| --- | --- | --- |
-| `varlens variants` | `varlens-variants` | Combine, filter, and annotate variants from VCF/CSV files |
-| `varlens reads` | `varlens-reads` | Display, filter, and copy reads from BAM/SAM files |
-| `varlens allele-support` | `varlens-allele-support` | Count reads supporting each allele at genomic sites |
-| `varlens fusions` | `varlens-fusions` | Reconstruct supplied fusion RNA and predict junction peptides |
+| Subcommand | Summary |
+| --- | --- |
+| `varlens variants` | Combine, filter, and annotate variants from VCF/CSV files |
+| `varlens reads` | Display, filter, and copy reads from BAM/SAM files |
+| `varlens allele-support` | Count reads supporting each allele at genomic sites |
+| `varlens fusions` | Reconstruct supplied fusion RNA and predict junction peptides |
+
+See the [Command guide](commands.md) for worked examples,
+[Structural variants](structural_variants.md) for symbolic SV and breakend
+handling, and [Fusion RNA](fusions.md) for `varlens fusions`.
 
 ### Quick start
 
@@ -85,7 +87,7 @@ varlens fusions fusion.json.gz --out reconstruction.json
 
 ### Shell tab completion
 
-All `varlens` entry points support tab completion via
+`varlens` supports tab completion via
 [argcomplete](https://kislyuk.github.io/argcomplete/). Enable it globally once
 or register `varlens` in your shell startup file:
 
@@ -108,5 +110,20 @@ example VCF `1:100 A>AT` becomes `interbase_start=100, interbase_end=100` with
 
 ## Python API
 
-See the [Reference](reference.md) for the CLI parser entry points and Python
-module APIs.
+`varlens.support.variant_support(variants, counts)` returns a pandas DataFrame
+indexed by variant with two column levels (`measurement` and `source`) across
+`num_alt`, `num_ref`, `num_other`, `total_depth`, `alt_fraction`, and
+`any_alt_fraction`:
+
+```python
+from varlens.support import variant_support
+
+evidence = variant_support(variants, counts)
+alt_counts = evidence["num_alt"]
+tumor_depth = evidence[("total_depth", "tumor")]
+```
+
+MHC binding helpers (`varlens.mhc_binding.binding_affinities`,
+`varlens.mhc_binding.fragment_predictions`, and `varlens.fusions.analyze_fusion`)
+use the Topiary API with any configured `mhctools` predictor. See the
+[Reference](reference.md) for the full CLI and Python module APIs.

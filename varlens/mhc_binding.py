@@ -133,7 +133,7 @@ def add_mhc_cli_args(
     """Add shared MHCtools CLI options and deprecated Varlens aliases.
 
     Delegates to :func:`varlens.commands.arguments.add_mhc_args` so
-    ``varlens-variants`` and ``varlens-fusions`` accept the same
+    ``varlens variants`` and ``varlens fusions`` accept the same
     ``--mhc-predictor``, ``--mhc-alleles``, ``--mhc-alleles-file``, and
     ``--mhc-peptide-lengths`` options as Topiary and Vaxrank, plus the
     unified deprecated ``--hla`` alias, without importing ``mhctools`` during

@@ -52,10 +52,6 @@ Homepage = "https://github.com/openvax/varlens"
 
 [project.scripts]
 varlens = "varlens.commands.main:run"
-varlens-allele-support = "varlens.commands.allele_support:run"
-varlens-variants = "varlens.commands.variants:run"
-varlens-fusions = "varlens.commands.fusions:run"
-varlens-reads = "varlens.commands.reads:run"
 
 [tool.setuptools]
 packages = ["varlens", "varlens.commands", "varlens.read_evidence"]

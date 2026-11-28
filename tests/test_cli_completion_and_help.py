@@ -134,11 +134,24 @@ def run_completion_subprocess(
         ),
         (
             "varlens.commands.main",
+            "varlens variants --mhc-",
+            {
+                "--mhc-predictor",
+                "--mhc-alleles",
+                "--mhc-alleles-file",
+                "--mhc-peptide-lengths",
+            },
+        ),
+        (
+            "varlens.commands.main",
             "varlens reads --",
             {
                 "--out",
                 "--field",
+                "--no-standard-fields",
+                "--no-sort",
                 "--header",
+                "--header-set",
                 "--locus",
                 "--variants",
                 "--min-mapping-quality",
@@ -162,70 +175,6 @@ def run_completion_subprocess(
         (
             "varlens.commands.main",
             "varlens fusions --",
-            {
-                "--out",
-                "--min-fragments",
-                "--mhc-predictor",
-                "--mhc-alleles",
-                "--version",
-            },
-        ),
-        (
-            "varlens.commands.variants",
-            "varlens-variants --include-",
-            {
-                "--include-effect",
-                "--include-gene",
-                "--include-context",
-                "--include-mhc-binding",
-                "--include-read-evidence",
-                "--include-metadata",
-                "--include-failing-variants",
-            },
-        ),
-        (
-            "varlens.commands.variants",
-            "varlens-variants --mhc-",
-            {
-                "--mhc-predictor",
-                "--mhc-alleles",
-                "--mhc-alleles-file",
-                "--mhc-peptide-lengths",
-            },
-        ),
-        (
-            "varlens.commands.reads",
-            "varlens-reads --",
-            {
-                "--out",
-                "--field",
-                "--no-standard-fields",
-                "--no-sort",
-                "--header",
-                "--header-set",
-                "--locus",
-                "--variants",
-                "--min-mapping-quality",
-                "--version",
-                "--verbose",
-            },
-        ),
-        (
-            "varlens.commands.allele_support",
-            "varlens-allele-support --",
-            {
-                "--out",
-                "--locus",
-                "--variants",
-                "--reads",
-                "--min-mapping-quality",
-                "--version",
-                "--verbose",
-            },
-        ),
-        (
-            "varlens.commands.fusions",
-            "varlens-fusions --",
             {
                 "--out",
                 "--min-fragments",
@@ -353,7 +302,7 @@ def test_varlens_lazy_exports_remain_discoverable_and_resolve() -> None:
 def test_all_console_script_entry_modules_carry_argcomplete_marker() -> None:
     pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     scripts = pyproject["project"]["scripts"]
-    assert scripts, "Expected console scripts in pyproject.toml"
+    assert set(scripts) == {"varlens"}, f"Expected only unified varlens script, got {scripts}"
     for script_name, target in scripts.items():
         module_path = target.split(":", 1)[0].replace(".", "/") + ".py"
         head = (REPO_ROOT / module_path).read_bytes()[:1024]
